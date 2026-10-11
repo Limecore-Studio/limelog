@@ -1,4 +1,4 @@
-import { createClient, type SupportedStorage } from '@supabase/supabase-js';
+import { createClient, type SupportedStorage, type User } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
 import { Preferences } from '@capacitor/preferences';
@@ -81,6 +81,8 @@ const capacitorStorage: SupportedStorage = {
   },
 };
 
+const STORAGE_KEY = 'wt_nexus_auth';
+
 export const supabase = createClient(url, anonKey, {
   auth: {
     // Web keeps localStorage: there is no Preferences plugin in a browser, the
@@ -91,9 +93,56 @@ export const supabase = createClient(url, anonKey, {
     autoRefreshToken: true,
     detectSessionInUrl: true,
     flowType: 'pkce',
-    storageKey: 'wt_nexus_auth',
+    storageKey: STORAGE_KEY,
   },
 });
+
+// ── The stored session, without asking anyone (v1.19 — LL#64) ─────────────
+//
+// `getSession()` is local only while the access token is fresh. Once it has
+// expired — any launch more than about an hour after the last refresh — it
+// refreshes first, and offline auth-js retries that refresh with backoff for
+// ~25 s (up to ~51 s) before answering. Cold start awaited that answer, so
+// every such offline launch sat on "LOADING…" for the full init timeout.
+//
+// This reads the same entry from the same adapter the client persists to and
+// does nothing else: no refresh, no lock, no network. It decides what to RENDER;
+// auth-js still decides whether the session is good, and says so through
+// onAuthStateChange (nexusStore.init).
+export interface StoredSession {
+  user: User;
+  /** Access-token expiry, epoch seconds — auth-js's `expires_at`. */
+  expiresAt: number;
+  /** Past auth-js's own expiry margin, i.e. `getSession()` will refresh. */
+  expired: boolean;
+}
+
+/** auth-js treats a token as expired 90 s early (3 ticks of 30 s —
+ *  EXPIRY_MARGIN_MS in auth-js's constants). Same margin, same answer. */
+const EXPIRY_MARGIN_MS = 90_000;
+
+/** Parse a persisted auth entry. Null for anything auth-js would not accept
+ *  as a session (its `_isValidSession`), or that carries no user to show. */
+export function parseStoredSession(raw: string | null, now = Date.now()): StoredSession | null {
+  try {
+    const s = raw ? JSON.parse(raw) : null;
+    const exp = s?.expires_at;
+    if (!s?.access_token || !s.refresh_token || typeof exp !== 'number' || !s.user?.id) return null;
+    return { user: s.user, expiresAt: exp, expired: exp * 1000 - now < EXPIRY_MARGIN_MS };
+  } catch {
+    return null;
+  }
+}
+
+export async function readStoredSession(): Promise<StoredSession | null> {
+  try {
+    return parseStoredSession(
+      Capacitor.isNativePlatform() ? await capacitorStorage.getItem(STORAGE_KEY) : localStorage.getItem(STORAGE_KEY),
+    );
+  } catch {
+    return null;
+  }
+}
 
 // ── Mobile session durability (v1.10) ───────────────────────────────────
 // Ported from NCC's supabase.ts, which got this in v1.7; this app never did.

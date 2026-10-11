@@ -158,10 +158,16 @@ export default function App() {
   // data LimeLog performs, and it only refills genuine gaps — a reinstall / new
   // device / lost-data situation gets its pushed history back instead of it
   // being stranded in the cloud. Fire-and-forget; never blocks the UI.
+  //
+  // v1.19 — LL#64: waits for `sessionUnverified` to clear. userEmail can now
+  // come from storage before auth-js has confirmed the session, and this runs
+  // once per launch: spent on an offline start, it would fail and never retry.
+  // A confirmed session is what used to set userEmail here, so this is the
+  // same moment as before.
   const recoveryRan = useRef(false);
   useEffect(() => {
     if (recoveryRan.current) return;
-    if (!nexusInitialized || !isNexusConfigured || !userEmail) return;
+    if (!nexusInitialized || !isNexusConfigured || !userEmail || sessionUnverified) return;
     recoveryRan.current = true;
     void (async () => {
       try {
@@ -175,7 +181,7 @@ export default function App() {
         console.warn('[recovery] workout hydrate failed:', (e as Error).message);
       }
     })();
-  }, [nexusInitialized, isNexusConfigured, userEmail]);
+  }, [nexusInitialized, isNexusConfigured, userEmail, sessionUnverified]);
 
   // Re-schedule whenever the active program changes. Pass the exercise
   // library so the notification body can preview the first few exercises

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Capacitor } from '@capacitor/core';
-import { supabase, isNexusConfigured } from '@/lib/supabase';
+import { supabase, isNexusConfigured, readStoredSession } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
 import { signInWithGoogle as oauthSignInWithGoogle, initOAuthDeepLinkListener } from '@/lib/oauth';
 import { setGuestMode, isGuestMode } from '@/lib/guestMode';
@@ -114,132 +114,63 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     outboxInstallTriggers();
     set({ loading: true });
     try {
-      // v1.13 — getSession(), not getUser().
+      // v1.19 — LL#64: render from the stored session first.
       //
-      // `getUser()` is a REQUEST to /auth/v1/user on every single cold start,
-      // and the old code read `.data.user` while discarding the error. So a
-      // launch with no signal — a tunnel, a dead zone, wifi that associates
-      // before it routes, a phone whose radio is not up yet — produced
-      // `user = null`, indistinguishable from being signed out. The inherit
-      // below then needed the network too, failed the same way, and the app
-      // rendered FirstLaunchAuth over a session that was sitting in storage,
-      // valid, the whole time.
+      // The v1.13 race below bounded the wait for `getSession()` at six
+      // seconds, but it was still a wait, and every offline launch more than
+      // about an hour after the last refresh paid all of it: an expired
+      // access token sends `getSession()` into auth-js's refresh retry chain
+      // (~25 s offline, up to ~51 s), so the race always lost to its timer.
       //
-      // That is the "I keep getting logged out" report with nothing on the
-      // server to corroborate it: 66 token refreshes in the sample window,
-      // all 200, no revoked families, no time-boxed sessions. Nothing
-      // happened server-side because nothing was ever asked of it.
-      //
-      // `getSession()` reads local storage and only touches the network when
-      // the access token has actually expired. StudyDesk and NCC have both
-      // resolved their session this way all along; this app was the outlier.
-      // Bounded, for the reason StudyDesk's suiteSso.js records as item G: an
-      // unbounded await in a session-init path does not fail, it HANGS, and
-      // the app sits on its loading label until the OS-level TCP timeout —
-      // minutes, not seconds. `getSession()` refreshes an expired token, and
-      // supabase-js retries that refresh with backoff, so a dead network here
-      // is measured in retries rather than one failure. Reproduced: an
-      // offline cold start with an expired token left the app on "LOADING…"
-      // past nine seconds with six refresh attempts made.
-      //
-      // Six seconds is longer than any plausible refresh on a slow mobile
-      // connection and far shorter than a TCP timeout. Expiring early costs a
-      // launch that starts in the unverified state and resolves itself the
-      // moment the refresh lands; not expiring at all costs an app that never
-      // opens.
-      const resolved = await Promise.race([
-        supabase.auth.getSession().then(
-          (r) => ({ data: r.data, error: r.error }),
-          (error: unknown) => ({ data: { session: null }, error: error as { message?: string } }),
-        ),
-        new Promise<{ data: { session: null }; error: { message: string } }>((res) =>
-          setTimeout(() => res({ data: { session: null }, error: { message: 'timed out resolving the session' } }), 6000),
-        ),
-      ]);
-      const { data: sessionData, error: sessionError } = resolved;
-      let user = sessionData.session?.user ?? null;
-      // An empty store returns {session: null, error: null}. An error with no
-      // session therefore means there WAS one and it could not be refreshed —
-      // keep that apart from being signed out. See `sessionUnverified`.
-      const unverified = !user && !!sessionError;
-      if (unverified) {
-        console.warn('[nexus] session present but unverifiable this launch:', sessionError?.message);
+      // A session in storage is enough to know who to render for. Read it
+      // with no network, open the app on it, and resolve init now; the
+      // `getSession()` that used to gate the launch carries on in `settle()`
+      // and the auth listener below reports what it finds. Flagged
+      // unverified on every launch, not only when the token is past expiry:
+      // it means "shown from storage, auth-js has not answered yet", which
+      // for a fresh token lasts milliseconds, and it closes the window where
+      // a token that read as fresh here crosses auth-js's 90 s expiry margin
+      // before its answer arrives. Only the auth gate and the recovery pull
+      // read the flag, and with an email set the gate is satisfied anyway.
+      const stored = await readStoredSession();
+      if (stored) {
+        if (stored.expired) console.warn('[nexus] access token expired; opening on the stored session while it refreshes');
+        set({
+          userEmail: stored.user.email ?? null,
+          userName: displayNameOf(stored.user),
+          sessionUnverified: true,
+          loading: false,
+        });
       }
 
-      // v1.1 — auto-inherit from NCC on cold start when no local session.
+      // v1.19 — LL#65: the listener goes up BEFORE anything asks for the
+      // session, so it hears every answer that request produces. It used to
+      // be registered after the race, so the refresh that eventually failed
+      // offline surfaced as an `INITIAL_SESSION` with a null session while
+      // the stored session was still there — and the handler took that as a
+      // sign-out, about 76 s into an offline launch.
       //
-      // Why: Supabase rotates refresh_tokens on every refresh (default
-      // behavior). NCC + LimeLog + StudyDesk all share ONE logical session
-      // via the SSO bundle, but each app's supabase client persists its own
-      // copy. Whichever side refreshes second gets a stale refresh_token,
-      // its auto-refresh fails, and onAuthStateChange fires SIGNED_OUT.
-      // Symptom: every cold start of LimeLog (after NCC has rotated in the
-      // background) lands the user on the auth screen needing to tap
-      // "Continue with Nexus" again. Reported 2026-05-28.
-      //
-      // Fix: when getUser() returns no user, probe NCC's ContentProvider
-      // and silently inherit. As long as NCC is signed in, this re-syncs
-      // LimeLog to the latest published bundle. The user never sees the
-      // auth screen unless NCC itself has signed out. Guest mode and the
-      // web platform short-circuit this path — guests opted out of auth
-      // explicitly; web has no native plugin to call.
-      //
-      // `!unverified` is new: inheriting is for an app that has no session,
-      // not for one whose session merely could not be reached. Probing NCC
-      // over the same dead network would only spend the SSO timeout before
-      // failing the same way.
-      if (!user && !unverified && Capacitor.isNativePlatform() && !isGuestMode()) {
-        try {
-          const result = await inheritFromNexus();
-          if (result.ok) {
-            user = (await supabase.auth.getSession()).data.session?.user ?? null;
-          }
-        } catch (e) {
-          // Silent — fall through to no-user state, FirstLaunchAuth will
-          // render with the manual Continue-with-Nexus affordance as the
-          // user-visible fallback.
-          console.warn('[nexus] auto-inherit on init failed:', e);
-        }
-      }
-
-      set({
-        userEmail: user?.email ?? null,
-        userName: displayNameOf(user),
-        sessionUnverified: unverified,
-        loading: false,
-      });
-
-      // ACT-5 — cover the restored-session path too, not just fresh sign-ins.
-      // Every account that predates this instrumentation only ever appears here.
-      scheduleOriginStamp(user ?? null);
-
-      // v1.12 Item 0 — retention. Placed after the SSO inherit above rather
-      // than at component mount: on a cold start LimeLog usually has no
-      // session until that call resolves, and an open recorded before it would
-      // find no user and be skipped. The visibilitychange listener installed
-      // here covers the commoner case — the app resumed from the background
-      // days later without the process having died.
-      watchAppOpens(pkgJson.version);
-
-      // v1.12 Item 5 — supporter entitlement, sited here for the same reason
-      // as the line above: on a cold start there is usually no session until
-      // the SSO inherit resolves, and asking earlier would cache a "not
-      // entitled" answer for six hours.
-      // Routed through the theme store rather than calling
-      // `refreshEntitlement` directly. The raw call updates the cache and
-      // nothing else — the store's `setEntitled` is what demotes a paid theme
-      // when an entitlement has lapsed, and without it a lapsed supporter
-      // keeps Cast Iron until they happen to restart the app.
-      if (user?.id) void useThemeStore.getState().syncEntitlement(user.id);
-
+      // `answers` counts the events that settle the session (everything but
+      // INITIAL_SESSION, which is the same answer `getSession()` gives).
+      // `settle()` checks it before writing, so its older answer never
+      // overwrites one that landed while it was still waiting.
+      let answers = 0;
       supabase.auth.onAuthStateChange((event, session) => {
+        // INITIAL_SESSION with no session is auth-js reporting that it could
+        // not load one — offline, that means the refresh failed, not that
+        // the account is gone. A real sign-out arrives as SIGNED_OUT (a
+        // refresh token the server rejects removes the session and emits it),
+        // so while the stored session is unconfirmed this is not an answer.
+        if (event === 'INITIAL_SESSION' && !session && get().sessionUnverified) return;
+        if (event !== 'INITIAL_SESSION') answers++;
         const wasSignedIn = Boolean(get().userEmail);
+        const wasUnverified = get().sessionUnverified;
         const nowSignedIn = Boolean(session?.user);
-        // Any event here is an ANSWER about the session — a refresh that
-        // landed, or a sign-out the server actually asserted. Either way the
-        // "could not reach the server to ask" state is over, so the flag
-        // clears; leaving it set would hold the auth gate open after a real
-        // sign-out.
+        // Anything that gets here is an ANSWER about the session — a refresh
+        // that landed, a session auth-js loaded, or a sign-out the server
+        // actually asserted. Either way the "could not reach the server to
+        // ask" state is over, so the flag clears; leaving it set would hold
+        // the auth gate open after a real sign-out.
         set({
           userEmail: session?.user?.email ?? null,
           userName: displayNameOf(session?.user),
@@ -271,7 +202,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         if (event === 'SIGNED_OUT') {
           void useThemeStore.getState().syncEntitlement(null);
         }
-        if (!wasSignedIn && nowSignedIn && get().syncEnabled) {
+        // v1.19 — `wasUnverified`: an unconfirmed session now carries its
+        // email from storage, so "was signed out" alone no longer catches the
+        // moment it is confirmed — the moment queued work can finally go.
+        if ((!wasSignedIn || wasUnverified) && nowSignedIn && get().syncEnabled) {
           void outboxDrain().then((result) => {
             const status = outboxStatus();
             set({ pendingCount: result.remaining, outboxStatus: status });
@@ -279,10 +213,162 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         }
       });
 
-      if (user && get().syncEnabled) {
-        const result = await outboxDrain();
-        set({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
-      }
+      const settle = async () => {
+        try {
+          // v1.13 — getSession(), not getUser().
+          //
+          // `getUser()` is a REQUEST to /auth/v1/user on every single cold start,
+          // and the old code read `.data.user` while discarding the error. So a
+          // launch with no signal — a tunnel, a dead zone, wifi that associates
+          // before it routes, a phone whose radio is not up yet — produced
+          // `user = null`, indistinguishable from being signed out. The inherit
+          // below then needed the network too, failed the same way, and the app
+          // rendered FirstLaunchAuth over a session that was sitting in storage,
+          // valid, the whole time.
+          //
+          // That is the "I keep getting logged out" report with nothing on the
+          // server to corroborate it: 66 token refreshes in the sample window,
+          // all 200, no revoked families, no time-boxed sessions. Nothing
+          // happened server-side because nothing was ever asked of it.
+          //
+          // `getSession()` reads local storage and only touches the network when
+          // the access token has actually expired. StudyDesk and NCC have both
+          // resolved their session this way all along; this app was the outlier.
+          // Bounded, for the reason StudyDesk's suiteSso.js records as item G: an
+          // unbounded await in a session-init path does not fail, it HANGS, and
+          // the app sits on its loading label until the OS-level TCP timeout —
+          // minutes, not seconds. `getSession()` refreshes an expired token, and
+          // supabase-js retries that refresh with backoff, so a dead network here
+          // is measured in retries rather than one failure. Reproduced: an
+          // offline cold start with an expired token left the app on "LOADING…"
+          // past nine seconds with six refresh attempts made.
+          //
+          // Six seconds is longer than any plausible refresh on a slow mobile
+          // connection and far shorter than a TCP timeout. Expiring early costs a
+          // launch that starts in the unverified state and resolves itself the
+          // moment the refresh lands; not expiring at all costs an app that never
+          // opens.
+          //
+          // v1.19 — LL#64: with a stored session this no longer gates the
+          // launch (see above); the bound now only decides when the follow-up
+          // work at the end of this function runs.
+          const resolved = await Promise.race([
+            supabase.auth.getSession().then(
+              (r) => ({ data: r.data, error: r.error }),
+              (error: unknown) => ({ data: { session: null }, error: error as { message?: string } }),
+            ),
+            new Promise<{ data: { session: null }; error: { message: string } }>((res) =>
+              setTimeout(() => res({ data: { session: null }, error: { message: 'timed out resolving the session' } }), 6000),
+            ),
+          ]);
+          const { data: sessionData, error: sessionError } = resolved;
+          let user = sessionData.session?.user ?? null;
+          // An empty store returns {session: null, error: null}. An error with no
+          // session therefore means there WAS one and it could not be refreshed —
+          // keep that apart from being signed out. See `sessionUnverified`.
+          const unverified = !user && !!sessionError;
+          if (unverified) {
+            console.warn('[nexus] session present but unverifiable this launch:', sessionError?.message);
+          }
+
+          // v1.1 — auto-inherit from NCC on cold start when no local session.
+          //
+          // Why: Supabase rotates refresh_tokens on every refresh (default
+          // behavior). NCC + LimeLog + StudyDesk all share ONE logical session
+          // via the SSO bundle, but each app's supabase client persists its own
+          // copy. Whichever side refreshes second gets a stale refresh_token,
+          // its auto-refresh fails, and onAuthStateChange fires SIGNED_OUT.
+          // Symptom: every cold start of LimeLog (after NCC has rotated in the
+          // background) lands the user on the auth screen needing to tap
+          // "Continue with Nexus" again. Reported 2026-05-28.
+          //
+          // Fix: when getUser() returns no user, probe NCC's ContentProvider
+          // and silently inherit. As long as NCC is signed in, this re-syncs
+          // LimeLog to the latest published bundle. The user never sees the
+          // auth screen unless NCC itself has signed out. Guest mode and the
+          // web platform short-circuit this path — guests opted out of auth
+          // explicitly; web has no native plugin to call.
+          //
+          // `!unverified` is new: inheriting is for an app that has no session,
+          // not for one whose session merely could not be reached. Probing NCC
+          // over the same dead network would only spend the SSO timeout before
+          // failing the same way.
+          if (!user && !unverified && Capacitor.isNativePlatform() && !isGuestMode()) {
+            try {
+              // v1.19 — LL#64: bounded. The inherit is two network calls (the
+              // suite-session function, then redeeming its credential), and
+              // with no stored session the launch is waiting on it. Past three
+              // seconds the app opens on the sign-in screen and the inherit
+              // carries on; if it lands, its SIGNED_IN reaches the listener
+              // above and flips the gate.
+              const result = await Promise.race([
+                inheritFromNexus(),
+                new Promise<null>((res) => setTimeout(() => res(null), 3000)),
+              ]);
+              if (!result) console.warn('[nexus] auto-inherit still running after 3 s; not holding the launch for it');
+              if (result?.ok) {
+                user = (await supabase.auth.getSession()).data.session?.user ?? null;
+              }
+            } catch (e) {
+              // Silent — fall through to no-user state, FirstLaunchAuth will
+              // render with the manual Continue-with-Nexus affordance as the
+              // user-visible fallback.
+              console.warn('[nexus] auto-inherit on init failed:', e);
+            }
+          }
+
+          // v1.19 — two cases where this answer is not the one to write:
+          //   - an auth event landed while it was being fetched (`answers`),
+          //     which is newer than anything computed here;
+          //   - the session came from storage and could not be checked. The
+          //     app is already showing it; writing `user` (null) would sign
+          //     the user out of the screen for want of a network. Leave it
+          //     unverified and let the refresh, when it lands, answer.
+          if (!answers && !(stored && unverified)) {
+            set({
+              userEmail: user?.email ?? null,
+              userName: displayNameOf(user),
+              sessionUnverified: unverified,
+            });
+          }
+          set({ loading: false });
+
+          // ACT-5 — cover the restored-session path too, not just fresh sign-ins.
+          // Every account that predates this instrumentation only ever appears here.
+          scheduleOriginStamp(user ?? null);
+
+          // v1.12 Item 0 — retention. Placed after the SSO inherit above rather
+          // than at component mount: on a cold start LimeLog usually has no
+          // session until that call resolves, and an open recorded before it would
+          // find no user and be skipped. The visibilitychange listener installed
+          // here covers the commoner case — the app resumed from the background
+          // days later without the process having died.
+          watchAppOpens(pkgJson.version);
+
+          // v1.12 Item 5 — supporter entitlement, sited here for the same reason
+          // as the line above: on a cold start there is usually no session until
+          // the SSO inherit resolves, and asking earlier would cache a "not
+          // entitled" answer for six hours.
+          // Routed through the theme store rather than calling
+          // `refreshEntitlement` directly. The raw call updates the cache and
+          // nothing else — the store's `setEntitled` is what demotes a paid theme
+          // when an entitlement has lapsed, and without it a lapsed supporter
+          // keeps Cast Iron until they happen to restart the app.
+          if (user?.id) void useThemeStore.getState().syncEntitlement(user.id);
+
+          if (user && get().syncEnabled) {
+            const result = await outboxDrain();
+            set({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
+          }
+        } catch (err) {
+          set({ loading: false, lastError: err instanceof Error ? err.message : String(err) });
+        }
+      };
+      // With a stored session the app is already open on it; nothing here
+      // may hold the launch. Without one the gate needs this answer first —
+      // bounded by the six-second race and the three-second inherit above.
+      if (stored) void settle();
+      else await settle();
     } catch (err) {
       set({ loading: false, lastError: err instanceof Error ? err.message : String(err) });
     }
