@@ -63,6 +63,19 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- v1.19 LL#63 — exact alarms for the workout reminders, which are one
+         exact alarm per session day now (src/utils/notifications.ts). Without
+         either permission Android 12+ refuses exact alarms and
+         @capacitor/local-notifications falls back to an inexact one the OS
+         may defer, an hour or more under Doze. USE_EXACT_ALARM covers API 33+
+         and is granted at install; SCHEDULE_EXACT_ALARM covers API 31-32,
+         where USE_EXACT_ALARM does not exist. StudyDesk declares both. API
+         26-30 needs neither. Google Play restricts USE_EXACT_ALARM to alarm
+         and calendar apps, but LimeLog ships on F-Droid only, where that
+         policy does not apply. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+
     <!-- v1.2.1 — required by @capacitor/camera for the Body Metrics
          progress-photo capture flow. The plugin replaces the
          <input type="file" capture="environment"> path, which silently

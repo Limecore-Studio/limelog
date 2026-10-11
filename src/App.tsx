@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — installed separately; see notifications.ts setup comment
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -111,13 +112,16 @@ export default function App() {
     return () => { cancelled = true; };
   }, [userEmail, nexusInitialized]);
 
-  // One-time channel creation + nexusStore init. The init() call awaits
-  // supabase.auth.getSession(), which is what sets userEmail to its restored
-  // value; we set nexusInitialized after init resolves so the gate below
-  // doesn't show the auth screen mid-restore. (It was getUser() until v1.13 —
-  // a network round trip standing between a returning user and their own app.)
+  // One-time channel creation + nexusStore init. init() sets userEmail to its
+  // restored value before it resolves; we set nexusInitialized after that so
+  // the gate below doesn't show the auth screen mid-restore. (It was getUser()
+  // until v1.13 — a network round trip standing between a returning user and
+  // their own app. v1.19 — LL#64: with a session in storage init() resolves
+  // from storage alone, and getSession() finishes in the background.)
+  // The channel setup is not awaited here; scheduleWorkoutReminders awaits it
+  // (v1.19 — LL#63).
   useEffect(() => {
-    setupNotificationChannel();
+    void setupNotificationChannel();
     void (async () => {
       const guest = await isGuestMode();
       setGuestModeState(guest);
@@ -188,10 +192,23 @@ export default function App() {
   // by display name (the SessionExercise FK only carries exerciseId).
   // Library is read at effect-fire time so a new exercise added later
   // surfaces on the next program edit.
+  //
+  // v1.19 — LL#63: and on every resume. Each reminder is a one-shot alarm for
+  // the next occurrence now, so something has to arm the week after it fires.
+  // Mount covers a cold start, but tapping the reminder usually RESUMES a
+  // backgrounded app rather than starting one, and nothing else re-ran this.
+  // The resume path never prompts for permission (see the option's comment).
   const exerciseLibrary = useProgramStore((s) => s.exercises);
   useEffect(() => {
     const sessions = activeProgram?.sessions ?? [];
-    scheduleWorkoutReminders(sessions, exerciseLibrary);
+    void scheduleWorkoutReminders(sessions, exerciseLibrary);
+    if (!Capacitor.isNativePlatform()) return;
+    const handle = CapacitorApp.addListener('resume', () => {
+      void scheduleWorkoutReminders(sessions, exerciseLibrary, { prompt: false });
+    });
+    return () => {
+      void handle.then((h) => h.remove());
+    };
   }, [activeProgram, exerciseLibrary]);
 
   // Auth gate: show the first-launch screen on a fresh install (no email,

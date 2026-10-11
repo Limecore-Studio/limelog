@@ -7,6 +7,10 @@
  *
  * Schedules a weekly 9 AM notification for every day that has a session
  * in the active program. Safe to call on web (no-ops when not on native).
+ *
+ * v1.19 — LL#63: "weekly" is one exact alarm for the next occurrence, re-armed
+ * by the app (App.tsx: every cold start, every resume, every program change),
+ * not a repeating alarm. See scheduleWorkoutReminders for why.
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -117,7 +121,19 @@ async function cancelAllSlots(): Promise<void> {
   await LocalNotifications.cancel({ notifications: allSlotIds });
 }
 
-export async function setupNotificationChannel(): Promise<void> {
+/**
+ * v1.19 — LL#63: memoised, and awaited by every schedule. App.tsx fired this
+ * without awaiting it and scheduled from an effect in the same commit, so the
+ * start-up sweep below (a blind cancel of IDs 0–999) raced the schedule and
+ * could land after it, cancelling the reminders it had just set. Whichever
+ * runs first now starts the setup, and the schedule waits for it to finish.
+ */
+let channelSetup: Promise<void> | undefined;
+export function setupNotificationChannel(): Promise<void> {
+  return (channelSetup ??= createChannelAndSweep());
+}
+
+async function createChannelAndSweep(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
     await LocalNotifications.createChannel({
@@ -177,14 +193,38 @@ function buildSessionBody(
   return full.length > 80 ? full.slice(0, 77) + '…' : full;
 }
 
-export async function scheduleWorkoutReminders(
+/**
+ * v1.19 — LL#63: calls run one at a time, in call order. Each is a blind
+ * cancel followed by a schedule, so two interleaved (a resume landing on a
+ * program edit) could finish with the older program's reminders.
+ */
+let scheduling: Promise<void> = Promise.resolve();
+
+/**
+ * `prompt: false` re-arms only when notifications are already allowed, and
+ * never asks — for the resume path, which must not re-raise the permission
+ * dialog every time the app comes to the foreground.
+ */
+export function scheduleWorkoutReminders(
   sessions: SessionTemplate[],
   exerciseLibrary: Exercise[] = [],
+  { prompt = true } = {},
+): Promise<void> {
+  return (scheduling = scheduling.then(() => scheduleNow(sessions, exerciseLibrary, prompt)));
+}
+
+async function scheduleNow(
+  sessions: SessionTemplate[],
+  exerciseLibrary: Exercise[],
+  prompt: boolean,
 ): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
   try {
-    const { display } = await LocalNotifications.requestPermissions();
+    await setupNotificationChannel();
+    const { display } = await (prompt
+      ? LocalNotifications.requestPermissions()
+      : LocalNotifications.checkPermissions());
     if (display !== 'granted') return;
 
     // Blind-cancel all 7 reserved slots before scheduling. See cancelAllSlots
@@ -225,12 +265,17 @@ export async function scheduleWorkoutReminders(
           // wording were English here regardless of app language.
           title: i18n.t('notif.sessionTitle', { day: weekdayNames('long')[s.dayOfWeek] }),
           body: buildSessionBody(s, exerciseLibrary),
-          schedule: {
-            at: target,
-            repeats: true,
-            every: 'week' as const,
-            allowWhileIdle: true,
-          },
+          // v1.19 — LL#63: one-shot. `at` + `repeats` is not "weekly" in
+          // @capacitor/local-notifications 8.0.2: that branch calls
+          // setRepeating(RTC, at, at - now), so the interval was however far
+          // off the reminder was when the app last scheduled it (open on
+          // Saturday for a Monday session and it repeated every ~2 days), and
+          // `every` and `allowWhileIdle` were ignored, on a non-wakeup alarm
+          // that Doze defers. A plain `at` takes the exact path instead —
+          // setExactAndAllowWhileIdle(RTC_WAKEUP) with `allowWhileIdle`,
+          // given the exact-alarm permissions in AndroidManifest.xml — and
+          // the app re-arms the next week each time it starts or resumes.
+          schedule: { at: target, allowWhileIdle: true },
           channelId: CHANNEL_ID,
           // Custom small icon derived from launcher (see
           // limecore/derive_notification_icons.py). Status-bar icons MUST be
