@@ -163,11 +163,12 @@ export default function App() {
   // device / lost-data situation gets its pushed history back instead of it
   // being stranded in the cloud. Fire-and-forget; never blocks the UI.
   //
-  // v1.19 — LL#64: waits for `sessionUnverified` to clear. userEmail can now
-  // come from storage before auth-js has confirmed the session, and this runs
-  // once per launch: spent on an offline start, it would fail and never retry.
-  // A confirmed session is what used to set userEmail here, so this is the
-  // same moment as before.
+  // v1.19 — LL#64: waits for `sessionUnverified` to clear, so an offline
+  // start that opened on the stored session (expired token) does not spend
+  // this once-per-launch pull before the session is confirmed. It is not a
+  // network check: offline with a still-valid token, auth-js confirms the
+  // session at once, and the pull runs, fails and is not retried until the
+  // next launch — the same as before v1.19.
   const recoveryRan = useRef(false);
   useEffect(() => {
     if (recoveryRan.current) return;

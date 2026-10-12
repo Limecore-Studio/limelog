@@ -194,6 +194,27 @@ function buildSessionBody(
 }
 
 /**
+ * v1.19 (LimeLog#67 review) — the resume path's cancel. Only this app's 7
+ * slots, and only those still pending: a reminder that already fired and is
+ * sitting in the tray is not pending, so it stays there. The blind 0–999
+ * sweep (about 3 000 binder calls) dismissed it on every resume; that sweep
+ * is for phantom alarms from old ID schemes, which the cold-start sweep in
+ * setupNotificationChannel already covers.
+ */
+async function cancelPendingSlots(): Promise<void> {
+  const slotIds = Array.from({ length: SLOT_COUNT }, (_, i) => ({ id: BASE_ID + i }));
+  try {
+    const { notifications } = await LocalNotifications.getPending();
+    const ours = notifications
+      .filter((n: { id: number }) => n.id >= BASE_ID && n.id < BASE_ID + SLOT_COUNT)
+      .map((n: { id: number }) => ({ id: n.id }));
+    if (ours.length > 0) await LocalNotifications.cancel({ notifications: ours });
+  } catch {
+    await LocalNotifications.cancel({ notifications: slotIds });
+  }
+}
+
+/**
  * v1.19 — LL#63: calls run one at a time, in call order. Each is a blind
  * cancel followed by a schedule, so two interleaved (a resume landing on a
  * program edit) could finish with the older program's reminders.
@@ -210,7 +231,10 @@ export function scheduleWorkoutReminders(
   exerciseLibrary: Exercise[] = [],
   { prompt = true } = {},
 ): Promise<void> {
-  return (scheduling = scheduling.then(() => scheduleNow(sessions, exerciseLibrary, prompt)));
+  // `.then(run, run)`: a rejected run must not stall every later one.
+  // scheduleNow catches its own errors today; this keeps it that way.
+  const run = () => scheduleNow(sessions, exerciseLibrary, prompt);
+  return (scheduling = scheduling.then(run, run));
 }
 
 async function scheduleNow(
@@ -230,7 +254,9 @@ async function scheduleNow(
     // Blind-cancel all 7 reserved slots before scheduling. See cancelAllSlots
     // docstring for why this can't trust getPending(). Always cancel even
     // when sessions.length === 0 so an empty program clears prior alarms.
-    await cancelAllSlots();
+    // v1.19: the resume re-arm (prompt: false) cancels only the pending
+    // slots, so a delivered reminder stays in the tray (cancelPendingSlots).
+    await (prompt ? cancelAllSlots() : cancelPendingSlots());
 
     if (sessions.length === 0) return;
 
