@@ -49,7 +49,7 @@ export function ProgressPage() {
       const session = prog.sessions.find((s) => s.id === sessionTemplateId);
       if (session) return session.name;
     }
-    return 'Unknown session';
+    return t('progress.unknownSession');
   }
 
   return (

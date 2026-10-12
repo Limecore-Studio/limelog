@@ -129,7 +129,7 @@ export function LoadChart({ exerciseId, sessionLogs, unit }: Props) {
           {min.toFixed(1)}
         </text>
       </svg>
-      <p className="load-chart__unit">{unit} — top set per session</p>
+      <p className="load-chart__unit">{t('progress.loadCaption', { unit })}</p>
     </div>
   );
 }

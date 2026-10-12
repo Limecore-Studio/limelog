@@ -150,9 +150,13 @@ export async function downloadExport(
  */
 export function wipeAllLocalData(): void {
   const PREFIXES = ['wt_', 'limelog-'];
+  // v1.18.1 (LimeLog#75): keys the prefixes miss, named one by one. The
+  // training goal and the referral prompt's flag survived an erasure; the two
+  // auth-metadata names are removed too in case anything mirrored them here.
+  const KEYS = ['limelog.trainingGoal', 'limelog.referralAsked', 'referral_source', 'limecore_origin'];
   try {
     const doomed = Object.keys(localStorage).filter((k) =>
-      PREFIXES.some((p) => k.startsWith(p)),
+      KEYS.includes(k) || PREFIXES.some((p) => k.startsWith(p)),
     );
     for (const k of doomed) localStorage.removeItem(k);
   } catch {

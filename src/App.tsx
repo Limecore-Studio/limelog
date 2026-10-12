@@ -16,8 +16,10 @@ import { useLogStore } from '@/store/logStore';
 import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud } from '@/lib/onboarding';
 import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
+import { phaseSessions, resolvePhase } from '@/lib/todaySessions';
 import {
   setupNotificationChannel,
+  labelNotifications,
   scheduleWorkoutReminders,
   WORKOUT_ACTION_START,
 } from '@/utils/notifications';
@@ -71,7 +73,7 @@ function NotificationActionBridge() {
 }
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { activeProgram } = useProgramStore();
   const userEmail = useNexusStore((s) => s.userEmail);
   const sessionUnverified = useNexusStore((s) => s.sessionUnverified);
@@ -182,11 +184,28 @@ export default function App() {
   // by display name (the SessionExercise FK only carries exerciseId).
   // Library is read at effect-fire time so a new exercise added later
   // surfaces on the next program edit.
+  //
+  // v1.18.1 (LimeLog#73): the active phase's sessions only, the ones Today
+  // offers. Every phase's were scheduled, so a day with no session in the
+  // current phase still got a reminder, sometimes under another phase's
+  // session name.
+  //
+  // Also re-run on a language change (LimeLog#75). A reminder is built in the
+  // language of the moment it is scheduled, and the channel name and the
+  // "Start session" button are registered with Android the same way, so those
+  // are registered again first (at launch setupNotificationChannel does it).
   const exerciseLibrary = useProgramStore((s) => s.exercises);
+  const labelledIn = useRef(i18n.language);
   useEffect(() => {
-    const sessions = activeProgram?.sessions ?? [];
-    scheduleWorkoutReminders(sessions, exerciseLibrary);
-  }, [activeProgram, exerciseLibrary]);
+    const sessions = phaseSessions(activeProgram, resolvePhase(activeProgram).current?.id);
+    void (async () => {
+      if (labelledIn.current !== i18n.language) {
+        labelledIn.current = i18n.language;
+        await labelNotifications().catch(() => { /* best-effort, as at launch */ });
+      }
+      await scheduleWorkoutReminders(sessions, exerciseLibrary);
+    })();
+  }, [activeProgram, exerciseLibrary, i18n.language]);
 
   // Auth gate: show the first-launch screen on a fresh install (no email,
   // not in guest mode). Skipped when Supabase isn't configured (env vars

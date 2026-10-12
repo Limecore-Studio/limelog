@@ -237,9 +237,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       const { evicted } = await savePhotoFromDataUrl(form.date, dataUrl);
       setPhotosNonce((n) => n + 1);
       if (evicted > 0) {
-        setPhotoNotice(
-          `Saved. Oldest ${evicted} photo${evicted === 1 ? '' : 's'} removed to free space.`,
-        );
+        setPhotoNotice(t('body.photosEvicted', { count: evicted }));
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -272,7 +270,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       const { evicted } = await savePhoto(form.date, file);
       setPhotosNonce((n) => n + 1);
       if (evicted > 0) {
-        setPhotoNotice(`Saved. Oldest ${evicted} photo${evicted === 1 ? '' : 's'} removed to free space.`);
+        setPhotoNotice(t('body.photosEvicted', { count: evicted }));
       }
     } catch (err) {
       setPhotoNotice(err instanceof Error ? err.message : 'Could not save photo.');

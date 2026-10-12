@@ -239,7 +239,8 @@ export async function deleteBodyMetricFromNexus(id: string): Promise<void> {
   if (error) throw error;
 }
 
-// v1.6 — Personal Records. Push-only, append-only: each detected PR is one row.
+// v1.6 — Personal Records. Each detected PR is one row; since v1.18.1 a row is
+// deleted again when its workout is undone or discarded (LimeLog#72).
 // Upsert by primary id keeps retries idempotent (the local PR keeps a stable
 // id). All derived from already-pushed workout sets — no new user input.
 export interface NexusExercisePRPayload {
@@ -342,5 +343,18 @@ export async function pushExercisePRToNexus(p: NexusExercisePRPayload): Promise<
     pr_date: p.date,
   };
   const { error } = await supabase.from('exercise_prs').upsert(row);
+  if (error) throw error;
+}
+
+// v1.18.1 (LimeLog#72) — retract a PR whose workout was undone or discarded.
+// Before this a PR row was permanent: a typo'd 1000 kg, fixed after Undo, left
+// a phantom PR every later lift was measured against. A hard delete by id, the
+// same as `deleteBodyMetricFromNexus`: the row carries no `deleted_at` or
+// `updated_at` in anything LimeLog writes, nothing pulls PRs back down, and a
+// re-finalize mints a fresh id, so there is nothing for a tombstone to guard.
+// Matching no row (a PR that never reached the cloud) is a no-op.
+export async function deleteExercisePRFromNexus(id: string): Promise<void> {
+  if (!isNexusConfigured) throw new Error('Nexus not configured');
+  const { error } = await supabase.from('exercise_prs').delete().eq('id', id);
   if (error) throw error;
 }

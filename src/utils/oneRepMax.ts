@@ -148,11 +148,15 @@ export function bestEstimateForExercise(
  *
  * Target reps come from the SessionExercise.targetReps string — accepts
  * "5", "5-8", "8x3", "AMRAP", etc. We parse a leading integer as the
- * lower-bound and skip sets whose target can't be parsed.
+ * lower-bound and skip sets whose target can't be parsed. They are looked up
+ * per exercise, or per workout and exercise when given a function: since
+ * v1.18.1 (LimeLog#73) Today passes each workout's own targets
+ * (deloadTargetReps), because one exercise can be prescribed 8–12 in one phase
+ * and 3–5 in the next.
  */
-export function missedRepRatio(
-  sessionLogs: Array<{ finalizedAt?: string; sets: Array<{ id: string; exerciseId: string; reps: number | null; completed: boolean }> }>,
-  targetRepsByExerciseId: Map<string, string>,
+export function missedRepRatio<L extends { finalizedAt?: string; sets: Array<{ id: string; exerciseId: string; reps: number | null; completed: boolean }> }>(
+  sessionLogs: L[],
+  targetReps: Map<string, string> | ((log: L, exerciseId: string) => string | undefined),
   limit: number = 3,
 ): { ratio: number; missedSets: number; totalSets: number } {
   const finalized = sessionLogs.filter((l) => l.finalizedAt).slice(0, limit);
@@ -162,7 +166,7 @@ export function missedRepRatio(
     for (const s of log.sets) {
       if (!s.completed) continue;
       if (s.reps == null) continue;
-      const target = targetRepsByExerciseId.get(s.exerciseId);
+      const target = typeof targetReps === 'function' ? targetReps(log, s.exerciseId) : targetReps.get(s.exerciseId);
       if (!target) continue;
       const m = target.match(/^(\d+)/);
       if (!m) continue; // unparseable (e.g. "AMRAP") — skip
