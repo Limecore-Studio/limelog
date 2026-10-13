@@ -20,14 +20,18 @@ const h = vi.hoisted(() => ({
   syncEntitlement: vi.fn(async () => {}),
   drain: vi.fn(async () => ({ sent: 0, remaining: 0 })),
   setGuestMode: vi.fn(),
+  signOut: (() => Promise.resolve({ error: null })) as () => Promise<{ error: { message: string } | null }>,
+  clearStored: vi.fn(async () => {}),
 }));
 
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native } }));
 vi.mock('@/lib/supabase', () => ({
   isNexusConfigured: true,
   readStoredSession: async () => h.stored,
+  clearStoredSession: h.clearStored,
   supabase: {
     auth: {
+      signOut: () => h.signOut(),
       getSession: () => {
         h.calls.push('getSession');
         return h.getSession();
@@ -94,6 +98,8 @@ beforeEach(() => {
   h.syncEntitlement.mockClear();
   h.drain.mockClear();
   h.setGuestMode.mockClear();
+  h.signOut = () => Promise.resolve({ error: null });
+  h.clearStored.mockClear();
 });
 
 afterEach(() => {
@@ -237,5 +243,56 @@ describe('init() with nothing in storage', () => {
     await store.getState().init();
     expect(inherit).not.toHaveBeenCalled();
     expect(store.getState().loading).toBe(false);
+  });
+});
+
+// v1.18.1 (LimeLog#66) — offline, auth-js returns a network error from
+// signOut() without removing the session (after resolving it first, which for
+// an expired token is its refresh retry chain). The data was already wiped,
+// so the user stayed signed in with an empty app.
+describe('signOut()', () => {
+  async function signedIn() {
+    h.stored = { user: USER, expiresAt: 0, expired: true };
+    const store = await freshStore();
+    await store.getState().init();
+    return store;
+  }
+
+  it('removes the session here when the server cannot be reached, and does not throw', async () => {
+    h.signOut = () => Promise.resolve({ error: { message: 'Failed to fetch' } });
+    const store = await signedIn();
+    await store.getState().signOut();
+    expect(h.clearStored).toHaveBeenCalled();
+    expect(h.setGuestMode).toHaveBeenCalledWith(true);
+    expect(h.syncEntitlement).toHaveBeenCalledWith(null);
+    expect(store.getState()).toMatchObject({ userEmail: null, loading: false });
+  });
+
+  it('stops waiting after a few seconds, and ignores a session saved by a refresh still in flight', async () => {
+    let settle: (r: { error: { message: string } | null }) => void = () => {};
+    h.signOut = () => new Promise((res) => { settle = res; });
+    const store = await signedIn();
+    const done = store.getState().signOut();
+    await vi.advanceTimersByTimeAsync(5000);
+    await done;
+    expect(h.clearStored).toHaveBeenCalledTimes(1);
+    expect(store.getState().userEmail).toBeNull();
+    // The refresh ahead of the queued call lands and reports the old session.
+    h.listener!('TOKEN_REFRESHED', SESSION);
+    expect(store.getState().userEmail).toBeNull();
+    // The call then fails: the session it may have saved goes again, and the
+    // next real sign-in is taken up.
+    settle({ error: { message: 'Failed to fetch' } });
+    await flush();
+    expect(h.clearStored).toHaveBeenCalledTimes(2);
+    h.listener!('SIGNED_IN', SESSION);
+    expect(store.getState().userEmail).toBe(USER.email);
+  });
+
+  it('online, leaves the session to auth-js', async () => {
+    const store = await signedIn();
+    await store.getState().signOut();
+    expect(h.clearStored).not.toHaveBeenCalled();
+    expect(store.getState().userEmail).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Capacitor } from '@capacitor/core';
-import { supabase, isNexusConfigured, readStoredSession } from '@/lib/supabase';
+import { supabase, isNexusConfigured, readStoredSession, clearStoredSession } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
 import { signInWithGoogle as oauthSignInWithGoogle, initOAuthDeepLinkListener } from '@/lib/oauth';
 import { setGuestMode, isGuestMode } from '@/lib/guestMode';
@@ -93,6 +93,14 @@ function displayNameOf(user: { user_metadata?: Record<string, unknown> } | null 
   return n || null;
 }
 
+// v1.18.1 (LimeLog#66): a sign-out that could not reach the server removes
+// the stored session itself. Its signOut() call is still queued behind any
+// token refresh in flight, and that refresh can save the session again and
+// report it; until the call settles, a session reported is not taken up.
+let signOutHold = false;
+/** How long sign-out waits for the server before removing the session here. */
+const SIGN_OUT_WAIT_MS = 5000;
+
 export const useNexusStore = create<NexusStore>((set, get) => ({
   configured: isNexusConfigured,
   syncEnabled: readSyncEnabled(),
@@ -156,6 +164,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       // overwrites one that landed while it was still waiting.
       let answers = 0;
       supabase.auth.onAuthStateChange((event, session) => {
+        if (signOutHold && session) return;
         // INITIAL_SESSION with no session is auth-js reporting that it could
         // not load one — offline, that means the refresh failed, not that
         // the account is gone. A real sign-out arrives as SIGNED_OUT (a
@@ -463,10 +472,37 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     } catch (e) {
       console.warn('[nexus] progress-photos wipe failed:', e);
     }
-    const { error } = await supabase.auth.signOut({ scope: 'local' });
-    if (error) {
-      set({ loading: false, lastError: error.message });
-      throw error;
+    // v1.18.1 (LimeLog#66): the data above is already gone, so the session
+    // has to go too, server or not. Offline, auth-js first resolves the
+    // session (an expired token means its refresh retry chain, up to ~51 s)
+    // and then returns a network error WITHOUT removing it: the user stayed
+    // signed in with an empty app. Give the server a few seconds; past that,
+    // or on any error, remove the stored session here. auth-js then emits no
+    // SIGNED_OUT, so the entitlement is dropped here as that event would.
+    signOutHold = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const call = supabase.auth
+      .signOut({ scope: 'local' })
+      .then(({ error }) => error ?? null, (e: unknown) => (e instanceof Error ? e : new Error(String(e))));
+    const outcome = await Promise.race([
+      call,
+      new Promise<'timeout'>((res) => {
+        timer = setTimeout(() => res('timeout'), SIGN_OUT_WAIT_MS);
+      }),
+    ]);
+    clearTimeout(timer);
+    if (outcome) {
+      console.warn('[nexus] sign-out did not reach the server; removing the local session:', outcome === 'timeout' ? 'timed out' : outcome.message);
+      await clearStoredSession();
+      void useThemeStore.getState().syncEntitlement(null);
+      // A refresh ahead of the call may save the session again before the
+      // call runs; when it settles, remove it once more if it failed.
+      void call.then(async (late) => {
+        if (late) await clearStoredSession();
+        signOutHold = false;
+      });
+    } else {
+      signOutHold = false;
     }
     // v1.1 — set guestMode TRUE on sign-out (was previously cleared to false).
     //

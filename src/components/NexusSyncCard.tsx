@@ -6,6 +6,9 @@ import { inheritFromNexus } from '@/lib/suiteSso';
 import { Button, Card, Badge } from '@/components/ui';
 import { Cloud, CloudOff } from 'lucide-react';
 import { ChangeEmail } from '@/components/ChangeEmail';
+import { useConfirm } from '@/components/confirmContext';
+import { useLogStore } from '@/store/logStore';
+import { listPhotos } from '@/lib/progressPhotos';
 import './NexusSyncCard.css';
 
 // Inline plugin handle for the "is NCC session available?" probe. We can't
@@ -41,6 +44,28 @@ export function NexusSyncCard() {
   const [localError, setLocalError] = useState<string | null>(null);
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [nexusAvailable, setNexusAvailable] = useState(false);
+  const confirm = useConfirm();
+
+  // v1.18.1 (LimeLog#66): sign-out wipes this device's workouts, body
+  // measurements and progress photos (shared-device privacy). Photos are never
+  // uploaded, and with sync off nothing is, so one tap could delete what
+  // exists nowhere else. Say what will be lost, and ask.
+  async function handleSignOut() {
+    const parts = [t('sync.signOutConfirm')];
+    if (!syncEnabled) {
+      if (useLogStore.getState().sessionLogs.length > 0) parts.push(t('sync.signOutSyncOff'));
+    } else if (pendingCount > 0) {
+      parts.push(t('sync.signOutUnsynced', { count: pendingCount }));
+    }
+    const photos = listPhotos().length;
+    if (photos > 0) parts.push(t('sync.signOutPhotos', { count: photos }));
+    if (!(await confirm({ message: parts.join(' '), confirmLabel: t('sync.signOut') }))) return;
+    try {
+      await signOut();
+    } catch {
+      // The store records the error in lastError, which this card shows.
+    }
+  }
 
   // v1.4 — probe NCC's SessionContentProvider on mount. Silent on failure:
   // if NCC isn't installed or signing certs don't match, the affordance
@@ -196,7 +221,7 @@ export function NexusSyncCard() {
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => void signOut()}
+            onClick={() => void handleSignOut()}
             disabled={loading}
             className="nexus-card__signout"
           >

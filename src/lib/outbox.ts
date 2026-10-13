@@ -79,7 +79,7 @@ interface KindPayload {
   upsert_workout_session: NexusWorkoutPayload;
   delete_workout_session: { id: string };
   upsert_body_metric: NexusBodyMetricPayload;
-  delete_body_metric: { id: string };
+  delete_body_metric: { id: string; date?: string };
   upsert_exercise_pr: NexusExercisePRPayload;
   submit_feedback: NexusFeedbackPayload;
   record_app_open: NexusAppOpenPayload;
@@ -403,7 +403,7 @@ const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K]) => Promise<unknown
     if (error) throw error;
   },
   upsert_body_metric: (p) => pushBodyMetricToNexus(p),
-  delete_body_metric: (p) => deleteBodyMetricFromNexus(p.id),
+  delete_body_metric: (p) => deleteBodyMetricFromNexus(p.id, p.date),
   upsert_exercise_pr: (p) => pushExercisePRToNexus(p),
   submit_feedback: (p) => pushFeedbackToNexus(p),
   record_app_open: (p) => pushAppOpenToNexus(p),

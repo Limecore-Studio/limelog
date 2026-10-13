@@ -36,11 +36,22 @@ interface ExportPayload {
  */
 export const SERVER_ONLY_TABLES = ['feedback', 'client_errors'] as const;
 
+// v1.18.1 (LimeLog#76): signed-in users may read only these columns of
+// `feedback` (the grant in StudyDesk's 20261005_feedback_status_columns
+// migration). `select('*')` and the user_id filter both asked for a column
+// outside it, so the export held "permission denied" instead of the user's
+// feedback. RLS already limits the rows to the user's own. `client_errors` still has every column granted,
+// user_id included. Same list as NCC's and StudyDesk's.
+export const FEEDBACK_EXPORT_COLUMNS = 'id, app, app_version, category, rating, message, status, shipped_in, created_at';
+
 export async function serverOnlyData(userId: string): Promise<Record<string, unknown[] | { error: string }>> {
   const out: Record<string, unknown[] | { error: string }> = {};
   for (const table of SERVER_ONLY_TABLES) {
     try {
-      const { data, error } = await selectAll(supabase, table, { filter: (q) => q.eq('user_id', userId) });
+      const { data, error } =
+        table === 'feedback'
+          ? await selectAll(supabase, table, { columns: FEEDBACK_EXPORT_COLUMNS })
+          : await selectAll(supabase, table, { filter: (q) => q.eq('user_id', userId) });
       out[table] = error ? { error: error.message } : (data ?? []);
     } catch (e) {
       out[table] = { error: (e as Error).message };

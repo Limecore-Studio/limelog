@@ -489,6 +489,10 @@
     "changeEmailInvalid": "Itu sepertinya bukan alamat email.",
     "changeEmailGoogle": "Anda masuk dengan Google, jadi email Anda adalah alamat Google Anda.",
     "signOut": "Keluar",
+    "signOutConfirm": "Keluar? Latihan, ukuran tubuh, dan foto progres akan dihapus dari perangkat ini.",
+    "signOutUnsynced_other": "{{count}} perubahan belum sampai ke akunmu dan akan hilang.",
+    "signOutSyncOff": "Sinkronisasi mati, jadi tidak ada data dari perangkat ini yang tersimpan di akunmu: semuanya akan hilang.",
+    "signOutPhotos_other": "{{count}} foto progres hanya ada di perangkat ini dan akan dihapus.",
     "autoPush": "Kirim otomatis saat selesai",
     "retryNow": "Coba lagi sekarang",
     "orUseEmail": "atau gunakan email"

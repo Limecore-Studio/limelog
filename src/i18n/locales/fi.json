@@ -497,6 +497,12 @@
     "changeEmailInvalid": "Tämä ei näytä sähköpostiosoitteelta.",
     "changeEmailGoogle": "Kirjaudut Googlella, joten sähköpostisi on Google-osoitteesi.",
     "signOut": "Kirjaudu ulos",
+    "signOutConfirm": "Kirjaudutaanko ulos? Treenisi, kehon mitat ja edistymiskuvat poistetaan tältä laitteelta.",
+    "signOutUnsynced_one": "{{count}} muutos ei ole vielä tallentunut tilillesi ja menetetään.",
+    "signOutUnsynced_other": "{{count}} muutosta ei ole vielä tallentunut tilillesi ja ne menetetään.",
+    "signOutSyncOff": "Synkronointi on pois päältä, joten mitään tältä laitteelta ei ole tallennettu tilillesi: kaikki menetetään.",
+    "signOutPhotos_one": "{{count}} edistymiskuva on vain tällä laitteella ja poistetaan.",
+    "signOutPhotos_other": "{{count}} edistymiskuvaa on vain tällä laitteella ja ne poistetaan.",
     "autoPush": "Lähetä automaattisesti lopetettaessa",
     "retryNow": "Yritä uudelleen",
     "orUseEmail": "tai käytä sähköpostia"

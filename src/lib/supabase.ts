@@ -144,6 +144,20 @@ export async function readStoredSession(): Promise<StoredSession | null> {
   }
 }
 
+/** Remove the stored session without asking the server (v1.18.1, LimeLog#66).
+ *  For a sign-out that could not reach it: offline, auth-js returns a network
+ *  error from signOut() BEFORE removing the session, so the user stayed
+ *  signed in. auth-js reads the session from storage on every use, so once
+ *  this entry is gone it has none. */
+export async function clearStoredSession(): Promise<void> {
+  try {
+    if (Capacitor.isNativePlatform()) await capacitorStorage.removeItem(STORAGE_KEY);
+    else localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* nothing stored, or storage unavailable */
+  }
+}
+
 // ── Mobile session durability (v1.10) ───────────────────────────────────
 // Ported from NCC's supabase.ts, which got this in v1.7; this app never did.
 // supabase-js drives its token auto-refresh loop off browser visibility /

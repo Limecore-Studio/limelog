@@ -210,32 +210,56 @@ export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload): Promise<
   if (authErr) throw authErr;
   if (!user) throw new Error('Not signed in to Nexus');
 
-  const row = {
-    id: p.id,
-    user_id: user.id,
-    date: p.date,
-    weight_kg: p.weightKg ?? null,
-    chest_cm: p.chestCm ?? null,
-    waist_cm: p.waistCm ?? null,
-    hips_cm: p.hipsCm ?? null,
-    arms_cm: p.armsCm ?? null,
-    legs_cm: p.legsCm ?? null,
-    notes: p.notes ?? null,
-    updated_at: new Date().toISOString(),
+  // v1.18.1 (LimeLog#76): two devices that log the same day hold the row
+  // under different local ids. Upserting on (user_id, date) while sending
+  // `id` rewrote the row's primary key to the second device's id, so the
+  // first device's delete by id then matched nothing, and every field the
+  // second device had not set was written as null. Now the day's row is
+  // updated in place with only the fields this device has, and inserted
+  // (with this device's id, as the column has no default) only when there
+  // is none. An update that matches no row, or changes nothing (the no-op
+  // guard skips it), falls through to an insert that does nothing if the
+  // day's row exists.
+  const fields: Record<string, unknown> = { updated_at: new Date().toISOString() };
+  const set = (col: string, v: number | string | undefined) => {
+    if (v !== undefined) fields[col] = v;
   };
+  set('weight_kg', p.weightKg);
+  set('chest_cm', p.chestCm);
+  set('waist_cm', p.waistCm);
+  set('hips_cm', p.hipsCm);
+  set('arms_cm', p.armsCm);
+  set('legs_cm', p.legsCm);
+  set('notes', p.notes);
 
-  // Conflict target is (user_id, date) — the natural primary identity for a
-  // single user's daily snapshot. Using `onConflict: 'user_id,date'` lets
-  // an "edit later that day" path overwrite without a separate read.
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('body_metrics')
-    .upsert(row, { onConflict: 'user_id,date' });
+    .update(fields)
+    .eq('user_id', user.id)
+    .eq('date', p.date)
+    .select('id');
   if (error) throw error;
+  if (data && data.length > 0) return;
+  const { error: insertError } = await supabase
+    .from('body_metrics')
+    .upsert({ id: p.id, user_id: user.id, date: p.date, ...fields }, { onConflict: 'user_id,date', ignoreDuplicates: true });
+  if (insertError) throw insertError;
 }
 
-export async function deleteBodyMetricFromNexus(id: string): Promise<void> {
+/** v1.18.1 (LimeLog#76): by day, as the row may carry another device's id
+ *  (see pushBodyMetricToNexus). A delete queued by an older build carries no
+ *  date and still goes by id. */
+export async function deleteBodyMetricFromNexus(id: string, date?: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
-  const { error } = await supabase.from('body_metrics').delete().eq('id', id);
+  if (!date) {
+    const { error } = await supabase.from('body_metrics').delete().eq('id', id);
+    if (error) throw error;
+    return;
+  }
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr) throw authErr;
+  if (!user) throw new Error('Not signed in to Nexus');
+  const { error } = await supabase.from('body_metrics').delete().eq('user_id', user.id).eq('date', date);
   if (error) throw error;
 }
 
