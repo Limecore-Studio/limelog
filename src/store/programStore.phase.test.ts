@@ -71,6 +71,21 @@ describe('deletePhase', () => {
     expect(phaseSessions(active(), resolvePhase(active()).current?.id).map((x) => x.name)).toEqual(['Accumulation day']);
   });
 
+  it('keeps a session with workouts logged, but never offers it again (review)', () => {
+    const { id, phases } = setUp();
+    const logged = active().sessions.find((x) => x.phaseId === phases[1].id)!;
+    useProgramStore.getState().deletePhase(id, phases[1].id, new Set([logged.id]));
+    expect(active().sessions.map((x) => x.name)).toContain('Intensification day');
+    expect(phaseSessions(active(), resolvePhase(active()).current?.id).map((x) => x.name)).toEqual(['Accumulation day']);
+    // Not even when the current phase has nothing and every session is offered.
+    const programs = useProgramStore.getState().programs.map((p) => ({
+      ...p,
+      sessions: p.sessions.filter((x) => x.phaseId !== phases[0].id),
+    }));
+    useProgramStore.setState({ programs, activeProgram: programs[0] });
+    expect(phaseSessions(active(), resolvePhase(active()).current?.id).map((x) => x.name)).toEqual(['Peaking day']);
+  });
+
   it('leaves the active phase alone when another phase is deleted', () => {
     const { id, phases } = setUp();
     useProgramStore.getState().advancePhase(id);

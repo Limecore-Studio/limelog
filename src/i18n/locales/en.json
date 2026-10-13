@@ -290,6 +290,7 @@
     "addSession": "Add session",
     "addPhase": "Add phase",
     "phaseNamePlaceholder": "Phase name",
+    "deletePhaseConfirm": "Delete the phase “{{name}}” and its sessions? Finished workouts stay in Progress.",
     "weekStart": "Week start",
     "weekEnd": "Week end",
     "weekRange": "Wk {{start}}–{{end}}",

@@ -32,13 +32,17 @@ export function resolvePhase(
  * so they fire on the days Today offers a session, under that session's name.
  */
 export function phaseSessions(
-  program: Pick<Program, 'sessions'> | null | undefined,
+  program: (Pick<Program, 'sessions'> & Partial<Pick<Program, 'phases'>>) | null | undefined,
   currentPhaseId: string | null | undefined,
 ): SessionTemplate[] {
   if (!program) return [];
-  if (!currentPhaseId) return program.sessions;
-  const mine = program.sessions.filter((s) => s.phaseId === currentPhaseId);
-  return mine.length > 0 ? mine : program.sessions;
+  // A session whose phase was deleted is kept only so History can name its
+  // workouts (deletePhase); it is never offered or reminded about.
+  const phaseIds = program.phases?.length ? new Set(program.phases.map((ph) => ph.id)) : null;
+  const live = phaseIds ? program.sessions.filter((s) => phaseIds.has(s.phaseId)) : program.sessions;
+  if (!currentPhaseId) return live;
+  const mine = live.filter((s) => s.phaseId === currentPhaseId);
+  return mine.length > 0 ? mine : live;
 }
 
 /**
@@ -51,7 +55,7 @@ export function phaseSessions(
  * never advanced to, and an empty Today would hide a workout the user built.
  */
 export function sessionsForDay(
-  program: Pick<Program, 'sessions'> | null | undefined,
+  program: (Pick<Program, 'sessions'> & Partial<Pick<Program, 'phases'>>) | null | undefined,
   dayOfWeek: number,
   currentPhaseId: string | null | undefined,
 ): SessionTemplate[] {
@@ -109,10 +113,19 @@ export function todaysLog(logs: SessionLog[], sessionId: string, now: Date): Ses
  * started TODAY, and Today is the only way into a workout. One begun at 23:50
  * dropped off at midnight, so it could not be finished, was never pushed and
  * never reached History. Cardio is logged already finished and never appears.
+ *
+ * Only the last week's, and one with no set done only for a day: these used
+ * to vanish at midnight, so every Start tapped by mistake would otherwise sit
+ * on Today for good.
  */
+const RESUME_WINDOW_MS = 7 * 24 * 3600 * 1000;
+const EMPTY_LOG_WINDOW_MS = 24 * 3600 * 1000;
+
 export function resumableLogs(logs: SessionLog[], todaySessions: SessionTemplate[], now: Date): SessionLog[] {
   const onCards = new Set(todaySessions.map((s) => todaysLog(logs, s.id, now)?.id));
+  const age = (l: SessionLog) => now.getTime() - new Date(l.loggedAt).getTime();
   return logs
     .filter((l) => !l.finalizedAt && !l.activityType && !onCards.has(l.id))
+    .filter((l) => age(l) <= RESUME_WINDOW_MS && (age(l) <= EMPTY_LOG_WINDOW_MS || l.sets.some((s) => s.completed)))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
 }

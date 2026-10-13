@@ -401,6 +401,7 @@
     "addSession": "सत्र जोड़ें",
     "addPhase": "चरण जोड़ें",
     "phaseNamePlaceholder": "चरण का नाम",
+    "deletePhaseConfirm": "चरण “{{name}}” और उसके सत्र हटाएँ? पूरे हुए वर्कआउट प्रगति में बने रहेंगे।",
     "weekStart": "शुरुआती सप्ताह",
     "weekEnd": "अंतिम सप्ताह",
     "weekRange": "सप्ताह {{start}}–{{end}}",

@@ -5,7 +5,7 @@ import type { SessionLog, SetLog, VerticalJumpLog, StallFlag, StallFlagType, Ses
 import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { mapSessionLogToNexus } from '@/lib/nexusSync';
-import { enqueue as outboxEnqueue } from '@/lib/outbox';
+import { enqueue as outboxEnqueue, cancel as outboxCancel } from '@/lib/outbox';
 import { detectNewPRs, currentPR } from '@/lib/prDetection';
 
 interface LogStore {
@@ -95,6 +95,9 @@ function retractSessionPRs(logId: string): void {
     exercisePRs: kept,
     lastCelebratedPRs: lastCelebratedPRs?.some((p) => p.sessionId === logId) ? null : lastCelebratedPRs,
   });
+  // An insert still queued is dropped whatever the sync setting.
+  const ids = new Set(gone.map((p) => p.id));
+  outboxCancel('upsert_exercise_pr', (p) => ids.has(p.id));
   // Same gate as the push in finalizeSession and the discard tombstone.
   const nexus = useNexusStore.getState();
   if (!nexus.configured || !nexus.syncEnabled) return;

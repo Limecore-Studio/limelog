@@ -31,7 +31,8 @@ export function fromDisplayWeight(value: number, unit: 'kg' | 'lb'): number {
 /** What a set's weight field holds once the user has typed `text` into it:
  *  null when cleared, otherwise kilograms, never below zero. */
 export function parseWeightInput(text: string, unit: 'kg' | 'lb'): number | null {
-  return text === '' ? null : fromDisplayWeight(Math.max(0, Number(text)), unit);
+  const n = Number(text);
+  return text === '' || !Number.isFinite(n) ? null : fromDisplayWeight(Math.max(0, n), unit);
 }
 
 /** A lift weight in the user's chosen unit, with the unit label. */

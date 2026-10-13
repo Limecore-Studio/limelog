@@ -158,8 +158,19 @@ describe('resumableLogs', () => {
     expect(resumableLogs(logs, today, now).map((l) => l.id)).toEqual(['late']);
   });
 
+  const done = { sets: [{ id: 's', sessionLogId: 'l', exerciseId: 'e', setNumber: 1, weightKg: 100, reps: 5, rpe: null, completed: true }] } as Partial<SessionLog>;
+
   it('offers every unfinished workout, newest first, on a rest day or with no program', () => {
-    const logs = [log('old', 'x', '2025-12-01T10:00:00.000Z'), log('late', 'mon-legs', mondayNight)];
+    const logs = [log('old', 'x', new Date(2026, 0, 2, 10).toISOString(), done), log('late', 'mon-legs', mondayNight)];
     expect(resumableLogs(logs, [], now).map((l) => l.id)).toEqual(['late', 'old']);
+  });
+
+  it('drops one older than a week, and an empty one older than a day (review)', () => {
+    const logs = [
+      log('stale', 'x', new Date(2025, 11, 20, 10).toISOString(), done),
+      log('mistap', 'x', new Date(2026, 0, 4, 18).toISOString()),
+      log('kept', 'x', new Date(2026, 0, 4, 18).toISOString(), done),
+    ];
+    expect(resumableLogs(logs, [], now).map((l) => l.id)).toEqual(['kept']);
   });
 });

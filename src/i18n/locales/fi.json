@@ -290,6 +290,7 @@
     "addSession": "Lisää harjoitus",
     "addPhase": "Lisää vaihe",
     "phaseNamePlaceholder": "Vaiheen nimi",
+    "deletePhaseConfirm": "Poistetaanko vaihe ”{{name}}” ja sen harjoitukset? Tehdyt treenit jäävät Edistymiseen.",
     "weekStart": "Alkuviikko",
     "weekEnd": "Loppuviikko",
     "weekRange": "Vk {{start}}–{{end}}",

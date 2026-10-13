@@ -23,7 +23,7 @@ export function TodayPage() {
   // someone who only runs has no program, so gating it behind the program view
   // would hide it from exactly the person it exists for.
   const [showCardio, setShowCardio] = useState(false);
-  const { activeProgram, exercises, advancePhase } = useProgramStore();
+  const { programs, activeProgram, exercises, advancePhase } = useProgramStore();
   const { sessionLogs, startSession, unfinalizeSession, discardSession, stallFlags } = useLogStore();
   const unit = useUserStore((s) => s.profile.unitPreference);
 
@@ -48,7 +48,7 @@ export function TodayPage() {
       <div className="today-session__header">
         <div className="today-session__title-block">
           <span className="today-session__name">
-            {activeProgram?.sessions.find((s) => s.id === l.sessionTemplateId)?.name ?? t('progress.unknownSession')}
+            {programs.flatMap((p) => p.sessions).find((s) => s.id === l.sessionTemplateId)?.name ?? t('progress.unknownSession')}
           </span>
           <span className="today-session__sub">{t('today.startedOn', { date: formatDate(l.loggedAt) })}</span>
         </div>

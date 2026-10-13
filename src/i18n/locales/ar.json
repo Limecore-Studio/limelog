@@ -429,6 +429,7 @@
     "addSession": "إضافة جلسة",
     "addPhase": "إضافة مرحلة",
     "phaseNamePlaceholder": "اسم المرحلة",
+    "deletePhaseConfirm": "حذف المرحلة «{{name}}» وجلساتها؟ تبقى التمارين المكتملة في «التقدّم».",
     "weekStart": "أسبوع البداية",
     "weekEnd": "أسبوع النهاية",
     "weekRange": "أسبوع {{start}}–{{end}}",

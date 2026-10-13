@@ -408,6 +408,7 @@
     "addSession": "Adicionar treino",
     "addPhase": "Adicionar fase",
     "phaseNamePlaceholder": "Nome da fase",
+    "deletePhaseConfirm": "Excluir a fase “{{name}}” e os seus treinos? Os treinos concluídos continuam em Progresso.",
     "weekStart": "Semana inicial",
     "weekEnd": "Semana final",
     "weekRange": "Sem {{start}}–{{end}}",

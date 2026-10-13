@@ -290,6 +290,7 @@
     "addSession": "Einheit hinzufügen",
     "addPhase": "Phase hinzufügen",
     "phaseNamePlaceholder": "Phasenname",
+    "deletePhaseConfirm": "Phase „{{name}}“ und ihre Einheiten löschen? Abgeschlossene Workouts bleiben unter Fortschritt.",
     "weekStart": "Startwoche",
     "weekEnd": "Endwoche",
     "weekRange": "Wo. {{start}}–{{end}}",

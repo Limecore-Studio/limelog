@@ -89,7 +89,7 @@ export function WorkoutPage() {
   const confirm = useConfirm();
   const { logId = '' } = useParams();
   const navigate = useNavigate();
-  const { activeProgram, exercises, updateSessionExercise } = useProgramStore();
+  const { programs, exercises, updateSessionExercise } = useProgramStore();
   const { sessionLogs, logSet, updateSet, deleteSet, swapExercise, setPerceivedFatigue, finalizeSession, discardSession, currentPRFor } = useLogStore();
   const { profile } = useUserStore();
   // v1.14 Item 13 — the bay is a Cast Iron idea, so the weight-up modal
@@ -97,9 +97,12 @@ export function WorkoutPage() {
   const pageTheme = useThemeStore((s) => s.theme);
 
   const log = sessionLogs.find((l) => l.id === logId) ?? null;
+  // v1.18.1 (LimeLog#74 review): looked up in every program, not just the
+  // active one, so a workout Today offers to resume always opens: one started
+  // under another program, or in a phase deleted since (deletePhase keeps it).
   const session = useMemo(
-    () => activeProgram?.sessions.find((s) => s.id === log?.sessionTemplateId) ?? null,
-    [activeProgram, log?.sessionTemplateId]
+    () => programs.flatMap((p) => p.sessions).find((s) => s.id === log?.sessionTemplateId) ?? null,
+    [programs, log?.sessionTemplateId]
   );
 
   const [rest, setRest] = useState<RestState | null>(null);
@@ -168,7 +171,7 @@ export function WorkoutPage() {
     });
   }, [logId]);
 
-  if (!log || !session || !activeProgram) {
+  if (!log || !session) {
     return (
       <div className="workout-page workout-page--missing">
         <button className="workout-page__back" onClick={() => navigate('/today')}>
@@ -473,7 +476,8 @@ function WeightInput({ weightKg, unit, placeholder, onChange }: {
   return (
     <input
       type="number" inputMode="decimal" min="0" step="0.5"
-      value={draft ?? (weightKg == null ? '' : toDisplayWeight(weightKg, unit))}
+      // kg as stored (101.25 stays 101.25); lb converted, to one decimal.
+      value={draft ?? (weightKg == null ? '' : unit === 'kg' ? weightKg : toDisplayWeight(weightKg, unit))}
       placeholder={placeholder}
       onBlur={() => setDraft(null)}
       onChange={(e) => {

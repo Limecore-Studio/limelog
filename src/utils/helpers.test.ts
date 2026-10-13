@@ -30,6 +30,7 @@ describe('the set weight field', () => {
 
   it('reads a cleared field as no weight, and never goes below zero', () => {
     expect(parseWeightInput('', 'lb')).toBeNull();
+    expect(parseWeightInput('abc', 'kg')).toBeNull();
     expect(parseWeightInput('-5', 'kg')).toBe(0);
   });
 });

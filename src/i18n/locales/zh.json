@@ -286,6 +286,7 @@
     "addSession": "添加训练",
     "addPhase": "添加阶段",
     "phaseNamePlaceholder": "阶段名称",
+    "deletePhaseConfirm": "删除阶段“{{name}}”及其训练？已完成的训练仍保留在“进度”中。",
     "weekStart": "起始周",
     "weekEnd": "结束周",
     "weekRange": "第 {{start}}–{{end}} 周",

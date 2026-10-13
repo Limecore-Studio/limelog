@@ -207,6 +207,18 @@ export function enqueue<K extends OutboxKind>(kind: K, payload: KindPayload[K]):
   void drain();
 }
 
+/** Remove queued items of `kind` whose payload matches. Returns how many.
+ *  v1.18.1 (LimeLog#72): a PR retracted while its insert is still queued. The
+ *  delete queued after it is not enough on its own: an insert that has hit
+ *  MAX_ATTEMPTS moves to the back, behind the delete, and lands after it. An
+ *  item already being pushed is not in storage, and its delete follows it. */
+export function cancel<K extends OutboxKind>(kind: K, match: (payload: KindPayload[K]) => boolean): number {
+  const items = loadItems();
+  const kept = items.filter((i) => i.kind !== kind || !match(i.payload as KindPayload[K]));
+  if (kept.length !== items.length) saveItems(kept);
+  return items.length - kept.length;
+}
+
 let draining = false;
 
 /** Process pending items oldest-first. Coalesces concurrent calls via the

@@ -151,3 +151,18 @@ describe('the queued deletion', () => {
     expect(queued()).toEqual([]);
   });
 });
+
+describe('an insert still queued when its PR is retracted (review)', () => {
+  it('is cancelled, so a retry moved behind the delete cannot bring the PR back', () => {
+    localStorage.setItem('limelog-outbox', JSON.stringify([
+      // Hit MAX_ATTEMPTS: the next failure moves it behind anything queued now.
+      { id: 'q1', createdAt: '2026-09-25T11:00:00Z', kind: 'upsert_exercise_pr', payload: { id: 'phantom' }, attempts: 4 },
+      { id: 'q2', createdAt: '2026-09-25T11:00:00Z', kind: 'upsert_exercise_pr', payload: { id: 'real' }, attempts: 0 },
+    ]));
+    useLogStore.getState().unfinalizeSession(LOG);
+    expect(queued()).toEqual([
+      ['upsert_exercise_pr', { id: 'real' }],
+      ['delete_exercise_pr', { id: 'phantom' }],
+    ]);
+  });
+});

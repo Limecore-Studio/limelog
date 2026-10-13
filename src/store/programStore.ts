@@ -36,7 +36,9 @@ interface ProgramStore {
   // Phase CRUD
   addPhase: (programId: string, p: Omit<Phase, 'id' | 'programId'>) => void;
   updatePhase: (programId: string, phaseId: string, updates: Partial<Phase>) => void;
-  deletePhase: (programId: string, phaseId: string) => void;
+  /** `keepSessionIds`: sessions of the phase that have workouts logged. They
+   *  stay (never offered or reminded about) so History can still name them. */
+  deletePhase: (programId: string, phaseId: string, keepSessionIds?: ReadonlySet<string>) => void;
   /** Advance the program's `activePhaseId` to the next phase by orderIndex.
    *  No-ops if already on the last phase. Returns the new active phase or
    *  null if no advance happened (useful for UI flash messaging). */
@@ -160,11 +162,11 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
   // them inside it. They used to stay behind invisible, still scheduling
   // reminders. And an activePhaseId naming it moves to the phase after it (the
   // one before, if it was the last) rather than dangling.
-  deletePhase: (programId, phaseId) => {
+  deletePhase: (programId, phaseId, keepSessionIds) => {
     const programs = get().programs.map((prog) => {
       if (prog.id !== programId) return prog;
       const phases = prog.phases.filter((ph) => ph.id !== phaseId);
-      const sessions = prog.sessions.filter((s) => s.phaseId !== phaseId);
+      const sessions = prog.sessions.filter((s) => s.phaseId !== phaseId || keepSessionIds?.has(s.id));
       if (prog.activePhaseId !== phaseId) return { ...prog, phases, sessions };
       const sorted = [...prog.phases].sort((a, b) => a.orderIndex - b.orderIndex);
       const i = sorted.findIndex((ph) => ph.id === phaseId);

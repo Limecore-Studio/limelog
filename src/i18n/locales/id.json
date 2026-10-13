@@ -394,6 +394,7 @@
     "addSession": "Tambah sesi",
     "addPhase": "Tambah fase",
     "phaseNamePlaceholder": "Nama fase",
+    "deletePhaseConfirm": "Hapus fase “{{name}}” beserta sesinya? Latihan yang selesai tetap ada di Progres.",
     "weekStart": "Minggu awal",
     "weekEnd": "Minggu akhir",
     "weekRange": "Mgg {{start}}–{{end}}",

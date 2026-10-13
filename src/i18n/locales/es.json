@@ -295,6 +295,7 @@
     "addSession": "Añadir sesión",
     "addPhase": "Añadir fase",
     "phaseNamePlaceholder": "Nombre de la fase",
+    "deletePhaseConfirm": "¿Eliminar la fase «{{name}}» y sus sesiones? Los entrenamientos terminados se quedan en Progreso.",
     "weekStart": "Semana inicial",
     "weekEnd": "Semana final",
     "weekRange": "Sem. {{start}}–{{end}}",
