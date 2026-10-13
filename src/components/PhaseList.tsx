@@ -39,7 +39,9 @@ export function PhaseList({ program }: Props) {
     addPhase(program.id, {
       name: phaseForm.name.trim(),
       type: phaseForm.type,
-      orderIndex: program.phases.length,
+      // After a delete, phases.length can repeat an order already taken, and
+      // Next phase could no longer tell which comes next (LimeLog#77 item 1).
+      orderIndex: program.phases.reduce((m, ph) => Math.max(m, ph.orderIndex + 1), 0),
       weekStart: phaseForm.weekStart,
       weekEnd: phaseForm.weekEnd,
     });
