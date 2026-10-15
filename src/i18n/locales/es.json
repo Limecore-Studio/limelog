@@ -509,7 +509,7 @@
     "signOutUnsynced_one": "{{count}} cambio aún no ha llegado a tu cuenta y se perderá.",
     "signOutUnsynced_many": "{{count}} cambios aún no han llegado a tu cuenta y se perderán.",
     "signOutUnsynced_other": "{{count}} cambios aún no han llegado a tu cuenta y se perderán.",
-    "signOutSyncOff": "La sincronización está desactivada, así que nada de este dispositivo se ha guardado en tu cuenta: se perderá todo.",
+    "signOutSyncOff": "La sincronización está desactivada, así que tus entrenamientos de este dispositivo no se han guardado en tu cuenta: se perderán.",
     "signOutPhotos_one": "{{count}} foto de progreso solo está en este dispositivo y se eliminará.",
     "signOutPhotos_many": "{{count}} fotos de progreso solo están en este dispositivo y se eliminarán.",
     "signOutPhotos_other": "{{count}} fotos de progreso solo están en este dispositivo y se eliminarán.",

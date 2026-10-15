@@ -18,7 +18,10 @@ function table(name: string) {
   let op: { kind: 'update' | 'delete'; fields?: Row } | null = null;
   const run = () => {
     if (op?.kind === 'update') {
-      const hit = db.rows.filter(match);
+      // zz_skip_noop_update: a row the update would not change (updated_at
+      // aside) is not written and not returned.
+      const changes = (r: Row) => Object.entries(op!.fields!).some(([c, v]) => c !== 'updated_at' && r[c] !== v);
+      const hit = db.rows.filter((r) => match(r) && changes(r));
       hit.forEach((r) => Object.assign(r, op!.fields));
       return { data: hit.map((r) => ({ id: r.id })), error: null };
     }
@@ -81,6 +84,13 @@ describe('body metrics from two devices on the same day (LimeLog#76)', () => {
     await pushBodyMetricToNexus({ id: 'tablet', date: '2026-10-13', waistCm: 90 });
     expect(db.rows).toHaveLength(1);
     expect(db.rows[0]).toMatchObject({ id: 'phone', weight_kg: 80, waist_cm: 90 });
+  });
+
+  it('a push that changes nothing (the no-op guard: 0 rows) leaves the row and its id alone', async () => {
+    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 });
+    await pushBodyMetricToNexus({ id: 'tablet', date: '2026-10-13', weightKg: 80 });
+    expect(db.rows).toHaveLength(1);
+    expect(db.rows[0]).toMatchObject({ id: 'phone', weight_kg: 80 });
   });
 
   it('a delete from the other device removes the day\'s row', async () => {

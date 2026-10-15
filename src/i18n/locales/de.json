@@ -500,7 +500,7 @@
     "signOutConfirm": "Abmelden? Deine Workouts, Körpermaße und Fortschrittsfotos werden von diesem Gerät entfernt.",
     "signOutUnsynced_one": "{{count}} Änderung ist noch nicht in deinem Konto angekommen und geht verloren.",
     "signOutUnsynced_other": "{{count}} Änderungen sind noch nicht in deinem Konto angekommen und gehen verloren.",
-    "signOutSyncOff": "Der Sync ist aus, daher wurde nichts von diesem Gerät in deinem Konto gespeichert: Alles geht verloren.",
+    "signOutSyncOff": "Der Sync ist aus, daher wurden deine Workouts auf diesem Gerät nicht in deinem Konto gespeichert: Sie gehen verloren.",
     "signOutPhotos_one": "{{count}} Fortschrittsfoto ist nur auf diesem Gerät gespeichert und wird gelöscht.",
     "signOutPhotos_other": "{{count}} Fortschrittsfotos sind nur auf diesem Gerät gespeichert und werden gelöscht.",
     "autoPush": "Automatisch senden am Ende",

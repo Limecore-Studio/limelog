@@ -21,7 +21,8 @@ const h = vi.hoisted(() => ({
   drain: vi.fn(async () => ({ sent: 0, remaining: 0 })),
   setGuestMode: vi.fn(),
   signOut: (() => Promise.resolve({ error: null })) as () => Promise<{ error: { message: string } | null }>,
-  clearStored: vi.fn(async () => {}),
+  clearStored: vi.fn(async (_onlyIf?: string) => {}),
+  token: 'rt-old' as string | undefined,
 }));
 
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native } }));
@@ -29,6 +30,7 @@ vi.mock('@/lib/supabase', () => ({
   isNexusConfigured: true,
   readStoredSession: async () => h.stored,
   clearStoredSession: h.clearStored,
+  storedRefreshToken: async () => h.token,
   supabase: {
     auth: {
       signOut: () => h.signOut(),
@@ -265,7 +267,7 @@ describe('signOut()', () => {
     expect(h.clearStored).toHaveBeenCalled();
     expect(h.setGuestMode).toHaveBeenCalledWith(true);
     expect(h.syncEntitlement).toHaveBeenCalledWith(null);
-    expect(store.getState()).toMatchObject({ userEmail: null, loading: false });
+    expect(store.getState()).toMatchObject({ userEmail: null, loading: false, sessionUnverified: false });
   });
 
   it('stops waiting after a few seconds, and ignores a session saved by a refresh still in flight', async () => {
@@ -282,9 +284,14 @@ describe('signOut()', () => {
     expect(store.getState().userEmail).toBeNull();
     // The call then fails: the session it may have saved goes again, and the
     // next real sign-in is taken up.
+    // Signing in waits meanwhile.
+    expect(store.getState().signOutPending).toBe(true);
     settle({ error: { message: 'Failed to fetch' } });
     await flush();
+    // Removed again, but only if it is still the signed-out session.
     expect(h.clearStored).toHaveBeenCalledTimes(2);
+    expect(h.clearStored).toHaveBeenLastCalledWith('rt-old');
+    expect(store.getState().signOutPending).toBe(false);
     h.listener!('SIGNED_IN', SESSION);
     expect(store.getState().userEmail).toBe(USER.email);
   });

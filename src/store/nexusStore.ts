@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Capacitor } from '@capacitor/core';
-import { supabase, isNexusConfigured, readStoredSession, clearStoredSession } from '@/lib/supabase';
+import { supabase, isNexusConfigured, readStoredSession, clearStoredSession, storedRefreshToken } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
 import { signInWithGoogle as oauthSignInWithGoogle, initOAuthDeepLinkListener } from '@/lib/oauth';
 import { setGuestMode, isGuestMode } from '@/lib/guestMode';
@@ -63,6 +63,9 @@ interface NexusStore {
    *  when storage HAD something (a fresh install errors with no session and
    *  no error, so it never lands here). */
   sessionUnverified: boolean;
+  /** v1.18.1 (LimeLog#66): a sign-out that could not reach the server is
+   *  still settling. Signing in waits until it has (NexusSyncCard). */
+  signOutPending: boolean;
   loading: boolean;
   lastError: string | null;
   pendingCount: number;
@@ -107,6 +110,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
   userEmail: null,
   userName: null,
   sessionUnverified: false,
+  signOutPending: false,
   loading: false,
   lastError: null,
   pendingCount: outboxStatus().pending,
@@ -333,7 +337,9 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           //     app is already showing it; writing `user` (null) would sign
           //     the user out of the screen for want of a network. Leave it
           //     unverified and let the refresh, when it lands, answer.
-          if (!answers && !(stored && unverified)) {
+          // ...and not while a sign-out is settling: the session this read
+          // found is the one being signed out (v1.18.1, LimeLog#66).
+          if (!answers && !(stored && unverified) && !signOutHold) {
             set({
               userEmail: user?.email ?? null,
               userName: displayNameOf(user),
@@ -480,6 +486,9 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     // or on any error, remove the stored session here. auth-js then emits no
     // SIGNED_OUT, so the entitlement is dropped here as that event would.
     signOutHold = true;
+    // The session being signed out, so the clean-up below can tell it from a
+    // sign-in that lands meanwhile.
+    const signedOutToken = await storedRefreshToken();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const call = supabase.auth
       .signOut({ scope: 'local' })
@@ -496,10 +505,15 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       await clearStoredSession();
       void useThemeStore.getState().syncEntitlement(null);
       // A refresh ahead of the call may save the session again before the
-      // call runs; when it settles, remove it once more if it failed.
+      // call runs; when it settles, remove it once more if it failed, but
+      // only if it is still the signed-out one. Signing in is disabled until
+      // then (signOutPending), so nothing newer should be there; this makes
+      // sure of it.
+      set({ signOutPending: true });
       void call.then(async (late) => {
-        if (late) await clearStoredSession();
+        if (late && signedOutToken !== undefined) await clearStoredSession(signedOutToken);
         signOutHold = false;
+        set({ signOutPending: false });
       });
     } else {
       signOutHold = false;
@@ -529,6 +543,8 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     set({
       userEmail: null,
       userName: null,
+      // A fallback sign-out emits no SIGNED_OUT to clear this (v1.18.1).
+      sessionUnverified: false,
       loading: false,
       pendingCount: 0,
       outboxStatus: outboxStatus(),

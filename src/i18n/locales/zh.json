@@ -496,7 +496,7 @@
     "signOut": "退出登录",
     "signOutConfirm": "退出登录？你的训练、身体数据和进度照片将从此设备上移除。",
     "signOutUnsynced_other": "有 {{count}} 项更改尚未同步到你的账户，将会丢失。",
-    "signOutSyncOff": "同步已关闭，此设备上的内容都没有保存到你的账户：全部将会丢失。",
+    "signOutSyncOff": "同步已关闭，此设备上的训练没有保存到你的账户：它们将会丢失。",
     "signOutPhotos_other": "{{count}} 张进度照片仅保存在此设备上，将被删除。",
     "autoPush": "结束时自动上传",
     "retryNow": "立即重试",

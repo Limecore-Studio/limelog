@@ -149,12 +149,42 @@ export async function readStoredSession(): Promise<StoredSession | null> {
  *  error from signOut() BEFORE removing the session, so the user stayed
  *  signed in. auth-js reads the session from storage on every use, so once
  *  this entry is gone it has none. */
-export async function clearStoredSession(): Promise<void> {
+export async function clearStoredSession(onlyIfRefreshToken?: string): Promise<void> {
   try {
-    if (Capacitor.isNativePlatform()) await capacitorStorage.removeItem(STORAGE_KEY);
-    else localStorage.removeItem(STORAGE_KEY);
+    const read = (k: string) =>
+      Capacitor.isNativePlatform() ? capacitorStorage.getItem(k) : Promise.resolve(localStorage.getItem(k));
+    const remove = (k: string) =>
+      Capacitor.isNativePlatform() ? capacitorStorage.removeItem(k) : Promise.resolve(localStorage.removeItem(k));
+    // `onlyIfRefreshToken`: remove the session only if it is still that one.
+    // A sign-in that landed since must not be taken with it.
+    if (onlyIfRefreshToken !== undefined) {
+      const raw = await read(STORAGE_KEY);
+      let stored: string | undefined;
+      try {
+        stored = raw ? JSON.parse(raw)?.refresh_token : undefined;
+      } catch {
+        stored = undefined;
+      }
+      if (stored !== onlyIfRefreshToken) return;
+    }
+    await remove(STORAGE_KEY);
+    // As auth-js's own sign-out does: the PKCE verifier of an OAuth flow
+    // that never completed goes too.
+    await remove(`${STORAGE_KEY}-code-verifier`);
   } catch {
     /* nothing stored, or storage unavailable */
+  }
+}
+
+/** The stored session's refresh token, or undefined. Read without asking
+ *  anyone, like readStoredSession. */
+export async function storedRefreshToken(): Promise<string | undefined> {
+  try {
+    const raw = Capacitor.isNativePlatform() ? await capacitorStorage.getItem(STORAGE_KEY) : localStorage.getItem(STORAGE_KEY);
+    const token = raw ? JSON.parse(raw)?.refresh_token : undefined;
+    return typeof token === 'string' ? token : undefined;
+  } catch {
+    return undefined;
   }
 }
 

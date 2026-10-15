@@ -34,6 +34,7 @@ export function NexusSyncCard() {
     signUp,
     signInWithGoogle,
     signOut,
+    signOutPending,
     setSyncEnabled,
     retryPending,
   } = useNexusStore();
@@ -52,18 +53,19 @@ export function NexusSyncCard() {
   // exists nowhere else. Say what will be lost, and ask.
   async function handleSignOut() {
     const parts = [t('sync.signOutConfirm')];
-    if (!syncEnabled) {
-      if (useLogStore.getState().sessionLogs.length > 0) parts.push(t('sync.signOutSyncOff'));
-    } else if (pendingCount > 0) {
-      parts.push(t('sync.signOutUnsynced', { count: pendingCount }));
-    }
+    // Queued changes are counted whatever the sync setting: body metrics are
+    // queued with sync off too. Workouts are not queued while it is off.
+    if (pendingCount > 0) parts.push(t('sync.signOutUnsynced', { count: pendingCount }));
+    if (!syncEnabled && useLogStore.getState().sessionLogs.length > 0) parts.push(t('sync.signOutSyncOff'));
     const photos = listPhotos().length;
     if (photos > 0) parts.push(t('sync.signOutPhotos', { count: photos }));
     if (!(await confirm({ message: parts.join(' '), confirmLabel: t('sync.signOut') }))) return;
     try {
       await signOut();
     } catch {
-      // The store records the error in lastError, which this card shows.
+      // signOut does not throw for a server it cannot reach (it signs out
+      // here instead); anything else is unexpected and must not escape the
+      // click handler.
     }
   }
 
@@ -222,7 +224,7 @@ export function NexusSyncCard() {
             size="sm"
             variant="ghost"
             onClick={() => void handleSignOut()}
-            disabled={loading}
+            disabled={loading || signOutPending}
             className="nexus-card__signout"
           >
             {t('sync.signOut')}
@@ -238,7 +240,7 @@ export function NexusSyncCard() {
                 size="md"
                 fullWidth
                 onClick={handleNexus}
-                disabled={loading}
+                disabled={loading || signOutPending}
                 className="nexus-card__nexus"
               >
                 <span className="nexus-card__nexus-glyph" aria-hidden="true">◈</span>
@@ -256,7 +258,7 @@ export function NexusSyncCard() {
             size="md"
             fullWidth
             onClick={handleGoogle}
-            disabled={loading}
+            disabled={loading || signOutPending}
             className="nexus-card__google"
           >
             {t('auth.google')}
@@ -293,7 +295,7 @@ export function NexusSyncCard() {
           )}
 
           <div className="nexus-card__actions">
-            <Button type="submit" variant="primary" size="sm" disabled={loading}>
+            <Button type="submit" variant="primary" size="sm" disabled={loading || signOutPending}>
               {loading ? '…' : mode === 'signin' ? t('auth.signIn') : t('auth.createAccount')}
             </Button>
             <button

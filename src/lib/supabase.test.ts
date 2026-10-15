@@ -28,7 +28,7 @@ function storage() {
 }
 vi.stubGlobal('localStorage', storage());
 
-const { readStoredSession, parseStoredSession } = await import('./supabase');
+const { readStoredSession, parseStoredSession, clearStoredSession, storedRefreshToken } = await import('./supabase');
 
 const KEY = 'wt_nexus_auth';
 const NOW = Date.UTC(2026, 9, 11, 12, 0, 0);
@@ -100,5 +100,36 @@ describe('readStoredSession', () => {
     h.prefs.set(KEY, entry({ user: { id: 'wrong-store' } }));
     localStorage.setItem(KEY, entry());
     expect((await readStoredSession())?.user.id).toBe('user-1');
+  });
+});
+
+// v1.18.1 (LimeLog#66) — a sign-out that cannot reach the server removes the
+// stored session itself; its late clean-up must not take a newer sign-in.
+describe('clearStoredSession', () => {
+  it('removes the session and the PKCE verifier, on native and on the web', async () => {
+    h.prefs.set(KEY, entry());
+    h.prefs.set(`${KEY}-code-verifier`, 'v');
+    await clearStoredSession();
+    expect(h.prefs.has(KEY)).toBe(false);
+    expect(h.prefs.has(`${KEY}-code-verifier`)).toBe(false);
+    h.native = false;
+    localStorage.setItem(KEY, entry());
+    await clearStoredSession();
+    expect(localStorage.getItem(KEY)).toBeNull();
+  });
+
+  it('with a token, removes the session only if it is still that one', async () => {
+    h.prefs.set(KEY, entry({ refresh_token: 'new-sign-in' }));
+    await clearStoredSession('signed-out');
+    expect(h.prefs.has(KEY)).toBe(true);
+    h.prefs.set(KEY, entry({ refresh_token: 'signed-out' }));
+    await clearStoredSession('signed-out');
+    expect(h.prefs.has(KEY)).toBe(false);
+  });
+
+  it('storedRefreshToken reads it without asking anyone', async () => {
+    expect(await storedRefreshToken()).toBeUndefined();
+    h.prefs.set(KEY, entry());
+    expect(await storedRefreshToken()).toBe('rt');
   });
 });

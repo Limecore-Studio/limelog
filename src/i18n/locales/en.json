@@ -500,7 +500,7 @@
     "signOutConfirm": "Sign out? Your workouts, body measurements and progress photos will be removed from this device.",
     "signOutUnsynced_one": "{{count}} change has not reached your account yet and will be lost.",
     "signOutUnsynced_other": "{{count}} changes have not reached your account yet and will be lost.",
-    "signOutSyncOff": "Sync is off, so nothing from this device has been saved to your account: all of it will be lost.",
+    "signOutSyncOff": "Sync is off, so your workouts on this device have not been saved to your account: they will be lost.",
     "signOutPhotos_one": "{{count}} progress photo is kept only on this device and will be deleted.",
     "signOutPhotos_other": "{{count}} progress photos are kept only on this device and will be deleted.",
     "autoPush": "Auto-push on finish",
