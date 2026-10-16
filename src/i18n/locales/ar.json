@@ -366,7 +366,7 @@
     "notesPlaceholder": "ملاحظات (اختياري)",
     "unknownExercise": "تمرين غير معروف",
     "sets": "المجموعات",
-    "targetKg": "الهدف بالكجم",
+    "targetWeight": "الهدف ({{unit}})",
     "restSecs": "الراحة (ثانية)",
     "repsPlaceholder": "مثال: ٦–٨",
     "restingEyebrow": "راحة",

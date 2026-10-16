@@ -453,7 +453,7 @@
     "notesPlaceholder": "Notes (facultatif)",
     "unknownExercise": "Exercice inconnu",
     "sets": "Séries",
-    "targetKg": "Objectif kg",
+    "targetWeight": "Objectif {{unit}}",
     "restSecs": "Repos (s)",
     "repsPlaceholder": "p. ex. 6–8",
     "restingEyebrow": "Repos",

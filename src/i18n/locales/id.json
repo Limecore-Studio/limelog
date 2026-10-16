@@ -341,7 +341,7 @@
     "notesPlaceholder": "Catatan (opsional)",
     "unknownExercise": "Gerakan tidak dikenal",
     "sets": "Set",
-    "targetKg": "Target kg",
+    "targetWeight": "Target {{unit}}",
     "restSecs": "Istirahat (dtk)",
     "repsPlaceholder": "mis. 6–8",
     "restingEyebrow": "Istirahat",

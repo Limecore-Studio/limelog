@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
 import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
-import { formatWeight, toDisplayWeight, fromDisplayWeight, parseWeightInput } from '@/utils/helpers';
+import { formatWeight, toDisplayWeight, fromDisplayWeight } from '@/utils/helpers';
 import { playRestComplete } from '@/utils/audio';
 import { getLastSessionSets, type LastSessionRef } from '@/lib/lastSessionSets';
 import { resolveDone } from '@/lib/setCompletion';
@@ -15,6 +15,7 @@ import { DebriefSection } from '@/components/DebriefSection';
 import { useConfirm } from '@/components/confirmContext';
 import { PlateBar } from '@/components/PlateBar';
 import { PlateKeypad } from '@/components/PlateKeypad';
+import { WeightInput } from '@/components/WeightInput';
 import { convertLoad, usesBarbell } from '@/utils/plateMath';
 import { useThemeStore } from '@/store/themeStore';
 import { SwapExerciseSheet } from '@/components/SwapExerciseSheet';
@@ -457,34 +458,6 @@ export function WorkoutPage() {
         />
       )}
     </div>
-  );
-}
-
-// v1.18.1 (LimeLog#71): the column is headed with the user's unit, so the
-// field shows and takes that unit. It used to show and store the raw number, so
-// an lb user's 225 was saved as 225 kg (496 lb everywhere else). The set still
-// stores kg. While the field has focus it keeps the user's own text: a value
-// with more decimals than the display keeps (226.25 lb) would otherwise be
-// rewritten mid-typing by the round trip through kg.
-function WeightInput({ weightKg, unit, placeholder, onChange }: {
-  weightKg: number | null;
-  unit: 'kg' | 'lb';
-  placeholder: string;
-  onChange: (weightKg: number | null) => void;
-}) {
-  const [draft, setDraft] = useState<string | null>(null);
-  return (
-    <input
-      type="number" inputMode="decimal" min="0" step="0.5"
-      // kg as stored (101.25 stays 101.25); lb converted, to one decimal.
-      value={draft ?? (weightKg == null ? '' : unit === 'kg' ? weightKg : toDisplayWeight(weightKg, unit))}
-      placeholder={placeholder}
-      onBlur={() => setDraft(null)}
-      onChange={(e) => {
-        setDraft(e.target.value);
-        onChange(parseWeightInput(e.target.value, unit));
-      }}
-    />
   );
 }
 

@@ -444,7 +444,7 @@
     "notesPlaceholder": "Notes (optional)",
     "unknownExercise": "Unknown exercise",
     "sets": "Sets",
-    "targetKg": "Target kg",
+    "targetWeight": "Target {{unit}}",
     "restSecs": "Rest (s)",
     "repsPlaceholder": "e.g. 6–8",
     "restingEyebrow": "Resting",

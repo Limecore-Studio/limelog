@@ -440,7 +440,7 @@
     "notesPlaceholder": "备注（可选）",
     "unknownExercise": "未知动作",
     "sets": "组数",
-    "targetKg": "目标 kg",
+    "targetWeight": "目标 {{unit}}",
     "restSecs": "休息 (秒)",
     "repsPlaceholder": "如 6–8",
     "restingEyebrow": "休息中",

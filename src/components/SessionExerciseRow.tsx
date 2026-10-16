@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
+import { useUserStore } from '@/store/userStore';
+import { WeightInput } from '@/components/WeightInput';
 import type { Program, SessionExercise } from '@/types/program';
 import { Trash2 } from 'lucide-react';
 import './SessionExerciseRow.css';
@@ -15,6 +17,7 @@ export function SessionExerciseRow({ sessionExercise: se, sessionId, program: _ 
   const { t } = useTranslation();
   const { exercises, updateSessionExercise, removeSessionExercise } = useProgramStore();
   const [open, setOpen] = useState(false);
+  const unit = useUserStore((s) => s.profile.unitPreference);
 
   const exercise = exercises.find((e) => e.id === se.exerciseId);
 
@@ -54,9 +57,16 @@ export function SessionExerciseRow({ sessionExercise: se, sessionId, program: _ 
               <input type="number" min="6" max="10" step="0.5" value={se.targetRpe ?? ''}
                 onChange={(e) => updateSessionExercise(sessionId, se.id, { targetRpe: e.target.value ? Number(e.target.value) : undefined })} />
             </label>
-            <label>{t('log.targetKg')}
-              <input type="number" min="0" step="2.5" value={se.targetWeight ?? ''}
-                onChange={(e) => updateSessionExercise(sessionId, se.id, { targetWeight: e.target.value ? Number(e.target.value) : undefined })} />
+            {/* v1.18.1 (LimeLog#78) — in the user's unit, like the set field
+                (#71). An lb user typed 225 here and it was stored, and then
+                prefilled into every set, as 225 kg. Storage stays kg. */}
+            <label>{t('log.targetWeight', { unit })}
+              <WeightInput
+                weightKg={se.targetWeight}
+                unit={unit}
+                step="2.5"
+                onChange={(kg) => updateSessionExercise(sessionId, se.id, { targetWeight: kg ?? undefined })}
+              />
             </label>
             <label>{t('log.restSecs')}
               <input type="number" min="0" step="15" value={se.restSeconds ?? ''}

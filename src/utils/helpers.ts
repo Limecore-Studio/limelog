@@ -35,6 +35,13 @@ export function parseWeightInput(text: string, unit: 'kg' | 'lb'): number | null
   return text === '' || !Number.isFinite(n) ? null : fromDisplayWeight(Math.max(0, n), unit);
 }
 
+/** What a weight field shows for a stored weight: kilograms as stored
+ *  (101.25 stays 101.25), pounds converted to one decimal, empty for none.
+ *  The set field and the program editor's target share it (LimeLog#71, #78). */
+export function weightFieldValue(kg: number | null | undefined, unit: 'kg' | 'lb'): number | '' {
+  return kg == null ? '' : unit === 'kg' ? kg : toDisplayWeight(kg, unit);
+}
+
 /** A lift weight in the user's chosen unit, with the unit label. */
 export function formatWeight(kg: number, unit: 'kg' | 'lb'): string {
   return `${toDisplayWeight(kg, unit)} ${unit}`;

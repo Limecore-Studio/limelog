@@ -346,7 +346,7 @@
     "notesPlaceholder": "नोट्स (वैकल्पिक)",
     "unknownExercise": "अज्ञात व्यायाम",
     "sets": "सेट",
-    "targetKg": "लक्ष्य किग्रा",
+    "targetWeight": "लक्ष्य {{unit}}",
     "restSecs": "आराम (सेकंड)",
     "repsPlaceholder": "जैसे 6–8",
     "restingEyebrow": "आराम",

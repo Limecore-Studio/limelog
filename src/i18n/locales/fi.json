@@ -444,7 +444,7 @@
     "notesPlaceholder": "Muistiinpanot (valinnainen)",
     "unknownExercise": "Tuntematon liike",
     "sets": "Sarjat",
-    "targetKg": "Tavoite kg",
+    "targetWeight": "Tavoite {{unit}}",
     "restSecs": "Lepo (s)",
     "repsPlaceholder": "esim. 6–8",
     "restingEyebrow": "Palautus",
