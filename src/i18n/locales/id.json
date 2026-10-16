@@ -77,7 +77,8 @@
     "continue": "Lanjutkan",
     "loading": "Memuat…",
     "undo": "Urungkan",
-    "clear": "Kosongkan"
+    "clear": "Kosongkan",
+    "storageFull": "Penyimpanan penuh, jadi perubahan ini tidak dapat disimpan. Kosongkan ruang (mis. hapus beberapa foto progres) lalu coba lagi."
   },
   "nav": {
     "today": "Hari ini",
@@ -274,6 +275,10 @@
     "noPhotos": "Belum ada foto tersimpan. Foto hanya ada di perangkat ini — tidak pernah diunggah.",
     "deleteEntryConfirm": "Hapus entri tanggal {{date}}?",
     "deletePhotoConfirm": "Hapus foto tanggal {{date}}?",
+    "photoNoImage": "Kamera tidak mengembalikan gambar.",
+    "photoSaveFailed": "Tidak dapat menyimpan foto.",
+    "photoReadFailed": "Tidak dapat membaca gambar yang diambil.",
+    "photoAlt": "Foto progres dari {{date}}",
     "unitSystem": "Sistem satuan",
     "weightChart": "Grafik tren berat badan",
     "weightChartAvg": "Tren berat badan dengan rata-rata bergerak 7 hari"
@@ -494,8 +499,15 @@
     "signOutSyncOff": "Sinkronisasi mati, jadi latihanmu di perangkat ini belum tersimpan di akunmu: semuanya akan hilang.",
     "signOutPhotos_other": "{{count}} foto progres hanya ada di perangkat ini dan akan dihapus.",
     "autoPush": "Kirim otomatis saat selesai",
+    "retrying": "Mencoba lagi…",
+    "retrySent_other": "Terkirim {{sent}}, {{count}} masih dalam antrean",
+    "retryRemaining_other": "{{count}} masih dalam antrean",
+    "lastPush": "Terakhir dikirim: {{time}}",
+    "stuck_other": "{{count}} item macet setelah beberapa kali dicoba — periksa koneksi atau masuk lagi.",
+    "lastError": "Kesalahan terakhir: {{error}}",
     "retryNow": "Coba lagi sekarang",
-    "orUseEmail": "atau gunakan email"
+    "orUseEmail": "atau gunakan email",
+    "queueEmpty": "Antrean kosong"
   },
   "jump": {
     "title": "Catat lompatan vertikal",

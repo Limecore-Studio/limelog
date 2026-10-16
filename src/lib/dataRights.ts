@@ -158,12 +158,35 @@ export async function downloadExport(
  * kept. Erasure is the opposite case: anything missed is data surviving a
  * deletion request, so the default has to be "remove it" and a hand-written
  * list would silently miss whatever gets added next.
+ *
+ * v1.18.1 (LimeLog#77) — `limelog.` (dot) was missing, so these survived an
+ * erasure. Each is about the person, not the device:
+ *   - `limelog.onboarded`: "this person has done the first-run wizard". v1.10
+ *     moved its truth to the account (user_preferences); the local copy is a
+ *     cache of an account fact, and the account is gone.
+ *   - `limelog.guestMode`: "this person chose to use the app without an
+ *     account". Kept, the next launch would skip the first-launch screen and
+ *     treat whoever opens the app next as having made that choice.
+ *   - `limelog.lastAppOpen`: the local day this account's app-open row was
+ *     last queued (appOpens.ts). It is a record of the erased person's use,
+ *     and kept, it would stop a new account's first open that day from being
+ *     recorded. Losing it costs at most one duplicate queue item, which the
+ *     table's primary key already collapses.
+ *   - `limelog.trainingGoal` and `limelog.referralAsked` are the person's
+ *     answers to the wizard and the referral prompt, so they go too (the
+ *     training PR, #79, also names these two one by one).
+ * The language (`limecore_lang`) is a device setting shared with the other
+ * apps, so it stays, as before.
  */
 export function wipeAllLocalData(): void {
-  const PREFIXES = ['wt_', 'limelog-'];
+  const PREFIXES = ['wt_', 'limelog-', 'limelog.'];
+  // Device settings under those prefixes that are not the person's data: the
+  // F-Droid update check (fdroidUpdate.ts) is a choice about this device, and
+  // an erase silently turned it back on.
+  const KEEP = new Set(['limelog-fdroid-check']);
   try {
     const doomed = Object.keys(localStorage).filter((k) =>
-      PREFIXES.some((p) => k.startsWith(p)),
+      !KEEP.has(k) && PREFIXES.some((p) => k.startsWith(p)),
     );
     for (const k of doomed) localStorage.removeItem(k);
   } catch {

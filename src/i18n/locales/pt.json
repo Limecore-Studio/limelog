@@ -77,7 +77,8 @@
     "continue": "Continuar",
     "loading": "Carregando…",
     "undo": "Anular",
-    "clear": "Limpar"
+    "clear": "Limpar",
+    "storageFull": "O armazenamento está cheio, então esta alteração não pôde ser salva. Libere espaço (por exemplo, exclua algumas fotos de progresso) e tente novamente."
   },
   "nav": {
     "today": "Hoje",
@@ -282,6 +283,10 @@
     "noPhotos": "Nenhuma foto salva ainda. Elas ficam só neste aparelho — nunca são enviadas.",
     "deleteEntryConfirm": "Excluir entrada de {{date}}?",
     "deletePhotoConfirm": "Excluir foto de {{date}}?",
+    "photoNoImage": "A câmera não retornou nenhuma imagem.",
+    "photoSaveFailed": "Não foi possível salvar a foto.",
+    "photoReadFailed": "Não foi possível ler a imagem capturada.",
+    "photoAlt": "Foto de progresso de {{date}}",
     "unitSystem": "Sistema de unidades",
     "weightChart": "Gráfico de tendência do peso",
     "weightChartAvg": "Tendência do peso com média móvel de 7 dias"
@@ -514,8 +519,21 @@
     "signOutPhotos_many": "{{count}} fotos de progresso estão só neste dispositivo e serão excluídas.",
     "signOutPhotos_other": "{{count}} fotos de progresso estão só neste dispositivo e serão excluídas.",
     "autoPush": "Enviar automaticamente ao finalizar",
+    "retrying": "Tentando novamente…",
+    "retrySent_one": "Enviados: {{sent}}, ainda na fila: {{count}}",
+    "retrySent_many": "Enviados: {{sent}}, ainda na fila: {{count}}",
+    "retrySent_other": "Enviados: {{sent}}, ainda na fila: {{count}}",
+    "retryRemaining_one": "Ainda na fila: {{count}}",
+    "retryRemaining_many": "Ainda na fila: {{count}}",
+    "retryRemaining_other": "Ainda na fila: {{count}}",
+    "lastPush": "Último envio: {{time}}",
+    "stuck_one": "{{count}} item travado após várias tentativas — verifique a conexão ou entre novamente.",
+    "stuck_many": "{{count}} itens travados após várias tentativas — verifique a conexão ou entre novamente.",
+    "stuck_other": "{{count}} itens travados após várias tentativas — verifique a conexão ou entre novamente.",
+    "lastError": "Último erro: {{error}}",
     "retryNow": "Tentar novamente",
-    "orUseEmail": "ou usar e-mail"
+    "orUseEmail": "ou usar e-mail",
+    "queueEmpty": "Fila vazia"
   },
   "jump": {
     "title": "Registrar salto vertical",

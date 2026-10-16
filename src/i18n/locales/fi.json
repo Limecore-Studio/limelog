@@ -34,7 +34,8 @@
     "continue": "Jatka",
     "loading": "Ladataan…",
     "undo": "Kumoa",
-    "clear": "Tyhjennä"
+    "clear": "Tyhjennä",
+    "storageFull": "Tallennustila on täynnä, joten muutosta ei voitu tallentaa. Vapauta tilaa (esim. poista edistymiskuvia) ja yritä uudelleen."
   },
   "nav": {
     "today": "Tänään",
@@ -258,6 +259,10 @@
     "noPhotos": "Ei tallennettuja kuvia. Ne pysyvät vain tällä laitteella — ei ladata.",
     "deleteEntryConfirm": "Poistetaanko merkintä päivältä {{date}}?",
     "deletePhotoConfirm": "Poistetaanko kuva päivältä {{date}}?",
+    "photoNoImage": "Kamera ei palauttanut kuvaa.",
+    "photoSaveFailed": "Kuvaa ei voitu tallentaa.",
+    "photoReadFailed": "Otettua kuvaa ei voitu lukea.",
+    "photoAlt": "Edistymiskuva {{date}}",
     "unitSystem": "Yksikköjärjestelmä",
     "weightChart": "Painon trendikaavio",
     "weightChartAvg": "Painon trendi 7 päivän liukuvalla keskiarvolla"
@@ -504,8 +509,18 @@
     "signOutPhotos_one": "{{count}} edistymiskuva on vain tällä laitteella ja poistetaan.",
     "signOutPhotos_other": "{{count}} edistymiskuvaa on vain tällä laitteella ja ne poistetaan.",
     "autoPush": "Lähetä automaattisesti lopetettaessa",
+    "retrying": "Yritetään uudelleen…",
+    "retrySent_one": "Lähetetty {{sent}}, jonossa vielä {{count}}",
+    "retrySent_other": "Lähetetty {{sent}}, jonossa vielä {{count}}",
+    "retryRemaining_one": "Jonossa vielä {{count}}",
+    "retryRemaining_other": "Jonossa vielä {{count}}",
+    "lastPush": "Viimeisin lähetys: {{time}}",
+    "stuck_one": "{{count}} kohde on jumissa uusintayritysten jälkeen — tarkista yhteys tai kirjaudu uudelleen sisään.",
+    "stuck_other": "{{count}} kohdetta on jumissa uusintayritysten jälkeen — tarkista yhteys tai kirjaudu uudelleen sisään.",
+    "lastError": "Viimeisin virhe: {{error}}",
     "retryNow": "Yritä uudelleen",
-    "orUseEmail": "tai käytä sähköpostia"
+    "orUseEmail": "tai käytä sähköpostia",
+    "queueEmpty": "Jono on tyhjä"
   },
   "jump": {
     "title": "Kirjaa vertikaalihyppy",

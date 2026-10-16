@@ -34,7 +34,8 @@
     "continue": "Continuer",
     "loading": "Chargement…",
     "undo": "Annuler",
-    "clear": "Effacer"
+    "clear": "Effacer",
+    "storageFull": "Le stockage est plein : cette modification n’a pas pu être enregistrée. Libérez de l’espace (par ex. en supprimant des photos de progression) et réessayez."
   },
   "nav": {
     "today": "Aujourd'hui",
@@ -262,6 +263,10 @@
     "noPhotos": "Aucune photo enregistrée. Elles restent sur cet appareil — jamais envoyées.",
     "deleteEntryConfirm": "Supprimer l'entrée du {{date}} ?",
     "deletePhotoConfirm": "Supprimer la photo du {{date}} ?",
+    "photoNoImage": "L’appareil photo n’a renvoyé aucune image.",
+    "photoSaveFailed": "Impossible d’enregistrer la photo.",
+    "photoReadFailed": "Impossible de lire l’image prise.",
+    "photoAlt": "Photo de progression du {{date}}",
     "unitSystem": "Système d’unités",
     "weightChart": "Graphique de tendance du poids",
     "weightChartAvg": "Tendance du poids avec moyenne mobile sur 7 jours"
@@ -514,8 +519,21 @@
     "signOutPhotos_many": "{{count}} photos de progression n’existent que sur cet appareil et seront supprimées.",
     "signOutPhotos_other": "{{count}} photos de progression n’existent que sur cet appareil et seront supprimées.",
     "autoPush": "Envoi auto à la fin",
+    "retrying": "Nouvel essai…",
+    "retrySent_one": "Envoyés : {{sent}}, encore en attente : {{count}}",
+    "retrySent_many": "Envoyés : {{sent}}, encore en attente : {{count}}",
+    "retrySent_other": "Envoyés : {{sent}}, encore en attente : {{count}}",
+    "retryRemaining_one": "Encore en attente : {{count}}",
+    "retryRemaining_many": "Encore en attente : {{count}}",
+    "retryRemaining_other": "Encore en attente : {{count}}",
+    "lastPush": "Dernier envoi : {{time}}",
+    "stuck_one": "{{count}} élément bloqué après plusieurs essais — vérifiez la connexion ou reconnectez-vous.",
+    "stuck_many": "{{count}} éléments bloqués après plusieurs essais — vérifiez la connexion ou reconnectez-vous.",
+    "stuck_other": "{{count}} éléments bloqués après plusieurs essais — vérifiez la connexion ou reconnectez-vous.",
+    "lastError": "Dernière erreur : {{error}}",
     "retryNow": "Réessayer",
-    "orUseEmail": "ou utiliser l’e-mail"
+    "orUseEmail": "ou utiliser l’e-mail",
+    "queueEmpty": "File d’attente vide"
   },
   "jump": {
     "title": "Enregistrer un saut vertical",

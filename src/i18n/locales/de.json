@@ -34,7 +34,8 @@
     "continue": "Weiter",
     "loading": "Wird geladen…",
     "undo": "Rückgängig",
-    "clear": "Leeren"
+    "clear": "Leeren",
+    "storageFull": "Der Speicher ist voll, deshalb konnte diese Änderung nicht gespeichert werden. Schaffe Platz (z. B. indem du Fortschrittsfotos löschst) und versuche es erneut."
   },
   "nav": {
     "today": "Heute",
@@ -258,6 +259,10 @@
     "noPhotos": "Noch keine Fotos. Sie bleiben nur auf diesem Gerät — nie hochgeladen.",
     "deleteEntryConfirm": "Eintrag vom {{date}} löschen?",
     "deletePhotoConfirm": "Foto vom {{date}} löschen?",
+    "photoNoImage": "Die Kamera hat kein Bild geliefert.",
+    "photoSaveFailed": "Foto konnte nicht gespeichert werden.",
+    "photoReadFailed": "Das aufgenommene Bild konnte nicht gelesen werden.",
+    "photoAlt": "Fortschrittsfoto vom {{date}}",
     "unitSystem": "Einheitensystem",
     "weightChart": "Diagramm des Gewichtsverlaufs",
     "weightChartAvg": "Gewichtsverlauf mit gleitendem 7-Tage-Durchschnitt"
@@ -504,8 +509,18 @@
     "signOutPhotos_one": "{{count}} Fortschrittsfoto ist nur auf diesem Gerät gespeichert und wird gelöscht.",
     "signOutPhotos_other": "{{count}} Fortschrittsfotos sind nur auf diesem Gerät gespeichert und werden gelöscht.",
     "autoPush": "Automatisch senden am Ende",
+    "retrying": "Neuer Versuch…",
+    "retrySent_one": "{{sent}} gesendet, {{count}} noch in der Warteschlange",
+    "retrySent_other": "{{sent}} gesendet, {{count}} noch in der Warteschlange",
+    "retryRemaining_one": "{{count}} noch in der Warteschlange",
+    "retryRemaining_other": "{{count}} noch in der Warteschlange",
+    "lastPush": "Zuletzt gesendet: {{time}}",
+    "stuck_one": "{{count}} Eintrag hängt nach mehreren Versuchen fest — prüfe die Verbindung oder melde dich erneut an.",
+    "stuck_other": "{{count}} Einträge hängen nach mehreren Versuchen fest — prüfe die Verbindung oder melde dich erneut an.",
+    "lastError": "Letzter Fehler: {{error}}",
     "retryNow": "Jetzt erneut versuchen",
-    "orUseEmail": "oder E-Mail verwenden"
+    "orUseEmail": "oder E-Mail verwenden",
+    "queueEmpty": "Warteschlange leer"
   },
   "jump": {
     "title": "Vertikalsprung erfassen",

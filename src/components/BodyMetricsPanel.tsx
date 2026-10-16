@@ -230,7 +230,8 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       });
       const webPath = photo.webPath;
       if (!webPath) {
-        setPhotoNotice('Camera returned no image.');
+        // v1.18.1 (LimeLog#77) — this notice and the two below were English.
+        setPhotoNotice(t('body.photoNoImage'));
         return;
       }
       const dataUrl = await uriToDataUrl(webPath);
@@ -246,7 +247,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       // User-cancelled is the plugin's standard "User cancelled photos
       // app" error — silently no-op instead of flashing a scary message.
       if (/cancel/i.test(msg)) return;
-      setPhotoNotice(msg || 'Could not save photo.');
+      setPhotoNotice(msg || t('body.photoSaveFailed'));
     }
   }
 
@@ -259,7 +260,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
     return await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Could not read captured image'));
+      reader.onerror = () => reject(new Error(t('body.photoReadFailed')));
       reader.readAsDataURL(blob);
     });
   }
@@ -275,7 +276,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
         setPhotoNotice(`Saved. Oldest ${evicted} photo${evicted === 1 ? '' : 's'} removed to free space.`);
       }
     } catch (err) {
-      setPhotoNotice(err instanceof Error ? err.message : 'Could not save photo.');
+      setPhotoNotice(err instanceof Error ? err.message : t('body.photoSaveFailed'));
     }
     // Reset input so the same file path can be re-selected.
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -549,7 +550,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
           <div className="body-metrics-photo-grid">
             {photos.map((p) => (
               <figure key={p.date} className="body-metrics-photo">
-                <img src={p.dataUrl} alt={`Progress photo from ${p.date}`} loading="lazy" />
+                <img src={p.dataUrl} alt={t('body.photoAlt', { date: p.date })} loading="lazy" />
                 <figcaption className="body-metrics-photo__caption">
                   {p.date}
                   <button

@@ -34,7 +34,8 @@
     "continue": "Continue",
     "loading": "Loading…",
     "undo": "Undo",
-    "clear": "Clear"
+    "clear": "Clear",
+    "storageFull": "Storage is full, so this change could not be saved. Free up space (e.g. delete some progress photos) and try again."
   },
   "nav": {
     "today": "Today",
@@ -258,6 +259,10 @@
     "noPhotos": "No photos saved yet. They live on this device only — never uploaded.",
     "deleteEntryConfirm": "Delete entry for {{date}}?",
     "deletePhotoConfirm": "Delete photo from {{date}}?",
+    "photoNoImage": "Camera returned no image.",
+    "photoSaveFailed": "Could not save photo.",
+    "photoReadFailed": "Could not read the captured image.",
+    "photoAlt": "Progress photo from {{date}}",
     "unitSystem": "Unit system",
     "weightChart": "Weight trend chart",
     "weightChartAvg": "Weight trend with 7-day moving average"
@@ -504,8 +509,18 @@
     "signOutPhotos_one": "{{count}} progress photo is kept only on this device and will be deleted.",
     "signOutPhotos_other": "{{count}} progress photos are kept only on this device and will be deleted.",
     "autoPush": "Auto-push on finish",
+    "retrying": "Retrying…",
+    "retrySent_one": "Sent {{sent}}, {{count}} still queued",
+    "retrySent_other": "Sent {{sent}}, {{count}} still queued",
+    "retryRemaining_one": "{{count}} still queued",
+    "retryRemaining_other": "{{count}} still queued",
+    "lastPush": "Last push: {{time}}",
+    "stuck_one": "{{count}} item stuck after retries — check connection or sign back in.",
+    "stuck_other": "{{count}} items stuck after retries — check connection or sign back in.",
+    "lastError": "Last error: {{error}}",
     "retryNow": "Retry now",
-    "orUseEmail": "or use email"
+    "orUseEmail": "or use email",
+    "queueEmpty": "Queue empty"
   },
   "jump": {
     "title": "Log vertical jump",

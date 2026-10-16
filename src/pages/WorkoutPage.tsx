@@ -194,7 +194,8 @@ export function WorkoutPage() {
     ? exercises.find((e) => e.id === effectiveExerciseId(log, currentExercise))
     : undefined;
   const idleRestSecs = currentExercise?.restSeconds ?? DEFAULT_REST_SECONDS;
-  const idleRestLabel = currentExerciseObj?.name ?? 'workout';
+  // v1.18.1 (LimeLog#77) — shown in the rest bar, so it is translated.
+  const idleRestLabel = currentExerciseObj?.name ?? t('workout.workout');
 
   function computeQualifying(): QualifyingExercise[] {
     if (!log || !session) return [];

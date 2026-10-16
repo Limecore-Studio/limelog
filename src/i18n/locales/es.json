@@ -34,7 +34,8 @@
     "continue": "Continuar",
     "loading": "Cargando…",
     "undo": "Deshacer",
-    "clear": "Vaciar"
+    "clear": "Vaciar",
+    "storageFull": "El almacenamiento está lleno, así que este cambio no se pudo guardar. Libera espacio (p. ej., borra algunas fotos de progreso) y vuelve a intentarlo."
   },
   "nav": {
     "today": "Hoy",
@@ -262,6 +263,10 @@
     "noPhotos": "Aún no hay fotos. Viven solo en este dispositivo — nunca se suben.",
     "deleteEntryConfirm": "¿Eliminar la entrada del {{date}}?",
     "deletePhotoConfirm": "¿Eliminar la foto del {{date}}?",
+    "photoNoImage": "La cámara no devolvió ninguna imagen.",
+    "photoSaveFailed": "No se pudo guardar la foto.",
+    "photoReadFailed": "No se pudo leer la imagen capturada.",
+    "photoAlt": "Foto de progreso del {{date}}",
     "unitSystem": "Sistema de unidades",
     "weightChart": "Gráfico de tendencia del peso",
     "weightChartAvg": "Tendencia del peso con media móvil de 7 días"
@@ -514,8 +519,21 @@
     "signOutPhotos_many": "{{count}} fotos de progreso solo están en este dispositivo y se eliminarán.",
     "signOutPhotos_other": "{{count}} fotos de progreso solo están en este dispositivo y se eliminarán.",
     "autoPush": "Enviar automáticamente al terminar",
+    "retrying": "Reintentando…",
+    "retrySent_one": "Enviados: {{sent}}, aún en cola: {{count}}",
+    "retrySent_many": "Enviados: {{sent}}, aún en cola: {{count}}",
+    "retrySent_other": "Enviados: {{sent}}, aún en cola: {{count}}",
+    "retryRemaining_one": "Aún en cola: {{count}}",
+    "retryRemaining_many": "Aún en cola: {{count}}",
+    "retryRemaining_other": "Aún en cola: {{count}}",
+    "lastPush": "Último envío: {{time}}",
+    "stuck_one": "{{count}} elemento atascado tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
+    "stuck_many": "{{count}} elementos atascados tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
+    "stuck_other": "{{count}} elementos atascados tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
+    "lastError": "Último error: {{error}}",
     "retryNow": "Reintentar ahora",
-    "orUseEmail": "o usa el correo"
+    "orUseEmail": "o usa el correo",
+    "queueEmpty": "Cola vacía"
   },
   "jump": {
     "title": "Registrar salto vertical",

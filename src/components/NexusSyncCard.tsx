@@ -9,6 +9,7 @@ import { ChangeEmail } from '@/components/ChangeEmail';
 import { useConfirm } from '@/components/confirmContext';
 import { useLogStore } from '@/store/logStore';
 import { listPhotos } from '@/lib/progressPhotos';
+import { formatTime } from '@/utils/helpers';
 import './NexusSyncCard.css';
 
 // Inline plugin handle for the "is NCC session available?" probe. We can't
@@ -92,7 +93,7 @@ export function NexusSyncCard() {
     try {
       const result = await inheritFromNexus();
       if (!result.ok) {
-        setLocalError(result.reason || 'Could not inherit Nexus session.');
+        setLocalError(result.reason || t('auth.errNexus'));
       }
       // On success, nexusStore.init's auth listener takes over.
     } catch (err) {
@@ -124,15 +125,18 @@ export function NexusSyncCard() {
     }
   }
 
+  // v1.18.1 (LimeLog#77) — the retry status, the last-push and error lines
+  // and the stuck warning below were still English. (On/Off and the queue
+  // lines are translated by the training PR, #79.)
   async function handleRetry() {
-    setRetryStatus('Retrying…');
+    setRetryStatus(t('sync.retrying'));
     const result = await retryPending();
     setRetryStatus(
       result.sent > 0
-        ? `Sent ${result.sent}, ${result.remaining} still queued`
+        ? t('sync.retrySent', { sent: result.sent, count: result.remaining })
         : result.remaining > 0
-          ? `${result.remaining} still queued`
-          : 'Queue empty'
+          ? t('sync.retryRemaining', { count: result.remaining })
+          : t('sync.queueEmpty')
     );
     setTimeout(() => setRetryStatus(null), 3000);
   }
@@ -203,20 +207,20 @@ export function NexusSyncCard() {
               "last push" line, and the stuck warning when items hit MAX_ATTEMPTS. */}
           {(lastPushAt || outboxStatus.lastSuccessAt) && (
             <p className="nexus-card__meta">
-              Last push: {new Date(outboxStatus.lastSuccessAt ?? lastPushAt!).toLocaleTimeString()}
+              {t('sync.lastPush', { time: formatTime(outboxStatus.lastSuccessAt ?? lastPushAt!) })}
             </p>
           )}
 
           {outboxStatus.stuck > 0 && (
             <p className="nexus-card__error">
-              {outboxStatus.stuck} item{outboxStatus.stuck > 1 ? 's' : ''} stuck after retries — check connection or sign back in.
+              {t('sync.stuck', { count: outboxStatus.stuck })}
             </p>
           )}
 
           {lastError && <p className="nexus-card__error">{lastError}</p>}
           {!lastError && outboxStatus.lastError && (
             <p className="nexus-card__error">
-              Last error: {outboxStatus.lastError}
+              {t('sync.lastError', { error: outboxStatus.lastError })}
             </p>
           )}
 

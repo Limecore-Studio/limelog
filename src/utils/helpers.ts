@@ -76,6 +76,12 @@ export function formatDate(iso: string): string {
   });
 }
 
+/** A clock time in the app's language (v1.18.1, LimeLog#77): a bare
+ *  toLocaleTimeString() follows the device, not the language the user chose. */
+export function formatTime(when: string | number | Date): string {
+  return new Date(when).toLocaleTimeString(formatLocale());
+}
+
 /** Localised weekday names, indexed 0 = Sunday to match Date.getDay() and the
  *  dayOfWeek fields stored on session templates.
  *

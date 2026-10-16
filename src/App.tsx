@@ -9,8 +9,6 @@ import { LocalNotifications } from '@capacitor/local-notifications';
 import { Layout } from '@/components/Layout';
 import { TodayPage } from '@/pages/TodayPage';
 import { FirstLaunchAuth } from '@/components/FirstLaunchAuth';
-import { ReferralPrompt } from '@/components/ReferralPrompt';
-import { PRCelebrationModal } from '@/components/PRCelebrationModal';
 import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { useLogStore } from '@/store/logStore';
@@ -22,6 +20,7 @@ import {
   scheduleWorkoutReminders,
   WORKOUT_ACTION_START,
 } from '@/utils/notifications';
+import { OptionalChunk } from '@/components/OptionalChunk';
 
 // v1.17 (limecore#13): every page a launch does not open on is its own chunk,
 // loaded the first time it is visited. Today (the index route) and the
@@ -33,6 +32,13 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ defa
 const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
 const WorkoutPage = lazy(() => import('@/pages/WorkoutPage').then((m) => ({ default: m.WorkoutPage })));
 const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
+// v1.18.1 (LimeLog#70) — the two root overlays render nothing at launch (the
+// PR card waits for a finished workout, the referral card for a 1.2 s beat
+// and a new account), so they load after first paint. Still mounted from the
+// start, each in its own Suspense, so neither waits on its chunk at the
+// moment it has to appear.
+const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
+const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
 
 /**
  * Subscribes to action-button taps on workout reminders and routes the user
@@ -296,10 +302,14 @@ export default function App() {
       </Suspense>
       {/* v1.6 — global PR celebration; mounted outside Routes so it survives
           the post-finish navigate('/today'). */}
-      <PRCelebrationModal />
+      <OptionalChunk>
+        <PRCelebrationModal />
+      </OptionalChunk>
       {/* Item 8 — asks once per account, inside the account-age window only.
           Non-blocking by design; see the component. */}
-      <ReferralPrompt />
+      <OptionalChunk>
+        <ReferralPrompt />
+      </OptionalChunk>
     </BrowserRouter>
   );
 }

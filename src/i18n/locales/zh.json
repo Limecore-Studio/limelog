@@ -34,7 +34,8 @@
     "continue": "继续",
     "loading": "加载中…",
     "undo": "撤销",
-    "clear": "清空"
+    "clear": "清空",
+    "storageFull": "存储空间已满，此更改未能保存。请释放空间（例如删除一些进度照片）后重试。"
   },
   "nav": {
     "today": "今天",
@@ -255,6 +256,10 @@
     "noPhotos": "尚未保存照片。它们仅存于本机——绝不上传。",
     "deleteEntryConfirm": "删除 {{date}} 的记录？",
     "deletePhotoConfirm": "删除 {{date}} 的照片？",
+    "photoNoImage": "相机未返回图像。",
+    "photoSaveFailed": "无法保存照片。",
+    "photoReadFailed": "无法读取拍摄的图像。",
+    "photoAlt": "{{date}} 的进度照片",
     "unitSystem": "单位制",
     "weightChart": "体重趋势图",
     "weightChartAvg": "带 7 天移动平均的体重趋势"
@@ -499,8 +504,15 @@
     "signOutSyncOff": "同步已关闭，此设备上的训练没有保存到你的账户：它们将会丢失。",
     "signOutPhotos_other": "{{count}} 张进度照片仅保存在此设备上，将被删除。",
     "autoPush": "结束时自动上传",
+    "retrying": "正在重试…",
+    "retrySent_other": "已发送 {{sent}} 项，仍有 {{count}} 项在队列中",
+    "retryRemaining_other": "仍有 {{count}} 项在队列中",
+    "lastPush": "上次上传：{{time}}",
+    "stuck_other": "{{count}} 项多次重试后仍未成功——请检查网络连接或重新登录。",
+    "lastError": "上次错误：{{error}}",
     "retryNow": "立即重试",
-    "orUseEmail": "或使用电子邮件"
+    "orUseEmail": "或使用电子邮件",
+    "queueEmpty": "队列为空"
   },
   "jump": {
     "title": "记录垂直跳",
