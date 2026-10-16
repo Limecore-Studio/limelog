@@ -72,6 +72,20 @@ function markAskedLocally(): void {
   }
 }
 
+/** v1.18.1 (LimeLog#82) — sign-out. The mirror is about the person who
+ *  signed out: kept, the next account on a shared device was never asked, and
+ *  its answer is exactly the data point this exists for. A returning user is
+ *  still not asked twice, because `shouldAskReferral` checks their account's
+ *  metadata first; the only cost is a second prompt for someone whose
+ *  metadata write had failed, which the comment above already accepts. */
+export function forgetReferralAskedLocally(): void {
+  try {
+    localStorage.removeItem(ASKED_KEY);
+  } catch {
+    /* no storage: nothing was kept */
+  }
+}
+
 function accountAgeDays(user: User): number {
   const created = user.created_at ? Date.parse(user.created_at) : NaN;
   if (Number.isNaN(created)) return Infinity; // unknown age -> don't ask

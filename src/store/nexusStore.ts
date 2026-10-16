@@ -25,7 +25,9 @@ import {
 // wipe would clobber the user's custom builtin overrides + force a
 // re-seed of BUILTIN_EXERCISES that would lose their tweaks. The
 // per-user scope of programs is tracked as a v1.3 design item.
-import { watchAppOpens } from '@/lib/appOpens';
+import { watchAppOpens, recordAppOpen, forgetLastAppOpen } from '@/lib/appOpens';
+import { releaseOnboardingOnSignOut } from '@/lib/onboarding';
+import { forgetReferralAskedLocally } from '@/lib/referralSource';
 import { clearEntitlement } from '@/lib/entitlement';
 import { useThemeStore } from '@/store/themeStore';
 import pkgJson from '../../package.json';
@@ -207,6 +209,14 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           // would otherwise serve the "not entitled" answer cached moments ago
           // while signed out.
           if (session?.user?.id) void useThemeStore.getState().syncEntitlement(session.user.id, { force: true });
+          // v1.18.1 (LimeLog#82) — record the new account's open now. Opens
+          // are recorded at launch and on resume; someone who signs in
+          // mid-launch (the next person on a shared device, after sign-out
+          // cleared the day guard) otherwise waited for the next resume.
+          // Deferred: recordAppOpen asks auth-js for the session, and auth-js
+          // holds its lock while this listener runs (see referralSource.ts).
+          // A repeat is a no-op: the day guard stops it.
+          setTimeout(() => void recordAppOpen(pkgJson.version), 0);
         }
         // Signing out ends the entitlement with it. `syncEntitlement(null)`
         // clears the cache and hands the store `false`, which drops a paid
@@ -478,6 +488,18 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     } catch (e) {
       console.warn('[nexus] progress-photos wipe failed:', e);
     }
+    // v1.18.1 (LimeLog#82) — the per-person flags go too, as an erase removes
+    // them (dataRights.wipeAllLocalData). Each helper says why it is safe:
+    // the training goal is display-only, the referral mirror is backed by the
+    // account's metadata, and the app-open guard costs at most a duplicate
+    // the upsert collapses. The onboarding flag is re-marked, not removed: a
+    // guest carrying on is not sent through the wizard again, and the next
+    // account's own answer resets it at sign-in. Device settings stay: the
+    // language (limecore_lang), the F-Droid update check, the sync toggle,
+    // programs and exercises. guestMode is set below, not cleared — see there.
+    releaseOnboardingOnSignOut();
+    forgetReferralAskedLocally();
+    forgetLastAppOpen();
     // v1.18.1 (LimeLog#66): the data above is already gone, so the session
     // has to go too, server or not. Offline, auth-js first resolves the
     // session (an expired token means its refresh retry chain, up to ~51 s)

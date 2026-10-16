@@ -266,6 +266,7 @@
     "photoNoImage": "L’appareil photo n’a renvoyé aucune image.",
     "photoSaveFailed": "Impossible d’enregistrer la photo.",
     "photoReadFailed": "Impossible de lire l’image prise.",
+    "photoStorageFull": "Espace insuffisant pour enregistrer cette photo. Supprimez quelques photos plus anciennes et réessayez.",
     "photoAlt": "Photo de progression du {{date}}",
     "unitSystem": "Système d’unités",
     "weightChart": "Graphique de tendance du poids",
@@ -533,7 +534,13 @@
     "lastError": "Dernière erreur : {{error}}",
     "retryNow": "Réessayer",
     "orUseEmail": "ou utiliser l’e-mail",
-    "queueEmpty": "File d’attente vide"
+    "queueEmpty": "File d’attente vide",
+    "queued_one": "{{count}} modification en attente",
+    "queued_many": "{{count}} modifications en attente",
+    "queued_other": "{{count}} modifications en attente",
+    "queuedSignedOut_one": "{{count}} modification en attente — synchronisée après connexion.",
+    "queuedSignedOut_many": "{{count}} modifications en attente — synchronisées après connexion.",
+    "queuedSignedOut_other": "{{count}} modifications en attente — synchronisées après connexion."
   },
   "jump": {
     "title": "Enregistrer un saut vertical",

@@ -266,6 +266,7 @@
     "photoNoImage": "La cámara no devolvió ninguna imagen.",
     "photoSaveFailed": "No se pudo guardar la foto.",
     "photoReadFailed": "No se pudo leer la imagen capturada.",
+    "photoStorageFull": "No hay espacio suficiente para guardar esta foto. Borra algunas fotos antiguas y vuelve a intentarlo.",
     "photoAlt": "Foto de progreso del {{date}}",
     "unitSystem": "Sistema de unidades",
     "weightChart": "Gráfico de tendencia del peso",
@@ -533,7 +534,13 @@
     "lastError": "Último error: {{error}}",
     "retryNow": "Reintentar ahora",
     "orUseEmail": "o usa el correo",
-    "queueEmpty": "Cola vacía"
+    "queueEmpty": "Cola vacía",
+    "queued_one": "{{count}} cambio en cola",
+    "queued_many": "{{count}} cambios en cola",
+    "queued_other": "{{count}} cambios en cola",
+    "queuedSignedOut_one": "{{count}} cambio en cola — se sincronizará al iniciar sesión.",
+    "queuedSignedOut_many": "{{count}} cambios en cola — se sincronizarán al iniciar sesión.",
+    "queuedSignedOut_other": "{{count}} cambios en cola — se sincronizarán al iniciar sesión."
   },
   "jump": {
     "title": "Registrar salto vertical",

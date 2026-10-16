@@ -278,6 +278,7 @@
     "photoNoImage": "Kamera tidak mengembalikan gambar.",
     "photoSaveFailed": "Tidak dapat menyimpan foto.",
     "photoReadFailed": "Tidak dapat membaca gambar yang diambil.",
+    "photoStorageFull": "Ruang penyimpanan tidak cukup untuk menyimpan foto ini. Hapus beberapa foto lama lalu coba lagi.",
     "photoAlt": "Foto progres dari {{date}}",
     "unitSystem": "Sistem satuan",
     "weightChart": "Grafik tren berat badan",
@@ -507,7 +508,9 @@
     "lastError": "Kesalahan terakhir: {{error}}",
     "retryNow": "Coba lagi sekarang",
     "orUseEmail": "atau gunakan email",
-    "queueEmpty": "Antrean kosong"
+    "queueEmpty": "Antrean kosong",
+    "queued_other": "{{count}} perubahan dalam antrean",
+    "queuedSignedOut_other": "{{count}} perubahan dalam antrean — akan disinkronkan setelah masuk."
   },
   "jump": {
     "title": "Catat lompatan vertikal",

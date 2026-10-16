@@ -23,6 +23,7 @@ const h = vi.hoisted(() => ({
   signOut: (() => Promise.resolve({ error: null })) as () => Promise<{ error: { message: string } | null }>,
   clearStored: vi.fn(async (_onlyIf?: string) => {}),
   token: 'rt-old' as string | undefined,
+  recordAppOpen: vi.fn(async (_version: string) => true),
 }));
 
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => h.native } }));
@@ -51,7 +52,13 @@ vi.mock('@/lib/oauth', () => ({ signInWithGoogle: vi.fn(), initOAuthDeepLinkList
 vi.mock('@/lib/guestMode', () => ({ isGuestMode: () => h.guest, setGuestMode: h.setGuestMode }));
 vi.mock('@/lib/suiteSso', () => ({ inheritFromNexus: () => h.inherit() }));
 vi.mock('@/lib/originMarker', () => ({ scheduleOriginStamp: vi.fn() }));
-vi.mock('@/lib/appOpens', () => ({ watchAppOpens: vi.fn() }));
+// The real module, but for the two that would push to the outbox: sign-out
+// clears its day guard through it (LimeLog#82), and that is under test.
+vi.mock('@/lib/appOpens', async (actual) => ({
+  ...(await actual<typeof import('@/lib/appOpens')>()),
+  watchAppOpens: vi.fn(),
+  recordAppOpen: h.recordAppOpen,
+}));
 vi.mock('@/lib/entitlement', () => ({ clearEntitlement: vi.fn() }));
 vi.mock('@/lib/outbox', () => ({
   drain: h.drain,
@@ -102,6 +109,7 @@ beforeEach(() => {
   h.setGuestMode.mockClear();
   h.signOut = () => Promise.resolve({ error: null });
   h.clearStored.mockClear();
+  h.recordAppOpen.mockClear();
 });
 
 afterEach(() => {
@@ -301,5 +309,76 @@ describe('signOut()', () => {
     await store.getState().signOut();
     expect(h.clearStored).not.toHaveBeenCalled();
     expect(store.getState().userEmail).toBeNull();
+  });
+});
+
+// v1.18.1 (LimeLog#82) — sign-out left the previous person's flags for the
+// next one on a shared device: the wizard and the referral question skipped,
+// and their first open of the day not recorded.
+describe('signOut() and the per-person flags', () => {
+  const PERSON = {
+    'limelog.trainingGoal': 'strength',
+    'limelog.referralAsked': '1',
+    'limelog.lastAppOpen': '2026-10-16',
+  };
+  const DEVICE = {
+    limecore_lang: 'fi',
+    'limelog-fdroid-check': 'off',
+    wt_nexus_sync_enabled: 'false',
+    wt_programs: '[]',
+    wt_exercises: '[]',
+  };
+
+  async function signedIn() {
+    h.stored = { user: USER, expiresAt: 0, expired: true };
+    const store = await freshStore();
+    await store.getState().init();
+    for (const [k, v] of Object.entries({ ...PERSON, ...DEVICE })) localStorage.setItem(k, v);
+    return store;
+  }
+
+  it("removes the signed-out person's flags", async () => {
+    const store = await signedIn();
+    await store.getState().signOut();
+    for (const k of Object.keys(PERSON)) expect(localStorage.getItem(k), k).toBeNull();
+  });
+
+  it("re-marks the onboarding flag as the signed-out account's instead of removing it", async () => {
+    const store = await signedIn();
+    localStorage.setItem('limelog.onboarded', '1');
+    await store.getState().signOut();
+    // Still done for a guest; the next account's own "no" resets it.
+    expect(localStorage.getItem('limelog.onboarded')).toBe('signed-out');
+  });
+
+  it('keeps the device settings', async () => {
+    const store = await signedIn();
+    await store.getState().signOut();
+    for (const [k, v] of Object.entries(DEVICE)) expect(localStorage.getItem(k), k).toBe(v);
+  });
+
+  it('removes them offline too, where the server never answers', async () => {
+    h.signOut = () => new Promise(() => {});
+    const store = await signedIn();
+    const done = store.getState().signOut();
+    await vi.advanceTimersByTimeAsync(5000);
+    await done;
+    for (const k of Object.keys(PERSON)) expect(localStorage.getItem(k), k).toBeNull();
+  });
+
+  it('still lands in guest mode, so the sign-out survives a restart', async () => {
+    const store = await signedIn();
+    await store.getState().signOut();
+    expect(h.setGuestMode).toHaveBeenLastCalledWith(true);
+  });
+
+  it("records the next account's open when it signs in, outside the auth listener", async () => {
+    const store = await signedIn();
+    await store.getState().signOut();
+    h.listener!('SIGNED_IN', { user: { ...USER, id: 'user-2', email: 'next@example.com' } });
+    // Not inside the listener: auth-js holds its lock while it runs.
+    expect(h.recordAppOpen).not.toHaveBeenCalled();
+    await flush();
+    expect(h.recordAppOpen).toHaveBeenCalledTimes(1);
   });
 });

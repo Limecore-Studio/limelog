@@ -262,6 +262,7 @@
     "photoNoImage": "Camera returned no image.",
     "photoSaveFailed": "Could not save photo.",
     "photoReadFailed": "Could not read the captured image.",
+    "photoStorageFull": "Not enough storage to save this photo. Delete some older photos and try again.",
     "photoAlt": "Progress photo from {{date}}",
     "unitSystem": "Unit system",
     "weightChart": "Weight trend chart",
@@ -520,7 +521,11 @@
     "lastError": "Last error: {{error}}",
     "retryNow": "Retry now",
     "orUseEmail": "or use email",
-    "queueEmpty": "Queue empty"
+    "queueEmpty": "Queue empty",
+    "queued_one": "{{count}} change queued",
+    "queued_other": "{{count}} changes queued",
+    "queuedSignedOut_one": "{{count}} change queued — will sync after sign-in.",
+    "queuedSignedOut_other": "{{count}} changes queued — will sync after sign-in."
   },
   "jump": {
     "title": "Log vertical jump",

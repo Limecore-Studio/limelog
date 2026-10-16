@@ -262,6 +262,7 @@
     "photoNoImage": "Die Kamera hat kein Bild geliefert.",
     "photoSaveFailed": "Foto konnte nicht gespeichert werden.",
     "photoReadFailed": "Das aufgenommene Bild konnte nicht gelesen werden.",
+    "photoStorageFull": "Nicht genug Speicherplatz für dieses Foto. Lösche ein paar ältere Fotos und versuche es erneut.",
     "photoAlt": "Fortschrittsfoto vom {{date}}",
     "unitSystem": "Einheitensystem",
     "weightChart": "Diagramm des Gewichtsverlaufs",
@@ -520,7 +521,11 @@
     "lastError": "Letzter Fehler: {{error}}",
     "retryNow": "Jetzt erneut versuchen",
     "orUseEmail": "oder E-Mail verwenden",
-    "queueEmpty": "Warteschlange leer"
+    "queueEmpty": "Warteschlange leer",
+    "queued_one": "{{count}} Änderung in der Warteschlange",
+    "queued_other": "{{count}} Änderungen in der Warteschlange",
+    "queuedSignedOut_one": "{{count}} Änderung in der Warteschlange — wird nach der Anmeldung synchronisiert.",
+    "queuedSignedOut_other": "{{count}} Änderungen in der Warteschlange — werden nach der Anmeldung synchronisiert."
   },
   "jump": {
     "title": "Vertikalsprung erfassen",

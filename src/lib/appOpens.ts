@@ -72,6 +72,18 @@ export async function recordAppOpen(appVersion: string): Promise<boolean> {
   return true;
 }
 
+/** v1.18.1 (LimeLog#82) — sign-out. The guard is "this ACCOUNT's open is
+ *  queued for today"; kept, it stopped the next account's first open that day
+ *  from being recorded. Clearing it costs at most a duplicate item if the same
+ *  person signs back in the same day, which the upsert collapses. */
+export function forgetLastAppOpen(): void {
+  try {
+    localStorage.removeItem(LAST_KEY);
+  } catch {
+    /* no storage: nothing was kept */
+  }
+}
+
 /**
  * Wire foreground detection. Returns an unsubscribe function.
  *

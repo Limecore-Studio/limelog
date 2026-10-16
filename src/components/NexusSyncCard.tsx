@@ -126,8 +126,14 @@ export function NexusSyncCard() {
   }
 
   // v1.18.1 (LimeLog#77) — the retry status, the last-push and error lines
-  // and the stuck warning below were still English. (On/Off and the queue
-  // lines are translated by the training PR, #79.)
+  // and the stuck warning below were still English. (On/Off is translated by
+  // the training PR, #79.)
+  //
+  // v1.18.1 (LimeLog#82) — the two queue lines say "changes", not "workouts":
+  // pendingCount is the whole outbox (body metrics, PRs, app opens and
+  // deletions as well as workouts), and Retry sends all of it. The calls are
+  // the training PR's (#79) word for word, so the two merge cleanly; only the
+  // wording of sync.queued / sync.queuedSignedOut differs.
   async function handleRetry() {
     setRetryStatus(t('sync.retrying'));
     const result = await retryPending();
@@ -188,9 +194,7 @@ export function NexusSyncCard() {
 
           <div className="nexus-card__row">
             <span className="settings-field__sublabel">
-              {pendingCount > 0
-                ? `${pendingCount} workout${pendingCount > 1 ? 's' : ''} queued`
-                : 'Queue empty'}
+              {pendingCount > 0 ? t('sync.queued', { count: pendingCount }) : t('sync.queueEmpty')}
             </span>
             {pendingCount > 0 && (
               <Button size="sm" variant="secondary" onClick={handleRetry}>
@@ -316,7 +320,7 @@ export function NexusSyncCard() {
 
           {pendingCount > 0 && (
             <p className="nexus-card__meta">
-              {pendingCount} workout{pendingCount > 1 ? 's' : ''} queued — will sync after sign-in.
+              {t('sync.queuedSignedOut', { count: pendingCount })}
             </p>
           )}
         </form>

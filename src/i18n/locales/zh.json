@@ -259,6 +259,7 @@
     "photoNoImage": "相机未返回图像。",
     "photoSaveFailed": "无法保存照片。",
     "photoReadFailed": "无法读取拍摄的图像。",
+    "photoStorageFull": "存储空间不足，无法保存这张照片。请删除一些较早的照片后重试。",
     "photoAlt": "{{date}} 的进度照片",
     "unitSystem": "单位制",
     "weightChart": "体重趋势图",
@@ -512,7 +513,9 @@
     "lastError": "上次错误：{{error}}",
     "retryNow": "立即重试",
     "orUseEmail": "或使用电子邮件",
-    "queueEmpty": "队列为空"
+    "queueEmpty": "队列为空",
+    "queued_other": "{{count}} 项更改待上传",
+    "queuedSignedOut_other": "{{count}} 项更改待上传 —— 登录后同步。"
   },
   "jump": {
     "title": "记录垂直跳",

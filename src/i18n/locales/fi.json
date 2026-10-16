@@ -262,6 +262,7 @@
     "photoNoImage": "Kamera ei palauttanut kuvaa.",
     "photoSaveFailed": "Kuvaa ei voitu tallentaa.",
     "photoReadFailed": "Otettua kuvaa ei voitu lukea.",
+    "photoStorageFull": "Tila ei riitä tämän kuvan tallentamiseen. Poista vanhempia kuvia ja yritä uudelleen.",
     "photoAlt": "Edistymiskuva {{date}}",
     "unitSystem": "Yksikköjärjestelmä",
     "weightChart": "Painon trendikaavio",
@@ -520,7 +521,11 @@
     "lastError": "Viimeisin virhe: {{error}}",
     "retryNow": "Yritä uudelleen",
     "orUseEmail": "tai käytä sähköpostia",
-    "queueEmpty": "Jono on tyhjä"
+    "queueEmpty": "Jono on tyhjä",
+    "queued_one": "{{count}} muutos jonossa",
+    "queued_other": "{{count}} muutosta jonossa",
+    "queuedSignedOut_one": "{{count}} muutos jonossa — synkronoidaan kirjautumisen jälkeen.",
+    "queuedSignedOut_other": "{{count}} muutosta jonossa — synkronoidaan kirjautumisen jälkeen."
   },
   "jump": {
     "title": "Kirjaa vertikaalihyppy",

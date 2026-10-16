@@ -110,9 +110,14 @@ export default function App() {
     if (!userEmail) { setOnboardChecked(true); return; }
     let cancelled = false;
     setOnboardChecked(false);
-    void hydrateOnboardedFromCloud().then((done) => {
+    // v1.18.1 (LimeLog#82) — a definite "no" now turns it off as well. This
+    // state was read once at launch, so the next person signing in on the
+    // same launch kept the previous person's "done". An answer that could not
+    // be had ('unknown') changes nothing: the wizard is never shown on
+    // uncertainty.
+    void hydrateOnboardedFromCloud().then((answer) => {
       if (cancelled) return;
-      if (done) setOnboardedState(true);
+      if (answer !== 'unknown') setOnboardedState(answer === 'yes');
       setOnboardChecked(true);
     });
     return () => { cancelled = true; };

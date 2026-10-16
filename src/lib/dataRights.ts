@@ -153,9 +153,10 @@ export async function downloadExport(
  * Remove every LimeLog key from local storage.
  *
  * Prefix-based rather than a list of names, deliberately. nexusStore.signOut
- * wipes an explicit six keys, which is right for sign-out — programs and
- * exercise definitions are not personal data and a returning user wants them
- * kept. Erasure is the opposite case: anything missed is data surviving a
+ * wipes an explicit list of keys (since v1.18.1, LimeLog#82, some of the
+ * `limelog.` flags below too; see there), which is right for sign-out — programs
+ * and exercise definitions are not personal data and a returning user wants
+ * them kept. Erasure is the opposite case: anything missed is data surviving a
  * deletion request, so the default has to be "remove it" and a hand-written
  * list would silently miss whatever gets added next.
  *

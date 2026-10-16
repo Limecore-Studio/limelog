@@ -282,6 +282,7 @@
     "photoNoImage": "कैमरे से कोई तस्वीर नहीं मिली।",
     "photoSaveFailed": "तस्वीर सहेजी नहीं जा सकी।",
     "photoReadFailed": "ली गई तस्वीर पढ़ी नहीं जा सकी।",
+    "photoStorageFull": "यह तस्वीर सहेजने के लिए पर्याप्त जगह नहीं है। कुछ पुरानी तस्वीरें हटाएँ और फिर से कोशिश करें।",
     "photoAlt": "{{date}} की प्रगति तस्वीर",
     "unitSystem": "इकाई प्रणाली",
     "weightChart": "वज़न रुझान चार्ट",
@@ -520,7 +521,11 @@
     "lastError": "पिछली त्रुटि: {{error}}",
     "retryNow": "अभी पुनः प्रयास करें",
     "orUseEmail": "या ईमेल का उपयोग करें",
-    "queueEmpty": "कतार खाली है"
+    "queueEmpty": "कतार खाली है",
+    "queued_one": "{{count}} बदलाव कतार में",
+    "queued_other": "{{count}} बदलाव कतार में",
+    "queuedSignedOut_one": "{{count}} बदलाव कतार में — साइन इन के बाद सिंक होगा।",
+    "queuedSignedOut_other": "{{count}} बदलाव कतार में — साइन इन के बाद सिंक होंगे।"
   },
   "jump": {
     "title": "वर्टिकल जंप दर्ज करें",
