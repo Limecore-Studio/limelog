@@ -19,6 +19,8 @@ const h = vi.hoisted(() => ({
   signOut: (() => Promise.resolve({ error: null })) as () => Promise<{ error: { message: string } | null }>,
 }));
 
+// v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => false } }));
 vi.mock('./supabase', () => ({
   isNexusConfigured: true,

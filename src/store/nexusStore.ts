@@ -23,8 +23,16 @@ import i18n from '@/i18n';
 // v1.18.1 (LimeLog#88) — the account-scoped local data is cleared in one
 // place (accountWipe.ts), by sign-out and by a different account's session
 // arriving (accountOwner.ts).
-import { wipeAccountLocalData } from '@/lib/accountWipe';
-import { adoptLocalData, clearOwner, configureAccountOwner } from '@/lib/accountOwner';
+import { wipeAccountLocalData, restoreAccountData } from '@/lib/accountWipe';
+import {
+  adoptLocalData,
+  clearOwner,
+  configureAccountOwner,
+  loadOwnerRecord,
+  ownerRecordKnown,
+  readOwner,
+  readOwnerEmail,
+} from '@/lib/accountOwner';
 
 const SYNC_ENABLED_KEY = 'wt_nexus_sync_enabled';
 
@@ -35,6 +43,15 @@ function readSyncEnabled(): boolean {
 
 function writeSyncEnabled(v: boolean): void {
   localStorage.setItem(SYNC_ENABLED_KEY, String(v));
+}
+
+/** v1.18.1 (LimeLog#91) — what "Continue as guest" asks about: the local
+ *  data of an account whose session ended without a sign-out. */
+export interface HeldAccountData {
+  /** The account's email, when it was recorded with the owner. */
+  email: string | null;
+  /** Changes in the outbox not yet sent. */
+  unsynced: number;
 }
 
 interface NexusStore {
@@ -84,6 +101,11 @@ interface NexusStore {
   signUp: (email: string, password: string) => Promise<{ needsConfirmation: boolean }>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** v1.18.1 (LimeLog#91) — enter guest mode. When the local data still
+   *  belongs to an account (its session ended without a sign-out), `ask` is
+   *  shown first; on yes the data is cleared as a sign-out clears it, on no
+   *  nothing changes. Resolves with whether guest mode was entered. */
+  continueAsGuest: (ask: (held: HeldAccountData) => Promise<boolean>) => Promise<boolean>;
   setSyncEnabled: (v: boolean) => void;
   retryPending: () => Promise<{ sent: number; remaining: number }>;
   refreshPendingCount: () => void;
@@ -124,6 +146,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
   init: async () => {
     if (!isNexusConfigured) return;
     initOAuthDeepLinkListener();
+    // v1.18.1 (LimeLog#92) — the owner record mirrored in Preferences, read
+    // before anything below takes the local data up (the stored session just
+    // after, the auth listener, the drain the triggers start).
+    await loadOwnerRecord();
     // v1.2 — install global drain triggers (window.online + visibilitychange).
     // Idempotent — safe to call multiple times. Returns a teardown helper that
     // we intentionally don't use; the listeners live for the app's lifetime.
@@ -156,7 +182,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         // owner changes nothing here; another account's (an app closed
         // between its sign-in and the listener below) clears the previous
         // account's data first.
-        takeUp(stored.user.id);
+        takeUp(stored.user.id, stored.user.email);
         set({
           userEmail: stored.user.email ?? null,
           userName: displayNameOf(stored.user),
@@ -197,7 +223,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         // session clears the previous account's first. A SIGNED_OUT (no
         // session) changes nothing: the next account to sign in decides, so
         // signing back in as the same account keeps the work done meanwhile.
-        if (session?.user?.id) takeUp(session.user.id);
+        if (session?.user?.id) takeUp(session.user.id, session.user.email);
         // Anything that gets here is an ANSWER about the session — a refresh
         // that landed, a session auth-js loaded, or a sign-out the server
         // actually asserted. Either way the "could not reach the server to
@@ -371,7 +397,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
             // v1.18.1 (LimeLog#88) — only here, with the set: an answer that
             // an auth event overtook may name an account that is no longer
             // the session's, and must not clear the current one's data.
-            if (user?.id) takeUp(user.id);
+            if (user?.id) takeUp(user.id, user.email);
             set({
               userEmail: user?.email ?? null,
               userName: displayNameOf(user),
@@ -434,7 +460,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     }
     // v1.18.1 (LimeLog#88) — the listener has normally done this already
     // (auth-js reports SIGNED_IN before the call returns); a no-op then.
-    takeUp(data.user?.id);
+    takeUp(data.user?.id, data.user?.email);
     set({ userEmail: data.user?.email ?? null, userName: displayNameOf(data.user), userId: data.user?.id ?? null, loading: false });
 
     if (get().syncEnabled) {
@@ -455,7 +481,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     // awaiting confirmation cannot be pulled for yet, and its SIGNED_IN, when
     // confirmed, sets the id and starts the recovery pull then.
     // v1.18.1 (LimeLog#88) — and takes up the local data then, likewise.
-    if (data.session) takeUp(data.user?.id);
+    if (data.session) takeUp(data.user?.id, data.user?.email);
     set({
       userEmail: data.user?.email ?? null,
       userName: displayNameOf(data.user),
@@ -495,7 +521,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       // (accountWipe.ts has the list and the reasons; v1.2, v1.2.1, v1.12,
       // LimeLog#82). Programs, exercises and device settings stay. guestMode
       // is set below, not cleared — see there.
-      wipeAccountLocalData();
+      // v1.18.1 (LimeLog#90) — the personal records and the profile are set
+      // aside for the account they belong to: the recorded owner, or the
+      // session's account when none was recorded.
+      wipeAccountLocalData(readOwner() ?? get().userId);
       // v1.18.1 (LimeLog#88) — the data has no owner now. A guest carrying on
       // adds data the next account to sign in takes up, as before.
       clearOwner();
@@ -585,6 +614,28 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     }
   },
 
+  continueAsGuest: async (ask) => {
+    // v1.18.1 (LimeLog#91) — after a session that ended without a sign-out,
+    // the local data is still the account's (LimeLog#88), so a guest carrying
+    // on would see it and add to it. Ask first; yes clears it as a sign-out
+    // does (records and profile set aside for the account) and leaves no
+    // owner, so the guest starts empty.
+    // v1.18.1 (LimeLog#92) — a mirrored record still being read may name
+    // the account whose data this is.
+    await ownerRecordKnown();
+    const owner = readOwner();
+    if (owner !== null && !get().userId) {
+      const go = await ask({ email: readOwnerEmail(), unsynced: outboxStatus().pending });
+      if (!go) return false;
+      wipeAccountLocalData(owner);
+      clearOwner();
+      const status = outboxStatus();
+      set({ pendingCount: status.pending, outboxStatus: status });
+    }
+    await setGuestMode(true);
+    return true;
+  },
+
   setSyncEnabled: (v) => {
     writeSyncEnabled(v);
     set({ syncEnabled: v });
@@ -596,7 +647,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     // failed (the drain itself only checks). The id is the store's, which
     // only the auth paths set.
     const uid = get().userId;
-    if (uid) takeUp(uid);
+    if (uid) takeUp(uid, get().userEmail);
     const result = await outboxDrain();
     set({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
     return result;
@@ -618,8 +669,8 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
 // checks the owner. After it, the store is told, so the queue count updates
 // and the recovery gate (App.tsx), which waits for the data to be the
 // account's, looks again.
-function takeUp(userId: string | null | undefined): boolean {
-  const ok = adoptLocalData(userId);
+function takeUp(userId: string | null | undefined, email?: string | null): boolean {
+  const ok = adoptLocalData(userId, email);
   const status = outboxStatus();
   useNexusStore.setState({ pendingCount: status.pending, outboxStatus: status });
   return ok;
@@ -628,9 +679,9 @@ function takeUp(userId: string | null | undefined): boolean {
 // Nothing takes the data up while a sign-out runs: it has just been cleared,
 // and the session reported meanwhile is the one being signed out.
 configureAccountOwner({
-  wipe: () => {
+  wipe: (previousOwner) => {
     console.warn('[nexus] local data belonged to another account; clearing it before this account syncs');
-    const ok = wipeAccountLocalData();
+    const ok = wipeAccountLocalData(previousOwner);
     // A clear that failed leaves sync waiting; say so where sync errors show.
     if (!ok) outboxNoteError(i18n.t('sync.waitingForClear'));
     return ok;
@@ -638,5 +689,18 @@ configureAccountOwner({
   paused: () => {
     const s = useNexusStore.getState();
     return signOutHold || s.signingOut || s.signOutPending;
+  },
+  // v1.18.1 (LimeLog#90) — the account taking the device up gets back the
+  // records and profile set aside for it when it last left.
+  restore: (userId) => restoreAccountData(userId),
+  // v1.18.1 (LimeLog#92) — the mirrored record answered after the launch
+  // stopped waiting for it; the take-ups refused meanwhile (stored session,
+  // auth listener) happen now, then the queue that waited for them.
+  recordSettled: () => {
+    const s = useNexusStore.getState();
+    if (!s.userId || !takeUp(s.userId, s.userEmail) || !s.syncEnabled) return;
+    void outboxDrain().then((result) => {
+      useNexusStore.setState({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
+    });
   },
 });

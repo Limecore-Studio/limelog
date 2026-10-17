@@ -14,6 +14,8 @@ import { forgetLastAppOpen } from '@/lib/appOpens';
 import { useLogStore } from '@/store/logStore';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics';
+import { useUserStore, defaultProfile } from '@/store/userStore';
+import { parkAccountData, restoreParked } from '@/lib/parkedData';
 
 // useProgramStore is intentionally NOT wiped — programs / exercises /
 // workout templates are tool configuration, not history, and a global
@@ -25,7 +27,12 @@ import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics
 // runs when one before it fails (sign-out clears as much as it can), but an
 // account switch takes the data up only on `true` (accountOwner.ts). A helper
 // returning nothing counts as done; only an explicit `false` is a failure.
-export function wipeAccountLocalData(): boolean {
+//
+// v1.18.1 (LimeLog#90) — `parkFor` is the account the data belongs to. Its
+// personal records and profile are set aside for it (parkedData.ts) rather
+// than left for the next person or deleted; null (no account known) leaves
+// them where they are, as before.
+export function wipeAccountLocalData(parkFor: string | null): boolean {
   let ok = true;
   const step = (done: boolean | void) => {
     if (done === false) ok = false;
@@ -73,6 +80,16 @@ export function wipeAccountLocalData(): boolean {
     ok = false;
     console.warn('[nexus] progress-photos wipe failed:', e);
   }
+  // After the photos: they are what fills storage, and the slot is written
+  // into the room they leave.
+  if (parkFor) {
+    const parked = parkAccountData(parkFor);
+    step(parked);
+    if (parked) {
+      useLogStore.setState({ exercisePRs: [], lastCelebratedPRs: null });
+      useUserStore.setState({ profile: defaultProfile() });
+    }
+  }
   // v1.18.1 (LimeLog#82) — the per-person flags go too, as an erase removes
   // them (dataRights.wipeAllLocalData). Each helper says why it is safe:
   // the training goal is display-only, the referral mirror is backed by the
@@ -86,4 +103,14 @@ export function wipeAccountLocalData(): boolean {
   step(forgetReferralAskedLocally());
   step(forgetLastAppOpen());
   return ok;
+}
+
+// v1.18.1 (LimeLog#90) — the other half: `userId` has taken the device up
+// (accountOwner.ts, on a change of owner), so the records and profile set
+// aside for it go back, into storage and into the stores already mounted.
+export function restoreAccountData(userId: string): void {
+  const restored = restoreParked(userId);
+  if (!restored) return;
+  useLogStore.setState({ exercisePRs: restored.prs });
+  if (restored.profile) useUserStore.setState({ profile: restored.profile });
 }

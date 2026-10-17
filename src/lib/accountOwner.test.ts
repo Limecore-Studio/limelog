@@ -14,6 +14,26 @@ const h = vi.hoisted(() => ({
   /** Replaces the insert's result, e.g. a push that hangs. */
   insert: null as null | (() => Promise<{ error: unknown }>),
   onPush: null as null | (() => void),
+  /** v1.18.1 (LimeLog#92) — the Preferences mirror (SharedPreferences). */
+  prefs: new Map<string, string>(),
+  prefsFail: false,
+  /** While set, Preferences reads wait for it (a slow plugin). */
+  prefsHold: null as null | Promise<void>,
+}));
+
+vi.mock('@capacitor/preferences', () => ({
+  Preferences: {
+    get: async ({ key }: { key: string }) => {
+      if (h.prefsHold) await h.prefsHold;
+      if (h.prefsFail) throw new Error('plugin unavailable');
+      return { value: h.prefs.get(key) ?? null };
+    },
+    set: async ({ key, value }: { key: string; value: string }) => {
+      if (h.prefsFail) throw new Error('plugin unavailable');
+      h.prefs.set(key, value);
+    },
+    remove: async ({ key }: { key: string }) => void h.prefs.delete(key),
+  },
 }));
 
 vi.mock('./supabase', () => ({
@@ -84,6 +104,9 @@ beforeEach(() => {
   h.sent = [];
   h.insert = null;
   h.onPush = null;
+  h.prefs.clear();
+  h.prefsFail = false;
+  h.prefsHold = null;
   wipe.mockClear();
   owner.configureAccountOwner({ wipe });
   outbox.clear();
@@ -287,5 +310,147 @@ describe('the outbox sends only under the account the queue belongs to', () => {
     expect(h.sent).toEqual([]);
     const [item] = JSON.parse(localStorage.getItem('limelog-outbox')!);
     expect(item.attempts).toBe(0);
+  });
+});
+
+// v1.18.1 (LimeLog#92) — the record mirrored into Preferences, so a full
+// localStorage cannot lose it between launches.
+describe('the owner record mirrored into Preferences', () => {
+  /** A new launch: the module state (the in-memory owner) starts over. */
+  async function relaunch() {
+    vi.resetModules();
+    const fresh = await import('./accountOwner');
+    fresh.configureAccountOwner({ wipe });
+    return fresh;
+  }
+
+  it('every write and clear reaches Preferences, in order', async () => {
+    owner.adoptLocalData('user-a', 'a@example.com');
+    await owner.ownerMirrorSettled();
+    expect(h.prefs.get(owner.OWNER_KEY)).toBe('user-a');
+    expect(h.prefs.get(owner.OWNER_EMAIL_KEY)).toBe('a@example.com');
+    owner.clearOwner();
+    await owner.ownerMirrorSettled();
+    expect(h.prefs.size).toBe(0);
+  });
+
+  it('localStorage full: the next launch finds the owner in Preferences, so another account clears it', async () => {
+    vi.stubGlobal('localStorage', storage(owner.OWNER_KEY));
+    owner.adoptLocalData('user-a');
+    await owner.ownerMirrorSettled();
+    expect(localStorage.getItem(owner.OWNER_KEY)).toBeNull(); // the WebView store refused it
+    expect(h.prefs.get(owner.OWNER_KEY)).toBe('user-a');
+
+    const next = await relaunch();
+    expect(next.readOwner()).toBeNull(); // before the launch reads the mirror
+    await next.loadOwnerRecord();
+    expect(next.readOwner()).toBe('user-a'); // still full: held in memory
+    expect(next.adoptLocalData('user-b')).toBe(true);
+    expect(wipe).toHaveBeenCalledWith('user-a');
+  });
+
+  it('localStorage emptied (no record at launch): the mirrored record is used and written back', async () => {
+    h.prefs.set(owner.OWNER_KEY, 'user-a');
+    h.prefs.set(owner.OWNER_EMAIL_KEY, 'a@example.com');
+    const next = await relaunch();
+    await next.loadOwnerRecord();
+    expect(localStorage.getItem(next.OWNER_KEY)).toBe('user-a');
+    expect(next.readOwnerEmail()).toBe('a@example.com');
+    expect(next.adoptLocalData('user-a')).toBe(true);
+    expect(wipe).not.toHaveBeenCalled();
+  });
+
+  it('a record in localStorage wins over the mirror, which is brought in line', async () => {
+    localStorage.setItem(owner.OWNER_KEY, 'user-b');
+    h.prefs.set(owner.OWNER_KEY, 'user-a');
+    const next = await relaunch();
+    await next.loadOwnerRecord();
+    await next.ownerMirrorSettled();
+    expect(next.readOwner()).toBe('user-b');
+    expect(h.prefs.get(next.OWNER_KEY)).toBe('user-b');
+  });
+
+  it('no take-up while the mirror is being read; then the mirrored owner decides', async () => {
+    h.prefs.set(owner.OWNER_KEY, 'user-a');
+    const next = await relaunch();
+    const loading = next.loadOwnerRecord();
+    expect(next.adoptLocalData('user-b')).toBe(false); // B's session, before the read lands
+    await loading;
+    expect(next.readOwner()).toBe('user-a');
+    expect(next.adoptLocalData('user-b')).toBe(true);
+    expect(wipe).toHaveBeenCalledWith('user-a');
+  });
+
+  it('a sign-out while the mirror is being read wins over its answer', async () => {
+    h.prefs.set(owner.OWNER_KEY, 'user-a');
+    const next = await relaunch();
+    const loading = next.loadOwnerRecord();
+    next.clearOwner();
+    await loading;
+    expect(next.readOwner()).toBeNull();
+  });
+
+  it('a read that outlasts the wait: take-ups stay refused until it lands, then are tried again', async () => {
+    let release!: () => void;
+    h.prefsHold = new Promise((res) => { release = res; });
+    h.prefs.set(owner.OWNER_KEY, 'user-a');
+    const next = await relaunch();
+    const settled = vi.fn();
+    next.configureAccountOwner({ wipe, recordSettled: settled });
+    await next.loadOwnerRecord(5); // the launch stops waiting
+    expect(next.adoptLocalData('user-b')).toBe(false); // no claim, so no drain or pull for B
+    expect(next.readOwner()).toBeNull();
+    release();
+    await next.ownerRecordKnown();
+    expect(settled).toHaveBeenCalledTimes(1);
+    expect(next.readOwner()).toBe('user-a');
+    expect(next.adoptLocalData('user-b')).toBe(true);
+    expect(wipe).toHaveBeenCalledWith('user-a');
+  });
+
+  it('a record in localStorage does not wait for the mirror', async () => {
+    h.prefsHold = new Promise(() => {}); // never answers
+    localStorage.setItem(owner.OWNER_KEY, 'user-a');
+    const next = await relaunch();
+    await next.loadOwnerRecord(5);
+    expect(next.adoptLocalData('user-a')).toBe(true);
+  });
+
+  it('no Preferences (the plugin fails): localStorage alone, as before', async () => {
+    h.prefsFail = true;
+    const next = await relaunch();
+    await next.loadOwnerRecord();
+    expect(next.adoptLocalData('user-a')).toBe(true);
+    await next.ownerMirrorSettled();
+    expect(next.readOwner()).toBe('user-a');
+  });
+
+  it('the email follows the same account, and goes with the record', () => {
+    owner.adoptLocalData('user-a', 'a@example.com');
+    owner.adoptLocalData('user-a', 'new@example.com'); // address changed
+    expect(owner.readOwnerEmail()).toBe('new@example.com');
+    owner.adoptLocalData('user-b'); // another account, address unknown
+    expect(owner.readOwnerEmail()).toBeNull();
+    owner.adoptLocalData('user-b', 'b@example.com');
+    owner.clearOwner();
+    expect(owner.readOwnerEmail()).toBeNull();
+  });
+});
+
+describe('putting back what was set aside (LimeLog#90)', () => {
+  it('runs on a change of owner, and for the same owner too (a slot can still be there)', () => {
+    const restore = vi.fn();
+    owner.configureAccountOwner({ wipe, restore });
+    owner.adoptLocalData('user-a');
+    owner.adoptLocalData('user-a');
+    expect(restore).toHaveBeenNthCalledWith(1, 'user-a');
+    expect(restore).toHaveBeenNthCalledWith(2, 'user-a');
+  });
+
+  it('not when the take-up is refused', () => {
+    const restore = vi.fn();
+    owner.configureAccountOwner({ wipe, restore, paused: () => true });
+    owner.adoptLocalData('user-a');
+    expect(restore).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,8 @@ const USER = 'user-1';
 type Write = { table: string; op: 'update' | 'delete'; row?: Record<string, unknown>; eq?: [string, unknown] };
 
 const holder = vi.hoisted(() => ({ client: null as unknown as ReturnType<typeof makeClient> }));
+// v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('./supabase', () => ({
   isNexusConfigured: true,
   get supabase() {

@@ -5,6 +5,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // own file: the training PR (#79) adds dataRights.test.ts for the keys it
 // names one by one.
 
+// v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('./supabase', () => ({ isNexusConfigured: false, supabase: {} }));
 
 import { wipeAllLocalData } from './dataRights';
@@ -47,6 +49,9 @@ describe('wipeAllLocalData', () => {
       'limelog.lastAppOpen',
       'limelog.trainingGoal',
       'limelog.referralAsked',
+      // v1.18.1 (LimeLog#90/#91): the owner's email and the parked records and profiles.
+      'limelog.dataOwnerEmail',
+      'limelog.parked',
     ];
     for (const k of doomed) localStorage.setItem(k, '1');
     localStorage.setItem('limecore_lang', 'fi');

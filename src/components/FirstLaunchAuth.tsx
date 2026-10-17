@@ -21,6 +21,9 @@ import { withCaptcha } from '@/lib/captcha';
 import { inheritFromNexus } from '@/lib/suiteSso';
 import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
+import { useConfirm } from '@/components/confirmContext';
+import { useLogStore } from '@/store/logStore';
+import { listPhotos } from '@/lib/progressPhotos';
 import './FirstLaunchAuth.css';
 
 // AUTH-2 — confirmation-code bounds, ported from StudyDesk's AuthGate.
@@ -48,8 +51,9 @@ interface FirstLaunchAuthProps {
 
 export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
   const { t } = useTranslation();
-  const { signIn, signUp, signInWithGoogle, configured, loading: storeLoading } =
+  const { signIn, signUp, signInWithGoogle, continueAsGuest, syncEnabled, configured, loading: storeLoading } =
     useNexusStore();
+  const confirm = useConfirm();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -208,9 +212,24 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
     }
   }
 
+  // v1.18.1 (LimeLog#91) — after a session that ended without a sign-out the
+  // local data is still that account's, so a guest would see it and add to
+  // it. The store asks through this first; Continue clears it as a sign-out
+  // does, Cancel stays here. The sentences are the sign-out confirm's
+  // (NexusSyncCard), so the two say the same about what is lost.
   async function handleGuest() {
-    await setGuestMode(true);
-    onContinue();
+    const entered = await continueAsGuest(async (held) => {
+      const parts = [
+        held.email ? t('auth.guestHeldEmail', { email: held.email }) : t('auth.guestHeldAccount'),
+        t('auth.guestHeldRemove'),
+      ];
+      if (held.unsynced > 0) parts.push(t('sync.signOutUnsynced', { count: held.unsynced }));
+      if (!syncEnabled && useLogStore.getState().sessionLogs.length > 0) parts.push(t('sync.signOutSyncOff'));
+      const photos = listPhotos().length;
+      if (photos > 0) parts.push(t('sync.signOutPhotos', { count: photos }));
+      return confirm({ title: t('auth.guestHeldTitle'), message: parts.join(' '), confirmLabel: t('auth.guest') });
+    });
+    if (entered) onContinue();
   }
 
   const disabled = busy || storeLoading;

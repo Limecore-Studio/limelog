@@ -12,6 +12,8 @@ const holder = vi.hoisted(() => ({
   fail: false,
   client: null as Client | null,
 }));
+// v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('./supabase', () => ({
   get supabase() {
     return {
