@@ -63,6 +63,12 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
 
+    <!-- v1.18.1 (LimeLog#69) — lets the WebView see network changes, so
+         navigator.onLine and the 'online' event follow the real connection.
+         Without it Chromium's WebView doesn't watch connectivity and reports
+         online throughout. A normal permission: granted at install, no prompt. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <!-- v1.19 LL#63 — exact alarms for the workout reminders, which are one
          exact alarm per session day now (src/utils/notifications.ts). Without
          either permission Android 12+ refuses exact alarms and

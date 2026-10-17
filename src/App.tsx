@@ -13,7 +13,7 @@ import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { useLogStore } from '@/store/logStore';
 import { isGuestMode } from '@/lib/guestMode';
-import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud } from '@/lib/onboarding';
+import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud, canAnswerLocallyNow } from '@/lib/onboarding';
 import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
 import { createRecoveryGate } from '@/lib/recoveryGate';
 import {
@@ -113,13 +113,17 @@ export default function App() {
   // device. Keyed on userEmail rather than nexusInitialized because it must
   // re-run when the user actually changes, not only on first init. Gated
   // behind `onboardChecked` so a signed-in user never sees a frame of the
-  // wizard before the answer lands; signed out it resolves immediately,
-  // because there is no account to ask.
+  // wizard before the answer lands (offline with no local "done" it is shown
+  // at once, LimeLog#69); signed out it resolves immediately, because there
+  // is no account to ask.
   useEffect(() => {
     if (!nexusInitialized) return;
     if (!userEmail) { setOnboardChecked(true); return; }
     let cancelled = false;
-    setOnboardChecked(false);
+    // v1.18.1 (LimeLog#69) — offline with no local "done", the answer would
+    // end 'unknown' and fall back to the local flag anyway, after up to ~50 s
+    // of auth-js retries. Decide now; the ask below can still turn it off.
+    setOnboardChecked(canAnswerLocallyNow());
     // v1.18.1 (LimeLog#82) — a definite "no" now turns it off as well. This
     // state was read once at launch, so the next person signing in on the
     // same launch kept the previous person's "done". An answer that could not

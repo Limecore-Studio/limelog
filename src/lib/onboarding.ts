@@ -110,6 +110,26 @@ export async function markOnboardedCloud(): Promise<void> {
   }
 }
 
+/** v1.18.1 (LimeLog#69) — may the gate decide from this device alone, without
+ *  waiting for the account's answer? Only offline, and only when nothing here
+ *  says done.
+ *
+ *  Offline, the account cannot answer: the ask ends 'unknown', and the gate
+ *  falls back to the local flag anyway. With an expired token that ending
+ *  comes only after auth-js's refresh retries give up (~25-50 s), so a
+ *  never-onboarded user stared at the app until the wizard appeared. This
+ *  shows the same wizard at once. The ask still runs, and a 'yes' that does
+ *  get through still takes the wizard away.
+ *
+ *  A device that says done ('1', or the signed-out account's mark) is not
+ *  affected: the wizard is not up for it while the answer is pending, so
+ *  there is nothing to show early, and nothing to flash at an onboarded user
+ *  whose logs are merely empty. `navigator.onLine` is false only with no
+ *  network at all; when it says online, the gate waits as before. */
+export function canAnswerLocallyNow(): boolean {
+  return doneValue() === null && typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
 /** v1.18.1 (LimeLog#82) — 'unknown' is apart from 'no'. A failed or
  *  unreachable ask used to read as "not done", which the caller could not
  *  tell from the account saying so; acting on it showed the wizard to an
