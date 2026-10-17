@@ -15,7 +15,7 @@ import { useLogStore } from '@/store/logStore';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics';
 import { useUserStore, defaultProfile } from '@/store/userStore';
-import { parkAccountData, restoreParked } from '@/lib/parkedData';
+import { parkAccountData, restoreParked, PRS_KEY, PROFILE_KEY } from '@/lib/parkedData';
 
 // useProgramStore is intentionally NOT wiped — programs / exercises /
 // workout templates are tool configuration, not history, and a global
@@ -102,6 +102,25 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   step(releaseOnboardingOnSignOut());
   step(forgetReferralAskedLocally());
   step(forgetLastAppOpen());
+  return ok;
+}
+
+// v1.18.1 (LimeLog#94) — a sign-out while the owner record is still being
+// read (a Preferences read that does not answer): whose the records and
+// profile are is not known, so they cannot be set aside for anyone, and
+// left in place they would be shown to whoever uses the device next. They
+// are removed with the rest instead.
+export function wipeUnownedLocalData(): boolean {
+  let ok = wipeAccountLocalData(null);
+  try {
+    localStorage.removeItem(PRS_KEY);
+    localStorage.removeItem(PROFILE_KEY);
+    useLogStore.setState({ exercisePRs: [], lastCelebratedPRs: null });
+    useUserStore.setState({ profile: defaultProfile() });
+  } catch (e) {
+    ok = false;
+    console.warn('[nexus] records/profile wipe failed:', e);
+  }
   return ok;
 }
 

@@ -166,6 +166,27 @@ export async function loadOwnerRecord(timeoutMs = 1500): Promise<void> {
   });
 }
 
+/** v1.18.1 (LimeLog#94) — read the mirrored record again, when the launch's
+ *  read has not answered (the holding screen's Retry now, after a read that
+ *  hangs). On an answer the take-ups refused meanwhile run, as after a late
+ *  answer. A no-op once the record is known. */
+export async function rereadOwnerRecord(timeoutMs = 1500): Promise<void> {
+  if (!recordPending) return;
+  await loadOwnerRecord(timeoutMs);
+  if (!recordPending) hooks?.recordSettled?.();
+}
+
+/** v1.18.1 (LimeLog#94) — no account signed in and the record has not
+ *  answered (the holding screen's Continue): carry on as if none was
+ *  recorded, for this launch, as before LimeLog#92. Nothing is cleared; a
+ *  late answer changes nothing now, and the next launch reads it again. */
+export function proceedWithoutOwnerRecord(): void {
+  if (!recordPending) return;
+  touched = true;
+  recordPending = false;
+  hooks?.recordSettled?.();
+}
+
 /** Resolves once the mirrored record is known (at once unless the launch's
  *  read outlasted its wait), or after `timeoutMs` at most. */
 export async function ownerRecordKnown(timeoutMs = 3000): Promise<void> {
@@ -187,6 +208,12 @@ function applyMirrored(found: { owner: string | null; email: string | null } | n
   console.warn('[owner] no account record in local storage; using the mirrored one');
   memoryOwner = writeLocal(OWNER_KEY, found.owner) ? null : found.owner;
   if (found.email !== null) memoryEmail = writeLocal(OWNER_EMAIL_KEY, found.email) ? null : found.email;
+}
+
+/** v1.18.1 (LimeLog#94) — true while the mirrored record is still being read
+ *  (see `recordPending`): the screens wait for it too (dataReady.ts). */
+export function ownerRecordPending(): boolean {
+  return recordPending;
 }
 
 export function readOwner(): string | null {
@@ -231,6 +258,9 @@ function writeOwnerEmail(email: string | null): void {
 
 export function clearOwner(): void {
   touched = true;
+  // v1.18.1 (LimeLog#94) — a clear decides the record (none), so a read
+  // still out no longer holds anything up; when it answers it is ignored.
+  recordPending = false;
   memoryOwner = null;
   memoryEmail = null;
   mirror(OWNER_KEY, null);

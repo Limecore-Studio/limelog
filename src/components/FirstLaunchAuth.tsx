@@ -218,6 +218,8 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
   // does, Cancel stays here. The sentences are the sign-out confirm's
   // (NexusSyncCard), so the two say the same about what is lost.
   async function handleGuest() {
+    setError(null);
+    // v1.18.1 (LimeLog#94) — a clear that failed rejects with what to show.
     const entered = await continueAsGuest(async (held) => {
       const parts = [
         held.email ? t('auth.guestHeldEmail', { email: held.email }) : t('auth.guestHeldAccount'),
@@ -228,6 +230,9 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
       const photos = listPhotos().length;
       if (photos > 0) parts.push(t('sync.signOutPhotos', { count: photos }));
       return confirm({ title: t('auth.guestHeldTitle'), message: parts.join(' '), confirmLabel: t('auth.guest') });
+    }).catch((e: unknown) => {
+      setError(e instanceof Error ? e.message : String(e));
+      return false;
     });
     if (entered) onContinue();
   }

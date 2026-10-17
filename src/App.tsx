@@ -23,6 +23,8 @@ import {
   WORKOUT_ACTION_START,
 } from '@/utils/notifications';
 import { OptionalChunk } from '@/components/OptionalChunk';
+import { useDataReady, showsSignIn } from '@/lib/dataReady';
+import { DataHold } from '@/components/DataHold';
 
 // v1.17 (limecore#13): every page a launch does not open on is its own chunk,
 // loaded the first time it is visited. Today (the index route) and the
@@ -97,9 +99,16 @@ function NotificationActionBridge() {
 export default function App() {
   const { t } = useTranslation();
   const { activeProgram } = useProgramStore();
-  const userEmail = useNexusStore((s) => s.userEmail);
+  // v1.18.1 (LimeLog#94) — the gates below key on the account id, which is
+  // set only with a session. `userEmail` is also set by a sign-up still
+  // waiting for its code, and keying on it took that sign-up off the
+  // sign-in screen (and its code step) into the views.
+  const userId = useNexusStore((s) => s.userId);
   const sessionUnverified = useNexusStore((s) => s.sessionUnverified);
   const isNexusConfigured = useNexusStore((s) => s.configured);
+  // v1.18.1 (LimeLog#94) — whether the local data is the signed-in
+  // account's yet; until it is, the views below are not rendered.
+  const dataReady = useDataReady();
 
   // Auth-gate state: whether the first-launch screen should be shown.
   // `null` while the guest-mode flag and the nexusStore are both still
@@ -117,14 +126,15 @@ export default function App() {
   const [onboardChecked, setOnboardChecked] = useState(false);
 
   // v1.10 - ask the ACCOUNT whether onboarding is already done, not just this
-  // device. Keyed on userEmail rather than nexusInitialized because it must
+  // device. Keyed on the account (userEmail until v1.18.1, LimeLog#94: the
+  // id, set only with a session) rather than nexusInitialized because it must
   // re-run when the user actually changes, not only on first init. Gated
   // behind `onboardChecked` so a signed-in user never sees a frame of the
   // wizard before the answer lands; signed out it resolves immediately,
   // because there is no account to ask.
   useEffect(() => {
     if (!nexusInitialized) return;
-    if (!userEmail) { setOnboardChecked(true); return; }
+    if (!userId) { setOnboardChecked(true); return; }
     let cancelled = false;
     setOnboardChecked(false);
     // v1.18.1 (LimeLog#82) — a definite "no" now turns it off as well. This
@@ -138,7 +148,7 @@ export default function App() {
       setOnboardChecked(true);
     });
     return () => { cancelled = true; };
-  }, [userEmail, nexusInitialized]);
+  }, [userId, nexusInitialized]);
 
   // One-time channel creation + nexusStore init. init() sets userEmail to its
   // restored value before it resolves; we set nexusInitialized after that so
@@ -210,6 +220,10 @@ export default function App() {
     return useNexusStore.subscribe(() => recoveryGate.evaluate());
   }, [nexusInitialized]);
 
+  // v1.18.1 (LimeLog#94) — not held for the take-over (DataHold below): the
+  // reminders come from the program store, which is device configuration
+  // that no clear removes (accountWipe.ts), not the previous account's data.
+  //
   // Re-schedule whenever the active program changes. Pass the exercise
   // library so the notification body can preview the first few exercises
   // by display name (the SessionExercise FK only carries exerciseId).
@@ -248,8 +262,13 @@ export default function App() {
   // behaviour while the answer is unknown is to open the app and let the
   // auto-refresh resolve it — onAuthStateChange clears the flag either way.
   const isResolving = guestMode === null || !nexusInitialized;
+  //
+  // v1.18.1 (LimeLog#94) — and with no account signed in while the local data
+  // is still an account's ('held': a sign-out whose clear failed), guest mode
+  // or not: signing in as it keeps it, "Continue as guest" asks first.
   const shouldShowAuth =
-    !isResolving && !userEmail && !sessionUnverified && !guestMode && isNexusConfigured;
+    !isResolving &&
+    showsSignIn({ userId, sessionUnverified, guestMode: Boolean(guestMode), configured: isNexusConfigured, readiness: dataReady });
 
   if (isResolving) {
     return (
@@ -277,6 +296,13 @@ export default function App() {
       />
     );
   }
+
+  // v1.18.1 (LimeLog#94) — it is not yet known whose the local data is (the
+  // owner record is still being read), or it is still the previous account's
+  // (its clear failed): a holding screen instead of the views, which would
+  // show that account's logs, body metrics, photos and records. Before the
+  // onboarding gate, which counts those logs.
+  if (dataReady === 'pending' || dataReady === 'waiting') return <DataHold state={dataReady} />;
 
   // Onboarding gate — only after auth is satisfied, for a genuinely fresh
   // user (no sessions logged). Skipping or finishing sets the persisted flag.

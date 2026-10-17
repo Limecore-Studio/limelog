@@ -26,6 +26,7 @@ export function NexusSyncCard() {
     configured,
     syncEnabled,
     userEmail,
+    userId,
     loading,
     lastError,
     pendingCount,
@@ -40,6 +41,9 @@ export function NexusSyncCard() {
     retryPending,
   } = useNexusStore();
 
+  // v1.18.1 (LimeLog#94) — signed in means a session (the account id), as
+  // in App.tsx's gate: a sign-up waiting for its code sets the email alone.
+  const signedInAs = userId ? userEmail : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
@@ -75,7 +79,7 @@ export function NexusSyncCard() {
   // simply doesn't render and the user sees the Google/email flow alone.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    if (userEmail) return; // already signed in; no probe needed
+    if (signedInAs) return; // already signed in; no probe needed
     let cancelled = false;
     void (async () => {
       try {
@@ -86,7 +90,7 @@ export function NexusSyncCard() {
       }
     })();
     return () => { cancelled = true; };
-  }, [userEmail]);
+  }, [signedInAs]);
 
   async function handleNexus() {
     setLocalError(null);
@@ -170,16 +174,16 @@ export function NexusSyncCard() {
       <div className="nexus-card__header">
         <Cloud size={18} />
         <span className="settings-field__label" style={{ margin: 0 }}>{t('sync.title')}</span>
-        {userEmail && <Badge label={t('sync.connected')} variant="success" />}
+        {signedInAs && <Badge label={t('sync.connected')} variant="success" />}
       </div>
 
-      {userEmail ? (
+      {signedInAs ? (
         <>
           <p className="nexus-card__signed-in">
-            {t('sync.signedInAs')} <strong>{userEmail}</strong>
+            {t('sync.signedInAs')} <strong>{signedInAs}</strong>
           </p>
           {/* v1.17 (limecore#10): email/password accounts only. */}
-          <ChangeEmail userEmail={userEmail} />
+          <ChangeEmail userEmail={signedInAs} />
 
           <div className="nexus-card__row">
             <span className="settings-field__sublabel">{t('sync.autoPush')}</span>

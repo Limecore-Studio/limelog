@@ -23,13 +23,14 @@ import i18n from '@/i18n';
 // v1.18.1 (LimeLog#88) — the account-scoped local data is cleared in one
 // place (accountWipe.ts), by sign-out and by a different account's session
 // arriving (accountOwner.ts).
-import { wipeAccountLocalData, restoreAccountData } from '@/lib/accountWipe';
+import { wipeAccountLocalData, wipeUnownedLocalData, restoreAccountData } from '@/lib/accountWipe';
 import {
   adoptLocalData,
   clearOwner,
   configureAccountOwner,
   loadOwnerRecord,
   ownerRecordKnown,
+  ownerRecordPending,
   readOwner,
   readOwnerEmail,
 } from '@/lib/accountOwner';
@@ -104,7 +105,8 @@ interface NexusStore {
   /** v1.18.1 (LimeLog#91) — enter guest mode. When the local data still
    *  belongs to an account (its session ended without a sign-out), `ask` is
    *  shown first; on yes the data is cleared as a sign-out clears it, on no
-   *  nothing changes. Resolves with whether guest mode was entered. */
+   *  nothing changes. Resolves with whether guest mode was entered; rejects,
+   *  with a message to show, when the clear failed (LimeLog#94). */
   continueAsGuest: (ask: (held: HeldAccountData) => Promise<boolean>) => Promise<boolean>;
   setSyncEnabled: (v: boolean) => void;
   retryPending: () => Promise<{ sent: number; remaining: number }>;
@@ -524,10 +526,21 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       // v1.18.1 (LimeLog#90) — the personal records and the profile are set
       // aside for the account they belong to: the recorded owner, or the
       // session's account when none was recorded.
-      wipeAccountLocalData(readOwner() ?? get().userId);
+      // v1.18.1 (LimeLog#94) — while the owner record is still being read
+      // (the holding screen's sign-out after a read that does not answer)
+      // the owner is not known: nothing is set aside for anyone, and the
+      // records and profile go with the rest (wipeUnownedLocalData).
+      const wiped = ownerRecordPending()
+        ? wipeUnownedLocalData()
+        : wipeAccountLocalData(readOwner() ?? get().userId);
       // v1.18.1 (LimeLog#88) — the data has no owner now. A guest carrying on
       // adds data the next account to sign in takes up, as before.
-      clearOwner();
+      // v1.18.1 (LimeLog#94) — only when the clear fully happened. What a
+      // failed one left stays its owner's, so the next account to sign in
+      // clears it first and nothing of it is sent meanwhile, and a guest is
+      // asked about it first (dataReady 'held' → the "Continue as guest"
+      // question, LimeLog#91). The session ends either way.
+      if (wiped) clearOwner();
       // v1.18.1 (LimeLog#66): the data above is already gone, so the session
       // has to go too, server or not. Offline, auth-js first resolves the
       // session (an expired token means its refresh retry chain, up to ~51 s)
@@ -601,7 +614,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       // v1.18.1 (LimeLog#88) — once more, now the session is gone: nothing
       // takes the data up while a sign-out runs (see the hooks below), but a
       // record written before `signingOut` was set must not outlive it.
-      clearOwner();
+      if (wiped) clearOwner();
       await setGuestMode(true);
       window.dispatchEvent(new CustomEvent('limelog:guest-mode-changed'));
       set({
@@ -627,7 +640,15 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     if (owner !== null && !get().userId) {
       const go = await ask({ email: readOwnerEmail(), unsynced: outboxStatus().pending });
       if (!go) return false;
-      wipeAccountLocalData(owner);
+      // v1.18.1 (LimeLog#94) — a clear that failed keeps the record (see
+      // signOut), so the question comes again rather than a guest carrying
+      // on with what was left.
+      if (!wipeAccountLocalData(owner)) {
+        const left = outboxStatus();
+        set({ pendingCount: left.pending, outboxStatus: left });
+        // Said on the sign-in screen (FirstLaunchAuth), not just logged.
+        throw new Error(i18n.t('auth.guestClearFailed'));
+      }
       clearOwner();
       const status = outboxStatus();
       set({ pendingCount: status.pending, outboxStatus: status });
@@ -698,7 +719,13 @@ configureAccountOwner({
   // auth listener) happen now, then the queue that waited for them.
   recordSettled: () => {
     const s = useNexusStore.getState();
-    if (!s.userId || !takeUp(s.userId, s.userEmail) || !s.syncEnabled) return;
+    // v1.18.1 (LimeLog#94) — with no account signed in the store is still
+    // told: the screens wait for the record too (dataReady.ts).
+    if (!s.userId) {
+      useNexusStore.setState({ outboxStatus: outboxStatus() });
+      return;
+    }
+    if (!takeUp(s.userId, s.userEmail) || !s.syncEnabled) return;
     void outboxDrain().then((result) => {
       useNexusStore.setState({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
     });

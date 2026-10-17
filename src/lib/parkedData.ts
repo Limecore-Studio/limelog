@@ -39,8 +39,8 @@ import type { ExercisePR } from '@/types/logging';
 import type { UserProfile } from '@/types/user';
 
 export const PARKED_KEY = 'limelog.parked';
-const PRS_KEY = 'wt_exercise_prs';
-const PROFILE_KEY = 'wt_profile';
+export const PRS_KEY = 'wt_exercise_prs';
+export const PROFILE_KEY = 'wt_profile';
 export const MAX_SLOTS = 5;
 
 export interface ParkedSlot {
