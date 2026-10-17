@@ -137,12 +137,20 @@ async function fetchSetsForSessions(userId: string, sessionIds: string[]): Promi
  * in. Throws on a genuine query error so the caller can log it.
  *
  * @param exercises local exercise list, used to resolve set names → ids.
+ * @param forUserId the account the caller started the pull for. When given,
+ *   a different signed-in account throws instead of being pulled.
  */
-export async function pullWorkoutsFromCloud(exercises: Exercise[]): Promise<SessionLog[]> {
+export async function pullWorkoutsFromCloud(exercises: Exercise[], forUserId?: string): Promise<SessionLog[]> {
   if (!isNexusConfigured) return [];
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) throw authErr;
   if (!user) return [];
+  // v1.18.1 (LimeLog#85) — the pull is deferred and can run late; by then
+  // someone else may be signed in. Their workouts are not this pull's to
+  // fetch: the gate drops the result anyway, and this stops the request.
+  if (forUserId !== undefined && user.id !== forUserId) {
+    throw new Error('the signed-in account changed before the pull started');
+  }
 
   // v1.16 (limecore#28): both pulls used to be one bare select, which PostgREST
   // truncates at its row cap without an error. A regular lifter crosses 1000

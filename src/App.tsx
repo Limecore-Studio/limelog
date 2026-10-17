@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
@@ -15,6 +15,7 @@ import { useLogStore } from '@/store/logStore';
 import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud } from '@/lib/onboarding';
 import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
+import { createRecoveryGate } from '@/lib/recoveryGate';
 import {
   setupNotificationChannel,
   scheduleWorkoutReminders,
@@ -39,6 +40,15 @@ const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m)
 // moment it has to appear.
 const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
+
+// v1.18.1 (LimeLog#85) — the recovery pull, once per sign-in rather than once
+// per launch (see lib/recoveryGate.ts). Module scope, not a ref, so the dev
+// StrictMode remount does not pull twice.
+const recoveryGate = createRecoveryGate({
+  read: () => useNexusStore.getState(),
+  pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
+  apply: (logs) => useLogStore.getState().recoverSessions(logs),
+});
 
 /**
  * Subscribes to action-button taps on workout reminders and routes the user
@@ -167,7 +177,7 @@ export default function App() {
     return () => window.removeEventListener('online', onOnline);
   }, []);
 
-  // v1.7 (BUG-6) — recovery hydrate. Once, after Nexus init resolves with a
+  // v1.7 (BUG-6) — recovery hydrate. After Nexus init resolves with a
   // signed-in user, pull cloud workouts and reinstate any whose id is missing
   // locally (skipping tombstoned discards). This is the ONLY read of workout
   // data LimeLog performs, and it only refills genuine gaps — a reinstall / new
@@ -176,28 +186,22 @@ export default function App() {
   //
   // v1.19 — LL#64: waits for `sessionUnverified` to clear, so an offline
   // start that opened on the stored session (expired token) does not spend
-  // this once-per-launch pull before the session is confirmed. It is not a
-  // network check: offline with a still-valid token, auth-js confirms the
-  // session at once, and the pull runs, fails and is not retried until the
-  // next launch — the same as before v1.19.
-  const recoveryRan = useRef(false);
+  // the pull before the session is confirmed. It is not a network check:
+  // offline with a still-valid token, auth-js confirms the session at once,
+  // and the pull runs, fails and is not retried until the next sign-in.
+  //
+  // v1.18.1 (LimeLog#85) — once per sign-in, not once per launch: a sign-out
+  // wipes the local history, and the next sign-in pulls it back. Driven by a
+  // store subscription rather than effect deps, which sees every change (a
+  // sign-out and a sign-in batched into one render would look like nothing
+  // happened). The onboarding gate below needs nothing new: it reads
+  // `sessionCount` live, so a pull that lands while the wizard is up for
+  // empty logs takes it away, as on a first launch.
   useEffect(() => {
-    if (recoveryRan.current) return;
-    if (!nexusInitialized || !isNexusConfigured || !userEmail || sessionUnverified) return;
-    recoveryRan.current = true;
-    void (async () => {
-      try {
-        const exercises = useProgramStore.getState().exercises;
-        const cloudSessions = await pullWorkoutsFromCloud(exercises);
-        const restored = useLogStore.getState().recoverSessions(cloudSessions);
-        if (restored > 0) {
-          console.log(`[recovery] reinstated ${restored} workout(s) from cloud`);
-        }
-      } catch (e) {
-        console.warn('[recovery] workout hydrate failed:', (e as Error).message);
-      }
-    })();
-  }, [nexusInitialized, isNexusConfigured, userEmail, sessionUnverified]);
+    if (!nexusInitialized) return;
+    recoveryGate.evaluate();
+    return useNexusStore.subscribe(() => recoveryGate.evaluate());
+  }, [nexusInitialized]);
 
   // Re-schedule whenever the active program changes. Pass the exercise
   // library so the notification body can preview the first few exercises

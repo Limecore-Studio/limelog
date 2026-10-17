@@ -55,6 +55,11 @@ interface NexusStore {
    *  from the name and fall back to the address. Tracking only the email meant
    *  LimeLog could never agree with them. */
   userName: string | null;
+  /** v1.18.1 (LimeLog#85) — the signed-in account's id, set with `userEmail`.
+   *  The recovery pull is keyed by it (lib/recoveryGate.ts): the email can
+   *  change under the same account, and a token refresh or a resume reports
+   *  the same id again, which must not count as a new sign-in. */
+  userId: string | null;
   /** A session exists in storage but this launch could not confirm it — the
    *  refresh needed the network and the network was not there.
    *
@@ -68,6 +73,10 @@ interface NexusStore {
   /** v1.18.1 (LimeLog#66): a sign-out that could not reach the server is
    *  still settling. Signing in waits until it has (NexusSyncCard). */
   signOutPending: boolean;
+  /** v1.18.1 (LimeLog#85) — `signOut()` is running, from before it wipes the
+   *  local logs until it returns. The recovery pull does not start meanwhile,
+   *  and a pull already running is not let write its results. */
+  signingOut: boolean;
   loading: boolean;
   lastError: string | null;
   pendingCount: number;
@@ -111,8 +120,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
   syncEnabled: readSyncEnabled(),
   userEmail: null,
   userName: null,
+  userId: null,
   sessionUnverified: false,
   signOutPending: false,
+  signingOut: false,
   loading: false,
   lastError: null,
   pendingCount: outboxStatus().pending,
@@ -152,6 +163,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         set({
           userEmail: stored.user.email ?? null,
           userName: displayNameOf(stored.user),
+          userId: stored.user.id ?? null,
           sessionUnverified: true,
           loading: false,
         });
@@ -189,6 +201,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         set({
           userEmail: session?.user?.email ?? null,
           userName: displayNameOf(session?.user),
+          userId: session?.user?.id ?? null,
           sessionUnverified: false,
         });
         scheduleOriginStamp(session?.user ?? null);
@@ -353,6 +366,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
             set({
               userEmail: user?.email ?? null,
               userName: displayNameOf(user),
+              userId: user?.id ?? null,
               sessionUnverified: unverified,
             });
           }
@@ -409,7 +423,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       set({ loading: false, lastError: error.message });
       throw error;
     }
-    set({ userEmail: data.user?.email ?? null, userName: displayNameOf(data.user), loading: false });
+    set({ userEmail: data.user?.email ?? null, userName: displayNameOf(data.user), userId: data.user?.id ?? null, loading: false });
 
     if (get().syncEnabled) {
       const result = await outboxDrain();
@@ -425,7 +439,15 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       set({ loading: false, lastError: error.message });
       throw error;
     }
-    set({ userEmail: data.user?.email ?? null, userName: displayNameOf(data.user), loading: false });
+    // v1.18.1 (LimeLog#85) — the id only with a session: an account still
+    // awaiting confirmation cannot be pulled for yet, and its SIGNED_IN, when
+    // confirmed, sets the id and starts the recovery pull then.
+    set({
+      userEmail: data.user?.email ?? null,
+      userName: displayNameOf(data.user),
+      userId: data.session ? data.user?.id ?? null : null,
+      loading: false,
+    });
     // AUTH-2 — Supabase returns a session only when the project auto-confirms.
     // With confirmation required, `session` is null and the caller has to show
     // the code step rather than waiting on an auth-state change that never
@@ -447,130 +469,146 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
   },
 
   signOut: async () => {
-    set({ loading: true, lastError: null });
-    // v1.2 — clear the outbox BEFORE the auth round-trip. Anything not yet
-    // drained is forfeit vs. potentially leaking writes to the next signed-in
-    // user on a shared device. Matches StudyDesk's sign-out hygiene contract.
-    outboxClear();
-    // v1.12 Item 5 — the supporter entitlement is cached locally so a perk
-    // survives being offline. That cache is per-account, so it has to go with
-    // everything else here: leaving it would hand the next signed-in user on a
-    // shared device someone else's paid perk.
-    clearEntitlement();
-    // v1.2.1 — AUDIT-LL-FSG-2: wipe the personal-data stores so the next
-    // signed-in user (on a shared device) doesn't inherit User A's
-    // workout history, bodyweight log, or progress photos in the UI.
-    // Cloud-side data stays scoped to A's user_id; this only addresses
-    // the on-device residue. Wipe order doesn't matter — each call
-    // both clears the in-memory zustand state and removes the underlying
-    // localStorage key so a refresh after sign-out doesn't re-hydrate.
+    // v1.18.1 (LimeLog#85) — first, before the wipe below: a recovery pull
+    // still running must not write the signed-out account's workouts back
+    // into the emptied store, and none may start until this returns.
+    // `finally`, so a sign-out that throws part-way cannot block the pull for
+    // the rest of the launch.
+    set({ signingOut: true });
     try {
-      localStorage.removeItem('wt_session_logs');
-      localStorage.removeItem('wt_jump_logs');
-      localStorage.removeItem('wt_stall_flags');
-      useLogStore.setState({ sessionLogs: [], jumpLogs: [], stallFlags: [] });
-    } catch (e) {
-      console.warn('[nexus] log-store wipe failed:', e);
-    }
-    try {
-      localStorage.removeItem('limelog-body-metrics');
-      localStorage.removeItem('limelog-body-metrics-prefs');
-      // bodyMetricsStore reads DEFAULT_PREFS from types/bodyMetrics on the
-      // next mount; the setState below restores in-memory state to that
-      // baseline so an already-mounted BodyMetricsPanel re-renders empty
-      // immediately rather than holding A's last-seen values.
-      useBodyMetricsStore.setState({ metrics: [], prefs: DEFAULT_BODY_METRICS_PREFS });
-    } catch (e) {
-      console.warn('[nexus] body-metrics wipe failed:', e);
-    }
-    try {
-      localStorage.removeItem('limelog-progress-photos');
-    } catch (e) {
-      console.warn('[nexus] progress-photos wipe failed:', e);
-    }
-    // v1.18.1 (LimeLog#82) — the per-person flags go too, as an erase removes
-    // them (dataRights.wipeAllLocalData). Each helper says why it is safe:
-    // the training goal is display-only, the referral mirror is backed by the
-    // account's metadata, and the app-open guard costs at most a duplicate
-    // the upsert collapses. The onboarding flag is re-marked, not removed: a
-    // guest carrying on is not sent through the wizard again, and the next
-    // account's own answer resets it at sign-in. Device settings stay: the
-    // language (limecore_lang), the F-Droid update check, the sync toggle,
-    // programs and exercises. guestMode is set below, not cleared — see there.
-    releaseOnboardingOnSignOut();
-    forgetReferralAskedLocally();
-    forgetLastAppOpen();
-    // v1.18.1 (LimeLog#66): the data above is already gone, so the session
-    // has to go too, server or not. Offline, auth-js first resolves the
-    // session (an expired token means its refresh retry chain, up to ~51 s)
-    // and then returns a network error WITHOUT removing it: the user stayed
-    // signed in with an empty app. Give the server a few seconds; past that,
-    // or on any error, remove the stored session here. auth-js then emits no
-    // SIGNED_OUT, so the entitlement is dropped here as that event would.
-    signOutHold = true;
-    // The session being signed out, so the clean-up below can tell it from a
-    // sign-in that lands meanwhile.
-    const signedOutToken = await storedRefreshToken();
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const call = supabase.auth
-      .signOut({ scope: 'local' })
-      .then(({ error }) => error ?? null, (e: unknown) => (e instanceof Error ? e : new Error(String(e))));
-    const outcome = await Promise.race([
-      call,
-      new Promise<'timeout'>((res) => {
-        timer = setTimeout(() => res('timeout'), SIGN_OUT_WAIT_MS);
-      }),
-    ]);
-    clearTimeout(timer);
-    if (outcome) {
-      console.warn('[nexus] sign-out did not reach the server; removing the local session:', outcome === 'timeout' ? 'timed out' : outcome.message);
-      await clearStoredSession();
-      void useThemeStore.getState().syncEntitlement(null);
-      // A refresh ahead of the call may save the session again before the
-      // call runs; when it settles, remove it once more if it failed, but
-      // only if it is still the signed-out one. Signing in is disabled until
-      // then (signOutPending), so nothing newer should be there; this makes
-      // sure of it.
-      set({ signOutPending: true });
-      void call.then(async (late) => {
-        if (late && signedOutToken !== undefined) await clearStoredSession(signedOutToken);
+      set({ loading: true, lastError: null });
+      // v1.2 — clear the outbox BEFORE the auth round-trip. Anything not yet
+      // drained is forfeit vs. potentially leaking writes to the next signed-in
+      // user on a shared device. Matches StudyDesk's sign-out hygiene contract.
+      outboxClear();
+      // v1.12 Item 5 — the supporter entitlement is cached locally so a perk
+      // survives being offline. That cache is per-account, so it has to go with
+      // everything else here: leaving it would hand the next signed-in user on a
+      // shared device someone else's paid perk.
+      clearEntitlement();
+      // v1.2.1 — AUDIT-LL-FSG-2: wipe the personal-data stores so the next
+      // signed-in user (on a shared device) doesn't inherit User A's
+      // workout history, bodyweight log, or progress photos in the UI.
+      // Cloud-side data stays scoped to A's user_id; this only addresses
+      // the on-device residue. Wipe order doesn't matter — each call
+      // both clears the in-memory zustand state and removes the underlying
+      // localStorage key so a refresh after sign-out doesn't re-hydrate.
+      try {
+        localStorage.removeItem('wt_session_logs');
+        localStorage.removeItem('wt_jump_logs');
+        localStorage.removeItem('wt_stall_flags');
+        useLogStore.setState({ sessionLogs: [], jumpLogs: [], stallFlags: [] });
+      } catch (e) {
+        console.warn('[nexus] log-store wipe failed:', e);
+      }
+      try {
+        localStorage.removeItem('limelog-body-metrics');
+        localStorage.removeItem('limelog-body-metrics-prefs');
+        // bodyMetricsStore reads DEFAULT_PREFS from types/bodyMetrics on the
+        // next mount; the setState below restores in-memory state to that
+        // baseline so an already-mounted BodyMetricsPanel re-renders empty
+        // immediately rather than holding A's last-seen values.
+        useBodyMetricsStore.setState({ metrics: [], prefs: DEFAULT_BODY_METRICS_PREFS });
+      } catch (e) {
+        console.warn('[nexus] body-metrics wipe failed:', e);
+      }
+      try {
+        localStorage.removeItem('limelog-progress-photos');
+      } catch (e) {
+        console.warn('[nexus] progress-photos wipe failed:', e);
+      }
+      // v1.18.1 (LimeLog#82) — the per-person flags go too, as an erase removes
+      // them (dataRights.wipeAllLocalData). Each helper says why it is safe:
+      // the training goal is display-only, the referral mirror is backed by the
+      // account's metadata, and the app-open guard costs at most a duplicate
+      // the upsert collapses. The onboarding flag is re-marked, not removed: a
+      // guest carrying on is not sent through the wizard again, and the next
+      // account's own answer resets it at sign-in. Device settings stay: the
+      // language (limecore_lang), the F-Droid update check, the sync toggle,
+      // programs and exercises. guestMode is set below, not cleared — see there.
+      releaseOnboardingOnSignOut();
+      forgetReferralAskedLocally();
+      forgetLastAppOpen();
+      // v1.18.1 (LimeLog#66): the data above is already gone, so the session
+      // has to go too, server or not. Offline, auth-js first resolves the
+      // session (an expired token means its refresh retry chain, up to ~51 s)
+      // and then returns a network error WITHOUT removing it: the user stayed
+      // signed in with an empty app. Give the server a few seconds; past that,
+      // or on any error, remove the stored session here. auth-js then emits no
+      // SIGNED_OUT, so the entitlement is dropped here as that event would.
+      signOutHold = true;
+      // The session being signed out, so the clean-up below can tell it from a
+      // sign-in that lands meanwhile.
+      const signedOutToken = await storedRefreshToken();
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const call = supabase.auth
+        .signOut({ scope: 'local' })
+        .then(({ error }) => error ?? null, (e: unknown) => (e instanceof Error ? e : new Error(String(e))));
+      const outcome = await Promise.race([
+        call,
+        new Promise<'timeout'>((res) => {
+          timer = setTimeout(() => res('timeout'), SIGN_OUT_WAIT_MS);
+        }),
+      ]);
+      clearTimeout(timer);
+      if (outcome) {
+        console.warn('[nexus] sign-out did not reach the server; removing the local session:', outcome === 'timeout' ? 'timed out' : outcome.message);
+        await clearStoredSession();
+        void useThemeStore.getState().syncEntitlement(null);
+        // A refresh ahead of the call may save the session again before the
+        // call runs; when it settles, remove it once more if it failed, but
+        // only if it is still the signed-out one. Signing in is disabled until
+        // then (signOutPending), so nothing newer should be there; this makes
+        // sure of it.
+        set({ signOutPending: true });
+        void call.then(async (late) => {
+          if (late && signedOutToken !== undefined) await clearStoredSession(signedOutToken);
+          signOutHold = false;
+          set({ signOutPending: false });
+        });
+      } else {
         signOutHold = false;
-        set({ signOutPending: false });
+      }
+      // v1.1 — set guestMode TRUE on sign-out (was previously cleared to false).
+      //
+      // Why: nexusStore.init silently re-inherits from NCC on cold start if
+      // the local session is missing AND guestMode is false (see the
+      // refresh-token-rotation fix earlier in this file). Setting guestMode
+      // to false here would mean the user's next app launch silently undoes
+      // their sign-out by inheriting NCC's still-active session — bug report
+      // 2026-05-28 "sign out buttons don't seem to do anything."
+      //
+      // Setting it to TRUE achieves two goals:
+      //   1. The user lands in guest mode immediately. The app stays usable
+      //      (no FirstLaunchAuth bounce); NexusSyncCard flips from the
+      //      signed-in view to the sign-in form, which is the clear visible
+      //      confirmation that sign-out completed.
+      //   2. The next cold start respects guestMode and skips auto-inherit.
+      //      The sign-out actually sticks.
+      //
+      // To re-sign-in later, the user opens Profile → Settings → Nexus sync
+      // and uses Continue with Nexus / Google / email. Those paths each
+      // clear guestMode via their own success handlers.
+      // v1.18.1 (LimeLog#85): the account is cleared before the guest-mode
+      // write, so a failure there cannot leave the old user on screen (and
+      // the recovery gate re-pulling for them when `signingOut` drops).
+      set({
+        userEmail: null,
+        userName: null,
+        userId: null,
+        // A fallback sign-out emits no SIGNED_OUT to clear this (v1.18.1).
+        sessionUnverified: false,
       });
-    } else {
-      signOutHold = false;
+      await setGuestMode(true);
+      window.dispatchEvent(new CustomEvent('limelog:guest-mode-changed'));
+      set({
+        loading: false,
+        pendingCount: 0,
+        outboxStatus: outboxStatus(),
+      });
+    } finally {
+      set({ signingOut: false });
     }
-    // v1.1 — set guestMode TRUE on sign-out (was previously cleared to false).
-    //
-    // Why: nexusStore.init silently re-inherits from NCC on cold start if
-    // the local session is missing AND guestMode is false (see the
-    // refresh-token-rotation fix earlier in this file). Setting guestMode
-    // to false here would mean the user's next app launch silently undoes
-    // their sign-out by inheriting NCC's still-active session — bug report
-    // 2026-05-28 "sign out buttons don't seem to do anything."
-    //
-    // Setting it to TRUE achieves two goals:
-    //   1. The user lands in guest mode immediately. The app stays usable
-    //      (no FirstLaunchAuth bounce); NexusSyncCard flips from the
-    //      signed-in view to the sign-in form, which is the clear visible
-    //      confirmation that sign-out completed.
-    //   2. The next cold start respects guestMode and skips auto-inherit.
-    //      The sign-out actually sticks.
-    //
-    // To re-sign-in later, the user opens Profile → Settings → Nexus sync
-    // and uses Continue with Nexus / Google / email. Those paths each
-    // clear guestMode via their own success handlers.
-    await setGuestMode(true);
-    window.dispatchEvent(new CustomEvent('limelog:guest-mode-changed'));
-    set({
-      userEmail: null,
-      userName: null,
-      // A fallback sign-out emits no SIGNED_OUT to clear this (v1.18.1).
-      sessionUnverified: false,
-      loading: false,
-      pendingCount: 0,
-      outboxStatus: outboxStatus(),
-    });
   },
 
   setSyncEnabled: (v) => {
