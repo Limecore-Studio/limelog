@@ -78,11 +78,15 @@ function markAskedLocally(): void {
  *  still not asked twice, because `shouldAskReferral` checks their account's
  *  metadata first; the only cost is a second prompt for someone whose
  *  metadata write had failed, which the comment above already accepts. */
-export function forgetReferralAskedLocally(): void {
+// v1.18.1 (LimeLog#88) — false when storage refused, so an account switch
+// can tell a clear that did not happen (accountWipe.ts).
+export function forgetReferralAskedLocally(): boolean {
   try {
     localStorage.removeItem(ASKED_KEY);
+    return true;
   } catch {
     /* no storage: nothing was kept */
+    return false;
   }
 }
 

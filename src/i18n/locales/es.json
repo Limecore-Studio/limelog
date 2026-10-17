@@ -532,6 +532,7 @@
     "stuck_many": "{{count}} elementos atascados tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
     "stuck_other": "{{count}} elementos atascados tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
     "lastError": "Último error: {{error}}",
+    "waitingForClear": "La sincronización está en espera: no se pudieron eliminar de este dispositivo los datos de la cuenta anterior. Toca Reintentar ahora.",
     "retryNow": "Reintentar ahora",
     "orUseEmail": "o usa el correo",
     "queueEmpty": "Cola vacía",

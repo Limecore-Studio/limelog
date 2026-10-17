@@ -532,6 +532,7 @@
     "stuck_many": "{{count}} itens travados após várias tentativas — verifique a conexão ou entre novamente.",
     "stuck_other": "{{count}} itens travados após várias tentativas — verifique a conexão ou entre novamente.",
     "lastError": "Último erro: {{error}}",
+    "waitingForClear": "A sincronização está em espera: não foi possível remover deste dispositivo os dados da conta anterior. Toque em Tentar novamente.",
     "retryNow": "Tentar novamente",
     "orUseEmail": "ou usar e-mail",
     "queueEmpty": "Fila vazia",

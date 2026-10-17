@@ -16,6 +16,7 @@ import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud } from '@/lib/onboarding';
 import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
 import { createRecoveryGate } from '@/lib/recoveryGate';
+import { readOwner } from '@/lib/accountOwner';
 import {
   setupNotificationChannel,
   scheduleWorkoutReminders,
@@ -44,10 +45,16 @@ const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m)
 // v1.18.1 (LimeLog#85) — the recovery pull, once per sign-in rather than once
 // per launch (see lib/recoveryGate.ts). Module scope, not a ref, so the dev
 // StrictMode remount does not pull twice.
+// v1.18.1 (LimeLog#88) — and only into local data that is that account's. The
+// auth paths take the data up before they set the account, so this holds
+// unless the previous account's data could not be cleared (accountOwner.ts):
+// then the pull waits, unspent, until a retry clears it.
 const recoveryGate = createRecoveryGate({
   read: () => useNexusStore.getState(),
   pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
-  apply: (logs) => useLogStore.getState().recoverSessions(logs),
+  apply: (logs) =>
+    readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
+  ready: (userId) => readOwner() === userId,
 });
 
 /**

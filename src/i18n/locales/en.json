@@ -519,6 +519,7 @@
     "stuck_one": "{{count}} item stuck after retries — check connection or sign back in.",
     "stuck_other": "{{count}} items stuck after retries — check connection or sign back in.",
     "lastError": "Last error: {{error}}",
+    "waitingForClear": "Sync is waiting: the previous account's data could not be removed from this device. Tap Retry now to try again.",
     "retryNow": "Retry now",
     "orUseEmail": "or use email",
     "queueEmpty": "Queue empty",

@@ -12,28 +12,19 @@ import { scheduleOriginStamp } from '@/lib/originMarker';
 import {
   drain as outboxDrain,
   getStatus as outboxStatus,
-  clear as outboxClear,
   installDrainTriggers as outboxInstallTriggers,
+  noteError as outboxNoteError,
   type OutboxStatus,
 } from '@/lib/outbox';
-// v1.2.1 — AUDIT-LL-FSG-2: stores whose state we wipe on sign-out so
-// User A's workout history / body data / progress photos don't surface
-// under User B on a shared device. The cloud-side replay path is already
-// closed (outboxClear above), so this is the LOCAL view-only leak fix.
-// useProgramStore is intentionally NOT wiped — programs / exercises /
-// workout templates are tool configuration, not history, and a global
-// wipe would clobber the user's custom builtin overrides + force a
-// re-seed of BUILTIN_EXERCISES that would lose their tweaks. The
-// per-user scope of programs is tracked as a v1.3 design item.
-import { watchAppOpens, recordAppOpen, forgetLastAppOpen } from '@/lib/appOpens';
-import { releaseOnboardingOnSignOut } from '@/lib/onboarding';
-import { forgetReferralAskedLocally } from '@/lib/referralSource';
-import { clearEntitlement } from '@/lib/entitlement';
+import { watchAppOpens, recordAppOpen } from '@/lib/appOpens';
 import { useThemeStore } from '@/store/themeStore';
 import pkgJson from '../../package.json';
-import { useLogStore } from '@/store/logStore';
-import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
-import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics';
+import i18n from '@/i18n';
+// v1.18.1 (LimeLog#88) — the account-scoped local data is cleared in one
+// place (accountWipe.ts), by sign-out and by a different account's session
+// arriving (accountOwner.ts).
+import { wipeAccountLocalData } from '@/lib/accountWipe';
+import { adoptLocalData, clearOwner, configureAccountOwner } from '@/lib/accountOwner';
 
 const SYNC_ENABLED_KEY = 'wt_nexus_sync_enabled';
 
@@ -160,6 +151,12 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       const stored = await readStoredSession();
       if (stored) {
         if (stored.expired) console.warn('[nexus] access token expired; opening on the stored session while it refreshes');
+        // v1.18.1 (LimeLog#88) — before the account is shown or anything is
+        // pulled or sent. Offline and unverified, the stored session of the
+        // owner changes nothing here; another account's (an app closed
+        // between its sign-in and the listener below) clears the previous
+        // account's data first.
+        takeUp(stored.user.id);
         set({
           userEmail: stored.user.email ?? null,
           userName: displayNameOf(stored.user),
@@ -193,6 +190,14 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         const wasSignedIn = Boolean(get().userEmail);
         const wasUnverified = get().sessionUnverified;
         const nowSignedIn = Boolean(session?.user);
+        // v1.18.1 (LimeLog#88) — the session's account takes up the local
+        // data, BEFORE the set below: that set starts the recovery pull (the
+        // gate in App.tsx subscribes to it) and the drain further down. The
+        // same account keeps its data and unsent changes; another account's
+        // session clears the previous account's first. A SIGNED_OUT (no
+        // session) changes nothing: the next account to sign in decides, so
+        // signing back in as the same account keeps the work done meanwhile.
+        if (session?.user?.id) takeUp(session.user.id);
         // Anything that gets here is an ANSWER about the session — a refresh
         // that landed, a session auth-js loaded, or a sign-out the server
         // actually asserted. Either way the "could not reach the server to
@@ -363,6 +368,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           // ...and not while a sign-out is settling: the session this read
           // found is the one being signed out (v1.18.1, LimeLog#66).
           if (!answers && !(stored && unverified) && !signOutHold) {
+            // v1.18.1 (LimeLog#88) — only here, with the set: an answer that
+            // an auth event overtook may name an account that is no longer
+            // the session's, and must not clear the current one's data.
+            if (user?.id) takeUp(user.id);
             set({
               userEmail: user?.email ?? null,
               userName: displayNameOf(user),
@@ -423,6 +432,9 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       set({ loading: false, lastError: error.message });
       throw error;
     }
+    // v1.18.1 (LimeLog#88) — the listener has normally done this already
+    // (auth-js reports SIGNED_IN before the call returns); a no-op then.
+    takeUp(data.user?.id);
     set({ userEmail: data.user?.email ?? null, userName: displayNameOf(data.user), userId: data.user?.id ?? null, loading: false });
 
     if (get().syncEnabled) {
@@ -442,6 +454,8 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     // v1.18.1 (LimeLog#85) — the id only with a session: an account still
     // awaiting confirmation cannot be pulled for yet, and its SIGNED_IN, when
     // confirmed, sets the id and starts the recovery pull then.
+    // v1.18.1 (LimeLog#88) — and takes up the local data then, likewise.
+    if (data.session) takeUp(data.user?.id);
     set({
       userEmail: data.user?.email ?? null,
       userName: displayNameOf(data.user),
@@ -477,58 +491,14 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     set({ signingOut: true });
     try {
       set({ loading: true, lastError: null });
-      // v1.2 — clear the outbox BEFORE the auth round-trip. Anything not yet
-      // drained is forfeit vs. potentially leaking writes to the next signed-in
-      // user on a shared device. Matches StudyDesk's sign-out hygiene contract.
-      outboxClear();
-      // v1.12 Item 5 — the supporter entitlement is cached locally so a perk
-      // survives being offline. That cache is per-account, so it has to go with
-      // everything else here: leaving it would hand the next signed-in user on a
-      // shared device someone else's paid perk.
-      clearEntitlement();
-      // v1.2.1 — AUDIT-LL-FSG-2: wipe the personal-data stores so the next
-      // signed-in user (on a shared device) doesn't inherit User A's
-      // workout history, bodyweight log, or progress photos in the UI.
-      // Cloud-side data stays scoped to A's user_id; this only addresses
-      // the on-device residue. Wipe order doesn't matter — each call
-      // both clears the in-memory zustand state and removes the underlying
-      // localStorage key so a refresh after sign-out doesn't re-hydrate.
-      try {
-        localStorage.removeItem('wt_session_logs');
-        localStorage.removeItem('wt_jump_logs');
-        localStorage.removeItem('wt_stall_flags');
-        useLogStore.setState({ sessionLogs: [], jumpLogs: [], stallFlags: [] });
-      } catch (e) {
-        console.warn('[nexus] log-store wipe failed:', e);
-      }
-      try {
-        localStorage.removeItem('limelog-body-metrics');
-        localStorage.removeItem('limelog-body-metrics-prefs');
-        // bodyMetricsStore reads DEFAULT_PREFS from types/bodyMetrics on the
-        // next mount; the setState below restores in-memory state to that
-        // baseline so an already-mounted BodyMetricsPanel re-renders empty
-        // immediately rather than holding A's last-seen values.
-        useBodyMetricsStore.setState({ metrics: [], prefs: DEFAULT_BODY_METRICS_PREFS });
-      } catch (e) {
-        console.warn('[nexus] body-metrics wipe failed:', e);
-      }
-      try {
-        localStorage.removeItem('limelog-progress-photos');
-      } catch (e) {
-        console.warn('[nexus] progress-photos wipe failed:', e);
-      }
-      // v1.18.1 (LimeLog#82) — the per-person flags go too, as an erase removes
-      // them (dataRights.wipeAllLocalData). Each helper says why it is safe:
-      // the training goal is display-only, the referral mirror is backed by the
-      // account's metadata, and the app-open guard costs at most a duplicate
-      // the upsert collapses. The onboarding flag is re-marked, not removed: a
-      // guest carrying on is not sent through the wizard again, and the next
-      // account's own answer resets it at sign-in. Device settings stay: the
-      // language (limecore_lang), the F-Droid update check, the sync toggle,
-      // programs and exercises. guestMode is set below, not cleared — see there.
-      releaseOnboardingOnSignOut();
-      forgetReferralAskedLocally();
-      forgetLastAppOpen();
+      // The account's local data, outbox first, BEFORE the auth round-trip
+      // (accountWipe.ts has the list and the reasons; v1.2, v1.2.1, v1.12,
+      // LimeLog#82). Programs, exercises and device settings stay. guestMode
+      // is set below, not cleared — see there.
+      wipeAccountLocalData();
+      // v1.18.1 (LimeLog#88) — the data has no owner now. A guest carrying on
+      // adds data the next account to sign in takes up, as before.
+      clearOwner();
       // v1.18.1 (LimeLog#66): the data above is already gone, so the session
       // has to go too, server or not. Offline, auth-js first resolves the
       // session (an expired token means its refresh retry chain, up to ~51 s)
@@ -599,6 +569,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
         // A fallback sign-out emits no SIGNED_OUT to clear this (v1.18.1).
         sessionUnverified: false,
       });
+      // v1.18.1 (LimeLog#88) — once more, now the session is gone: nothing
+      // takes the data up while a sign-out runs (see the hooks below), but a
+      // record written before `signingOut` was set must not outlive it.
+      clearOwner();
       await setGuestMode(true);
       window.dispatchEvent(new CustomEvent('limelog:guest-mode-changed'));
       set({
@@ -617,6 +591,12 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
   },
 
   retryPending: async () => {
+    // v1.18.1 (LimeLog#88) — Retry now and coming back online also retry
+    // taking the data up, for a clear of the previous account's data that
+    // failed (the drain itself only checks). The id is the store's, which
+    // only the auth paths set.
+    const uid = get().userId;
+    if (uid) takeUp(uid);
     const result = await outboxDrain();
     set({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
     return result;
@@ -631,3 +611,32 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     set({ lastPushAt: iso });
   },
 }));
+
+// v1.18.1 (LimeLog#88) — the auth paths above take the local data up for
+// the session's account before they set it; a different account's session
+// clears the previous account's data with the sign-out clear. The outbox only
+// checks the owner. After it, the store is told, so the queue count updates
+// and the recovery gate (App.tsx), which waits for the data to be the
+// account's, looks again.
+function takeUp(userId: string | null | undefined): boolean {
+  const ok = adoptLocalData(userId);
+  const status = outboxStatus();
+  useNexusStore.setState({ pendingCount: status.pending, outboxStatus: status });
+  return ok;
+}
+
+// Nothing takes the data up while a sign-out runs: it has just been cleared,
+// and the session reported meanwhile is the one being signed out.
+configureAccountOwner({
+  wipe: () => {
+    console.warn('[nexus] local data belonged to another account; clearing it before this account syncs');
+    const ok = wipeAccountLocalData();
+    // A clear that failed leaves sync waiting; say so where sync errors show.
+    if (!ok) outboxNoteError(i18n.t('sync.waitingForClear'));
+    return ok;
+  },
+  paused: () => {
+    const s = useNexusStore.getState();
+    return signOutHold || s.signingOut || s.signOutPending;
+  },
+});

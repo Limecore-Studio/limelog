@@ -506,6 +506,7 @@
     "lastPush": "Terakhir dikirim: {{time}}",
     "stuck_other": "{{count}} item macet setelah beberapa kali dicoba — periksa koneksi atau masuk lagi.",
     "lastError": "Kesalahan terakhir: {{error}}",
+    "waitingForClear": "Sinkronisasi menunggu: data akun sebelumnya tidak dapat dihapus dari perangkat ini. Ketuk Coba lagi sekarang untuk mencoba lagi.",
     "retryNow": "Coba lagi sekarang",
     "orUseEmail": "atau gunakan email",
     "queueEmpty": "Antrean kosong",

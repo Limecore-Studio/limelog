@@ -80,28 +80,28 @@ beforeEach(() => {
 
 describe('body metrics from two devices on the same day (LimeLog#76)', () => {
   it('keeps the first id and each device\'s fields', async () => {
-    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 });
-    await pushBodyMetricToNexus({ id: 'tablet', date: '2026-10-13', waistCm: 90 });
+    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 }, USER);
+    await pushBodyMetricToNexus({ id: 'tablet', date: '2026-10-13', waistCm: 90 }, USER);
     expect(db.rows).toHaveLength(1);
     expect(db.rows[0]).toMatchObject({ id: 'phone', weight_kg: 80, waist_cm: 90 });
   });
 
   it('a push that changes nothing (the no-op guard: 0 rows) leaves the row and its id alone', async () => {
-    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 });
-    await pushBodyMetricToNexus({ id: 'tablet', date: '2026-10-13', weightKg: 80 });
+    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 }, USER);
+    await pushBodyMetricToNexus({ id: 'tablet', date: '2026-10-13', weightKg: 80 }, USER);
     expect(db.rows).toHaveLength(1);
     expect(db.rows[0]).toMatchObject({ id: 'phone', weight_kg: 80 });
   });
 
   it('a delete from the other device removes the day\'s row', async () => {
-    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 });
-    await deleteBodyMetricFromNexus('tablet', '2026-10-13');
+    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 }, USER);
+    await deleteBodyMetricFromNexus('tablet', '2026-10-13', USER);
     expect(db.rows).toEqual([]);
   });
 
   it('a delete queued by an older build, with no date, still goes by id', async () => {
-    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 });
-    await deleteBodyMetricFromNexus('phone');
+    await pushBodyMetricToNexus({ id: 'phone', date: '2026-10-13', weightKg: 80 }, USER);
+    await deleteBodyMetricFromNexus('phone', undefined, USER);
     expect(db.rows).toEqual([]);
   });
 });

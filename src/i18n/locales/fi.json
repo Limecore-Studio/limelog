@@ -519,6 +519,7 @@
     "stuck_one": "{{count}} kohde on jumissa uusintayritysten jälkeen — tarkista yhteys tai kirjaudu uudelleen sisään.",
     "stuck_other": "{{count}} kohdetta on jumissa uusintayritysten jälkeen — tarkista yhteys tai kirjaudu uudelleen sisään.",
     "lastError": "Viimeisin virhe: {{error}}",
+    "waitingForClear": "Synkronointi odottaa: edellisen tilin tietoja ei voitu poistaa tältä laitteelta. Napauta Yritä uudelleen.",
     "retryNow": "Yritä uudelleen",
     "orUseEmail": "tai käytä sähköpostia",
     "queueEmpty": "Jono on tyhjä",

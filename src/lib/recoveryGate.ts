@@ -38,6 +38,10 @@ export interface RecoveryGateDeps {
   pull: (userId: string) => Promise<SessionLog[]>;
   /** Reinstate what is missing locally; returns how many were added. */
   apply: (logs: SessionLog[]) => number;
+  /** v1.18.1 (LimeLog#88) — whether the local data is `userId`'s yet. Until
+   *  it is, this sign-in's pull waits (it is not spent), and it starts on the
+   *  first evaluate() after. Default: always. */
+  ready?: (userId: string) => boolean;
   /** How the pull is started after `evaluate()` returns. Default: a 0 ms
    *  timer. `evaluate()` runs from a store subscription, and the auth
    *  listener sets that store while auth-js holds its lock; the pull asks
@@ -103,6 +107,7 @@ export function createRecoveryGate(deps: RecoveryGateDeps): RecoveryGate {
       // so an offline start does not spend the pull before it can work.
       if (!s.configured || s.sessionUnverified || s.signOutPending) return;
       if (pulledFor === s.userId) return;
+      if (deps.ready && !deps.ready(s.userId)) return;
       // A new sign-in. If another account's pull is still running (signed in
       // over it, with no sign-out between), this replaces it.
       pulledFor = s.userId;

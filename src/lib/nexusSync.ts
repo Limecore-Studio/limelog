@@ -105,6 +105,35 @@ export async function setRowId(sessionId: string, index: number): Promise<string
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+/** v1.18.1 (LimeLog#88) — the session's account changed between the outbox
+ *  picking an item and the push asking who is signed in. */
+export class AccountChangedError extends Error {
+  constructor() {
+    super('The signed-in account changed; not sent');
+    this.name = 'AccountChangedError';
+  }
+}
+
+/**
+ * The signed-in user, for a push. Throws when there is none, and when the
+ * session now belongs to another account than `forUserId` (the account the
+ * outbox is sending for). Required on every push, so tsc catches a handler
+ * that stops passing it.
+ *
+ * v1.18.1 (LimeLog#88) — the outbox checks the queue's owner before each item,
+ * but each push asks auth-js for the user itself, a network round trip later.
+ * A different account signed in between would otherwise get the previous
+ * account's item with its own user_id. With the check, the rows carry the
+ * outbox's account, and a session switched after it is refused by RLS.
+ */
+export async function requireSessionUser(forUserId: string) {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr) throw authErr;
+  if (!user) throw new Error('Not signed in to Nexus');
+  if (user.id !== forUserId) throw new AccountChangedError();
+  return user;
+}
+
 /**
  * Push one workout payload to Supabase: upsert the session row, upsert its
  * sets under deterministic ids, then drop the session's other set rows.
@@ -115,12 +144,10 @@ export async function setRowId(sessionId: string, index: number): Promise<string
  *   - outbox.ts dispatch for the `upsert_workout_session` kind (typical path)
  *   - directly during dev/testing if needed
  */
-export async function pushWorkoutToNexus(workout: NexusWorkoutPayload): Promise<string> {
+export async function pushWorkoutToNexus(workout: NexusWorkoutPayload, forUserId: string): Promise<string> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
 
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) throw authErr;
-  if (!user) throw new Error('Not signed in to Nexus');
+  const user = await requireSessionUser(forUserId);
 
   // v1.6.1 — idempotent push, honouring the outbox's UPSERT-style contract.
   // Use the STABLE local session id (not a fresh random one) and UPSERT, so a
@@ -204,11 +231,9 @@ export interface NexusBodyMetricPayload {
   notes?: string;
 }
 
-export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload): Promise<void> {
+export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload, forUserId: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) throw authErr;
-  if (!user) throw new Error('Not signed in to Nexus');
+  const user = await requireSessionUser(forUserId);
 
   // v1.18.1 (LimeLog#76): two devices that log the same day hold the row
   // under different local ids. Upserting on (user_id, date) while sending
@@ -249,16 +274,16 @@ export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload): Promise<
 /** v1.18.1 (LimeLog#76): by day, as the row may carry another device's id
  *  (see pushBodyMetricToNexus). A delete queued by an older build carries no
  *  date and still goes by id. */
-export async function deleteBodyMetricFromNexus(id: string, date?: string): Promise<void> {
+export async function deleteBodyMetricFromNexus(id: string, date: string | undefined, forUserId: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
   if (!date) {
+    // v1.18.1 (LimeLog#88) — the account is checked on this path too.
+    await requireSessionUser(forUserId);
     const { error } = await supabase.from('body_metrics').delete().eq('id', id);
     if (error) throw error;
     return;
   }
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) throw authErr;
-  if (!user) throw new Error('Not signed in to Nexus');
+  const user = await requireSessionUser(forUserId);
   const { error } = await supabase.from('body_metrics').delete().eq('user_id', user.id).eq('date', date);
   if (error) throw error;
 }
@@ -292,11 +317,9 @@ export interface NexusFeedbackPayload {
   platform: string;
 }
 
-export async function pushFeedbackToNexus(p: NexusFeedbackPayload): Promise<void> {
+export async function pushFeedbackToNexus(p: NexusFeedbackPayload, forUserId: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) throw authErr;
-  if (!user) throw new Error('Not signed in to Nexus');
+  const user = await requireSessionUser(forUserId);
 
   const { error } = await supabase.from('feedback').insert({
     id: p.id,
@@ -332,11 +355,9 @@ export interface NexusAppOpenPayload {
  * by construction — the caller upserts on every foreground and the database
  * collapses same-day repeats.
  */
-export async function pushAppOpenToNexus(p: NexusAppOpenPayload): Promise<void> {
+export async function pushAppOpenToNexus(p: NexusAppOpenPayload, forUserId: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) throw authErr;
-  if (!user) throw new Error('Not signed in to Nexus');
+  const user = await requireSessionUser(forUserId);
 
   const { error } = await supabase.from('app_opens').upsert({
     user_id: user.id,
@@ -348,11 +369,9 @@ export async function pushAppOpenToNexus(p: NexusAppOpenPayload): Promise<void> 
   if (error) throw error;
 }
 
-export async function pushExercisePRToNexus(p: NexusExercisePRPayload): Promise<void> {
+export async function pushExercisePRToNexus(p: NexusExercisePRPayload, forUserId: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
-  const { data: { user }, error: authErr } = await supabase.auth.getUser();
-  if (authErr) throw authErr;
-  if (!user) throw new Error('Not signed in to Nexus');
+  const user = await requireSessionUser(forUserId);
 
   const row = {
     id: p.id,

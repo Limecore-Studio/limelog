@@ -63,12 +63,16 @@ export function setTrainingGoal(goal: TrainingGoal): void {
  *    but the next account's definite "no" resets it at sign-in
  *    (`hydrateOnboardedFromCloud`), where a plain '1' is taken as this
  *    person's and back-filled to their account. */
-export function releaseOnboardingOnSignOut(): void {
+// v1.18.1 (LimeLog#88) — false when storage refused, so an account switch
+// can tell a clear that did not happen (accountWipe.ts).
+export function releaseOnboardingOnSignOut(): boolean {
   try {
     localStorage.removeItem(GOAL_KEY);
     if (localStorage.getItem(DONE_KEY) === DONE) localStorage.setItem(DONE_KEY, DONE_BY_SIGNED_OUT);
+    return true;
   } catch {
     /* no storage: nothing was kept */
+    return false;
   }
 }
 

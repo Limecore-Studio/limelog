@@ -532,6 +532,7 @@
     "stuck_many": "{{count}} éléments bloqués après plusieurs essais — vérifiez la connexion ou reconnectez-vous.",
     "stuck_other": "{{count}} éléments bloqués après plusieurs essais — vérifiez la connexion ou reconnectez-vous.",
     "lastError": "Dernière erreur : {{error}}",
+    "waitingForClear": "La synchronisation est en attente : les données du compte précédent n'ont pas pu être supprimées de cet appareil. Touchez Réessayer.",
     "retryNow": "Réessayer",
     "orUseEmail": "ou utiliser l’e-mail",
     "queueEmpty": "File d’attente vide",

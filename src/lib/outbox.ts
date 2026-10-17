@@ -35,6 +35,8 @@ import {
   pushExercisePRToNexus,
   pushFeedbackToNexus,
   pushAppOpenToNexus,
+  requireSessionUser,
+  AccountChangedError,
   type NexusWorkoutPayload,
   type NexusBodyMetricPayload,
   type NexusExercisePRPayload,
@@ -42,6 +44,7 @@ import {
   type NexusAppOpenPayload,
 } from './nexusSync';
 import { supabase, isNexusConfigured } from './supabase';
+import { readOwner } from './accountOwner';
 
 const STORAGE_KEY = 'limelog-outbox';
 const META_KEY = 'limelog-outbox-meta';
@@ -234,8 +237,21 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
     // (drainPendingQueue legacy did the same gate.)
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { sent: 0, remaining: loadItems().length };
+    // v1.18.1 (LimeLog#88) — the queue is sent only under the account it
+    // belongs to. Every drain comes through here (enqueue, `online`,
+    // `visibilitychange`, init, sign-in, Retry now), so this one check covers
+    // them all. It only checks: taking the data up (and clearing another
+    // account's) is left to the auth paths in nexusStore, which do it before
+    // the account is set. This reply may be stale — a getUser() still in
+    // flight when another account signed in — and claiming from it would
+    // clear the newer account's data. No owner yet means not taken up yet:
+    // send nothing and wait for the auth path to take it up.
+    if (readOwner() !== user.id) return { sent: 0, remaining: loadItems().length };
 
     for (;;) {
+      // And before each item: an explicit sign-out (record cleared) or another
+      // account taking the data up while this pass awaited a push ends it.
+      if (readOwner() !== user.id) break;
       const items = loadItems();
       if (items.length === 0) break;
       const item = items[0];
@@ -248,15 +264,28 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
         saveItems(items.slice(1));
         continue;
       }
+      let failure: unknown = null;
       try {
-        await handler(item.payload as never);
+        await handler(item.payload as never, user.id);
+      } catch (e) {
+        failure = e;
+      }
+      // v1.18.1 (LimeLog#88) — nothing is written back once the queue has
+      // changed hands during the push: a push can hang (no fetch timeout)
+      // across a sign-out or another account's arrival, and re-saving the
+      // item, or its retry state, into the emptied queue would let the next
+      // drain send it under the new account. Nor does a push that found
+      // another account signed in count as a failed attempt.
+      if (readOwner() !== user.id || failure instanceof AccountChangedError) break;
+      if (failure === null) {
         // Success — remove THIS item from the queue as it is now, not from the
         // snapshot read before the push: anything enqueued during the await
         // would otherwise be overwritten out of storage (limelog#28).
         saveItems(loadItems().filter((i) => i.id !== item.id));
         saveMeta({ ...loadMeta(), lastSuccessAt: new Date().toISOString(), lastError: null });
         sent++;
-      } catch (e) {
+      } else {
+        const e = failure;
         const attempts = (item.attempts || 0) + 1;
         const errMsg = (e instanceof Error ? e.message : String(e));
         const failed = { ...item, attempts, lastAttemptAt: new Date().toISOString(), lastError: errMsg };
@@ -303,12 +332,23 @@ export function getStatus(): OutboxStatus {
 
 /** Clear the outbox. Called on auth sign-out — we don't want to retry the
  *  signed-out user's pending writes as the next signed-in user. */
-export function clear(): void {
+/** v1.18.1 (LimeLog#88) — record why the queue is not being sent, for the
+ *  Settings panel (sync.lastError), when no push has failed to say so. */
+export function noteError(message: string): void {
+  saveMeta({ ...loadMeta(), lastError: message, lastErrorAt: new Date().toISOString() });
+}
+
+// v1.18.1 (LimeLog#88) — false when storage refused, so an account switch
+// can tell a clear that did not happen (accountWipe.ts).
+export function clear(): boolean {
+  cachedStatus = null;
   try {
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(META_KEY);
-  } catch { /* ignore */ }
-  cachedStatus = null;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Wire `online` + `visibilitychange` drain triggers. Idempotent — safe to
@@ -383,10 +423,13 @@ migrateLegacyQueue();
 // KindPayload map, and an entry here. Existing call sites in logStore /
 // nexusStore route through `enqueue('kind', payload)`.
 
-const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K]) => Promise<unknown> } = {
-  upsert_workout_session: (p) => pushWorkoutToNexus(p),
-  delete_workout_session: async (p) => {
+// v1.18.1 (LimeLog#88) — each handler gets the account the drain is sending
+// for, and refuses (AccountChangedError) when the session is now another's.
+const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K], forUserId: string) => Promise<unknown> } = {
+  upsert_workout_session: (p, uid) => pushWorkoutToNexus(p, uid),
+  delete_workout_session: async (p, uid) => {
     if (!isNexusConfigured) throw new Error('Nexus not configured');
+    await requireSessionUser(uid);
     // v1.16 (limelog#32, registry P6) — a tombstone, never a DELETE. A hard
     // delete left nothing behind, so a later push of the same workout from
     // another device simply inserted it again. The server's guard lets a
@@ -402,9 +445,9 @@ const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K]) => Promise<unknown
       .eq('id', p.id);
     if (error) throw error;
   },
-  upsert_body_metric: (p) => pushBodyMetricToNexus(p),
-  delete_body_metric: (p) => deleteBodyMetricFromNexus(p.id, p.date),
-  upsert_exercise_pr: (p) => pushExercisePRToNexus(p),
-  submit_feedback: (p) => pushFeedbackToNexus(p),
-  record_app_open: (p) => pushAppOpenToNexus(p),
+  upsert_body_metric: (p, uid) => pushBodyMetricToNexus(p, uid),
+  delete_body_metric: (p, uid) => deleteBodyMetricFromNexus(p.id, p.date, uid),
+  upsert_exercise_pr: (p, uid) => pushExercisePRToNexus(p, uid),
+  submit_feedback: (p, uid) => pushFeedbackToNexus(p, uid),
+  record_app_open: (p, uid) => pushAppOpenToNexus(p, uid),
 };

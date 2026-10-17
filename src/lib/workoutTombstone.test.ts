@@ -70,6 +70,8 @@ const LOG = '6f1c2a4e-0b7d-4c9a-8e3f-2d5b1a7c9e01';
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', storage());
+  // v1.18.1 (LimeLog#88) — the outbox sends only for the recorded owner.
+  localStorage.setItem('limelog.dataOwner', USER);
   vi.stubGlobal('navigator', { onLine: false }); // enqueue must not drain on its own
   holder.client = makeClient();
   useLogStore.setState({

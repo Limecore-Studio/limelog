@@ -53,6 +53,8 @@ const workout = (over: Partial<NexusWorkoutPayload> = {}): NexusWorkoutPayload =
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.stubGlobal('localStorage', storage());
+  // v1.18.1 (LimeLog#88) — the outbox sends only for the recorded owner.
+  localStorage.setItem('limelog.dataOwner', 'user-1');
   sent.sessions = [];
   outbox.resetWorkoutStamps();
 });

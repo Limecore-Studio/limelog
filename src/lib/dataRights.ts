@@ -12,6 +12,7 @@ import { storage } from '@/utils/storage';
 import { supabase, isNexusConfigured } from './supabase';
 import { listPhotos } from './progressPhotos';
 import { selectAll } from './selectAll';
+import { clearOwner } from './accountOwner';
 
 const EXPORT_SCHEMA_VERSION = 1;
 
@@ -215,8 +216,15 @@ export async function deleteAccount({
 }: {
   clearLocal: () => Promise<void>;
 }): Promise<{ deleted: 'local' | 'account' }> {
-  if (!isNexusConfigured) {
+  // v1.18.1 (LimeLog#88) — the local data has no owner after an erase. The
+  // prefix wipe removes the record too (`limelog.`); this does not depend on
+  // the caller's clearLocal doing so.
+  const clearAll = async () => {
     await clearLocal();
+    clearOwner();
+  };
+  if (!isNexusConfigured) {
+    await clearAll();
     return { deleted: 'local' };
   }
 
@@ -224,7 +232,7 @@ export async function deleteAccount({
   if (!session) {
     // Guest: there is no server-side account. Clearing the device is the whole
     // of the erasure.
-    await clearLocal();
+    await clearAll();
     return { deleted: 'local' };
   }
 
@@ -238,6 +246,6 @@ export async function deleteAccount({
   } catch {
     // The user row is already gone, so the sign-out call may fail. Not fatal.
   }
-  await clearLocal();
+  await clearAll();
   return { deleted: 'account' };
 }

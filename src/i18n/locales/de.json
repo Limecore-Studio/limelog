@@ -519,6 +519,7 @@
     "stuck_one": "{{count}} Eintrag hängt nach mehreren Versuchen fest — prüfe die Verbindung oder melde dich erneut an.",
     "stuck_other": "{{count}} Einträge hängen nach mehreren Versuchen fest — prüfe die Verbindung oder melde dich erneut an.",
     "lastError": "Letzter Fehler: {{error}}",
+    "waitingForClear": "Die Synchronisierung wartet: Die Daten des vorherigen Kontos konnten nicht von diesem Gerät entfernt werden. Tippe auf Jetzt erneut versuchen.",
     "retryNow": "Jetzt erneut versuchen",
     "orUseEmail": "oder E-Mail verwenden",
     "queueEmpty": "Warteschlange leer",
