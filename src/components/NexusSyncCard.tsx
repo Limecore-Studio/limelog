@@ -151,15 +151,13 @@ export function NexusSyncCard() {
               onClick={() => setSyncEnabled(!syncEnabled)}
               style={{ flex: 'none', padding: '6px 14px' }}
             >
-              {syncEnabled ? 'On' : 'Off'}
+              {syncEnabled ? t('sync.on') : t('sync.off')}
             </button>
           </div>
 
           <div className="nexus-card__row">
             <span className="settings-field__sublabel">
-              {pendingCount > 0
-                ? `${pendingCount} workout${pendingCount > 1 ? 's' : ''} queued`
-                : 'Queue empty'}
+              {pendingCount > 0 ? t('sync.queued', { count: pendingCount }) : t('sync.queueEmpty')}
             </span>
             {pendingCount > 0 && (
               <Button size="sm" variant="secondary" onClick={handleRetry}>
@@ -285,7 +283,7 @@ export function NexusSyncCard() {
 
           {pendingCount > 0 && (
             <p className="nexus-card__meta">
-              {pendingCount} workout{pendingCount > 1 ? 's' : ''} queued — will sync after sign-in.
+              {t('sync.queuedSignedOut', { count: pendingCount })}
             </p>
           )}
         </form>

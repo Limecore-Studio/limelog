@@ -33,6 +33,7 @@ import {
   pushBodyMetricToNexus,
   deleteBodyMetricFromNexus,
   pushExercisePRToNexus,
+  deleteExercisePRFromNexus,
   pushFeedbackToNexus,
   pushAppOpenToNexus,
   type NexusWorkoutPayload,
@@ -56,8 +57,11 @@ type OutboxKind =
   // v1.2 — Body Metrics. Same upsert/delete pair pattern.
   | 'upsert_body_metric'
   | 'delete_body_metric'
-  // v1.6 — Personal Records. Push-only (append-only), upsert by id.
+  // v1.6 — Personal Records. Upsert by id.
   | 'upsert_exercise_pr'
+  // v1.18.1 (LimeLog#72) — a PR retracted because its workout was undone or
+  // discarded.
+  | 'delete_exercise_pr'
   // v1.10 - in-app feedback. Insert-only; idempotent on the client id.
   | 'submit_feedback'
   // v1.12 Item 0 - retention. Queued rather than pushed directly because a
@@ -81,6 +85,7 @@ interface KindPayload {
   upsert_body_metric: NexusBodyMetricPayload;
   delete_body_metric: { id: string };
   upsert_exercise_pr: NexusExercisePRPayload;
+  delete_exercise_pr: { id: string };
   submit_feedback: NexusFeedbackPayload;
   record_app_open: NexusAppOpenPayload;
 }
@@ -200,6 +205,18 @@ export function enqueue<K extends OutboxKind>(kind: K, payload: KindPayload[K]):
   // Fire-and-forget drain. Single-flight inside drain() coalesces overlapping
   // calls so this is safe even if many enqueues land in quick succession.
   void drain();
+}
+
+/** Remove queued items of `kind` whose payload matches. Returns how many.
+ *  v1.18.1 (LimeLog#72): a PR retracted while its insert is still queued. The
+ *  delete queued after it is not enough on its own: an insert that has hit
+ *  MAX_ATTEMPTS moves to the back, behind the delete, and lands after it. An
+ *  item already being pushed is not in storage, and its delete follows it. */
+export function cancel<K extends OutboxKind>(kind: K, match: (payload: KindPayload[K]) => boolean): number {
+  const items = loadItems();
+  const kept = items.filter((i) => i.kind !== kind || !match(i.payload as KindPayload[K]));
+  if (kept.length !== items.length) saveItems(kept);
+  return items.length - kept.length;
 }
 
 let draining = false;
@@ -405,6 +422,7 @@ const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K]) => Promise<unknown
   upsert_body_metric: (p) => pushBodyMetricToNexus(p),
   delete_body_metric: (p) => deleteBodyMetricFromNexus(p.id),
   upsert_exercise_pr: (p) => pushExercisePRToNexus(p),
+  delete_exercise_pr: (p) => deleteExercisePRFromNexus(p.id),
   submit_feedback: (p) => pushFeedbackToNexus(p),
   record_app_open: (p) => pushAppOpenToNexus(p),
 };

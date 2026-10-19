@@ -154,7 +154,10 @@
     "noJumpsBody": "एथलेटिक प्रगति देखने के लिए अपनी वर्टिकल जंप ट्रैक करें।",
     "unknownExercise": "अज्ञात एक्सरसाइज़",
     "stallWeightPlateau": "वज़न ठहराव",
-    "stallRpeCreep": "RPE बढ़ोतरी"
+    "stallRpeCreep": "RPE बढ़ोतरी",
+    "unknownSession": "अज्ञात सत्र",
+    "loadCaption": "{{unit}} — हर सत्र का सबसे भारी सेट",
+    "ormCaption": "{{unit}} — अनुमानित 1RM, हर सत्र का सर्वोत्तम"
   },
   "today": {
     "noProgramTitle": "कोई सक्रिय प्रोग्राम नहीं",
@@ -185,7 +188,9 @@
     "stallAlert_one": "{{count}} ठहराव संकेत मिला — डीलोड पर विचार करें",
     "stallAlert_other": "{{count}} ठहराव संकेत मिले — डीलोड पर विचार करें",
     "deloadAdvance": "पिछले 3 सत्रों में {{missed}}/{{total}} सेट लक्ष्य से कम रहे — डीलोड चरण में जाने पर विचार करें।",
-    "deloadSchedule": "पिछले 3 सत्रों में {{missed}}/{{total}} सेट लक्ष्य से कम रहे — डीलोड शेड्यूल करने पर विचार करें।"
+    "deloadSchedule": "पिछले 3 सत्रों में {{missed}}/{{total}} सेट लक्ष्य से कम रहे — डीलोड शेड्यूल करने पर विचार करें।",
+    "startedOn": "{{date}} को शुरू किया",
+    "resumeWorkout": "वर्कआउट जारी रखें"
   },
   "settings": {
     "errorReports": "त्रुटि रिपोर्ट भेजें",
@@ -280,7 +285,9 @@
     "deletePhotoConfirm": "{{date}} की तस्वीर मिटाएँ?",
     "unitSystem": "इकाई प्रणाली",
     "weightChart": "वज़न रुझान चार्ट",
-    "weightChartAvg": "7-दिन के मूविंग औसत के साथ वज़न रुझान"
+    "weightChartAvg": "7-दिन के मूविंग औसत के साथ वज़न रुझान",
+    "photosEvicted_one": "सहेजा गया। जगह खाली करने के लिए सबसे पुरानी तस्वीर हटा दी गई।",
+    "photosEvicted_other": "सहेजा गया। जगह खाली करने के लिए सबसे पुरानी {{count}} तस्वीरें हटा दी गईं।"
   },
   "profile": {
     "title": "प्रोफ़ाइल",
@@ -367,7 +374,11 @@
     "barOnly": "सिर्फ़ बार · {{weight}} {{unit}}",
     "addPlatePair": "{{weight}} {{unit}} की एक जोड़ी प्लेट जोड़ें",
     "useWeight": "{{weight}} {{unit}} इस्तेमाल करें",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — इस अंतर के लिए कोई प्लेट नहीं है।"
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — इस अंतर के लिए कोई प्लेट नहीं है।",
+    "lastSession": "पिछली बार · {{date}}",
+    "restSeconds": "{{secs}} सेकंड आराम",
+    "restrictionAvoid": "{{label}} — टालने के लिए चिह्नित",
+    "restrictionModify": "{{label}} — भार या रेंज बदलें"
   },
   "program": {
     "title": "प्रोग्राम",
@@ -390,6 +401,7 @@
     "addSession": "सत्र जोड़ें",
     "addPhase": "चरण जोड़ें",
     "phaseNamePlaceholder": "चरण का नाम",
+    "deletePhaseConfirm": "चरण “{{name}}” और उसके सत्र हटाएँ? पूरे हुए वर्कआउट प्रगति में बने रहेंगे।",
     "weekStart": "शुरुआती सप्ताह",
     "weekEnd": "अंतिम सप्ताह",
     "weekRange": "सप्ताह {{start}}–{{end}}",
@@ -467,7 +479,10 @@
     "customEquipPlaceholder": "जैसे स्लेड"
   },
   "notif": {
-    "sessionTitle": "{{day}} का सत्र"
+    "sessionTitle": "{{day}} का सत्र",
+    "channelName": "वर्कआउट रिमाइंडर",
+    "channelDescription": "जिन दिनों सत्र तय है, उन दिनों सुबह 9 बजे रिमाइंडर",
+    "startAction": "सत्र शुरू करें"
   },
   "health": {
     "stepsWeekLabel": "पिछले 7 दिनों के कदम",
@@ -499,7 +514,14 @@
     "signOut": "साइन आउट",
     "autoPush": "समाप्त होने पर स्वतः भेजें",
     "retryNow": "अभी पुनः प्रयास करें",
-    "orUseEmail": "या ईमेल का उपयोग करें"
+    "orUseEmail": "या ईमेल का उपयोग करें",
+    "on": "चालू",
+    "off": "बंद",
+    "queued_one": "{{count}} वर्कआउट कतार में",
+    "queued_other": "{{count}} वर्कआउट कतार में",
+    "queueEmpty": "कतार खाली है",
+    "queuedSignedOut_one": "{{count}} वर्कआउट कतार में — साइन इन के बाद सिंक होगा।",
+    "queuedSignedOut_other": "{{count}} वर्कआउट कतार में — साइन इन के बाद सिंक होंगे।"
   },
   "jump": {
     "title": "वर्टिकल जंप दर्ज करें",

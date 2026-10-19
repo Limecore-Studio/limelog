@@ -152,7 +152,10 @@
     "noJumpsBody": "记录垂直跳以追踪运动能力的进展。",
     "unknownExercise": "未知动作",
     "stallWeightPlateau": "重量停滞",
-    "stallRpeCreep": "RPE 上升"
+    "stallRpeCreep": "RPE 上升",
+    "unknownSession": "未知训练",
+    "loadCaption": "{{unit}} —— 每次训练的最重组",
+    "ormCaption": "{{unit}} —— 估算 1RM，每次训练取最佳"
   },
   "today": {
     "noProgramTitle": "没有进行中的计划",
@@ -182,7 +185,9 @@
     "e1rmTitle": "根据你的训练记录估算的最佳 1RM",
     "stallAlert_other": "检测到 {{count}} 个停滞标记 —— 建议安排减载周",
     "deloadAdvance": "最近 3 次训练中有 {{missed}}/{{total}} 组未达目标 —— 建议进入减载阶段。",
-    "deloadSchedule": "最近 3 次训练中有 {{missed}}/{{total}} 组未达目标 —— 建议安排一次减载。"
+    "deloadSchedule": "最近 3 次训练中有 {{missed}}/{{total}} 组未达目标 —— 建议安排一次减载。",
+    "startedOn": "开始于 {{date}}",
+    "resumeWorkout": "继续训练"
   },
   "settings": {
     "errorReports": "发送错误报告",
@@ -257,7 +262,8 @@
     "deletePhotoConfirm": "删除 {{date}} 的照片？",
     "unitSystem": "单位制",
     "weightChart": "体重趋势图",
-    "weightChartAvg": "带 7 天移动平均的体重趋势"
+    "weightChartAvg": "带 7 天移动平均的体重趋势",
+    "photosEvicted_other": "已保存。为释放空间，已删除最早的 {{count}} 张照片。"
   },
   "program": {
     "title": "训练计划",
@@ -280,6 +286,7 @@
     "addSession": "添加训练",
     "addPhase": "添加阶段",
     "phaseNamePlaceholder": "阶段名称",
+    "deletePhaseConfirm": "删除阶段“{{name}}”及其训练？已完成的训练仍保留在“进度”中。",
     "weekStart": "起始周",
     "weekEnd": "结束周",
     "weekRange": "第 {{start}}–{{end}} 周",
@@ -461,10 +468,17 @@
     "barOnly": "空杠 · {{weight}} {{unit}}",
     "addPlatePair": "添加一对 {{weight}} {{unit}} 杠片",
     "useWeight": "使用 {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — 没有杠片能补上差值。"
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — 没有杠片能补上差值。",
+    "lastSession": "上次 · {{date}}",
+    "restSeconds": "休息 {{secs}} 秒",
+    "restrictionAvoid": "{{label}} —— 标记为避免",
+    "restrictionModify": "{{label}} —— 调整负荷或动作幅度"
   },
   "notif": {
-    "sessionTitle": "{{day}}的训练"
+    "sessionTitle": "{{day}}的训练",
+    "channelName": "训练提醒",
+    "channelDescription": "在安排了训练的日子于上午 9 点提醒",
+    "startAction": "开始训练"
   },
   "health": {
     "stepsWeekLabel": "最近 7 天的步数",
@@ -496,7 +510,12 @@
     "signOut": "退出登录",
     "autoPush": "结束时自动上传",
     "retryNow": "立即重试",
-    "orUseEmail": "或使用电子邮件"
+    "orUseEmail": "或使用电子邮件",
+    "on": "开启",
+    "off": "关闭",
+    "queued_other": "{{count}} 次训练待上传",
+    "queueEmpty": "队列为空",
+    "queuedSignedOut_other": "{{count}} 次训练待上传 —— 登录后同步。"
   },
   "jump": {
     "title": "记录垂直跳",

@@ -162,7 +162,10 @@
     "noJumpsBody": "تتبّع قفزتك العمودية لمراقبة تقدّمك الرياضي.",
     "unknownExercise": "تمرين غير معروف",
     "stallWeightPlateau": "ثبات الوزن",
-    "stallRpeCreep": "ارتفاع RPE"
+    "stallRpeCreep": "ارتفاع RPE",
+    "unknownSession": "جلسة غير معروفة",
+    "loadCaption": "{{unit}} — أثقل مجموعة في كل جلسة",
+    "ormCaption": "{{unit}} — 1RM المقدّر، الأفضل في كل جلسة"
   },
   "today": {
     "noProgramTitle": "لا يوجد برنامج نشط",
@@ -201,7 +204,9 @@
     "stallAlert_many": "اكتُشفت {{count}} علامة توقف — فكّر في أسبوع تخفيف",
     "stallAlert_other": "اكتُشفت {{count}} علامة توقف — فكّر في أسبوع تخفيف",
     "deloadAdvance": "لم تبلغ {{missed}} من {{total}} مجموعة هدفها في آخر 3 جلسات — فكّر في الانتقال إلى مرحلة تخفيف.",
-    "deloadSchedule": "لم تبلغ {{missed}} من {{total}} مجموعة هدفها في آخر 3 جلسات — فكّر في جدولة أسبوع تخفيف."
+    "deloadSchedule": "لم تبلغ {{missed}} من {{total}} مجموعة هدفها في آخر 3 جلسات — فكّر في جدولة أسبوع تخفيف.",
+    "startedOn": "بدأ في {{date}}",
+    "resumeWorkout": "استئناف التمرين"
   },
   "settings": {
     "errorReports": "إرسال تقارير الأخطاء",
@@ -296,7 +301,13 @@
     "deletePhotoConfirm": "حذف صورة {{date}}؟",
     "unitSystem": "نظام الوحدات",
     "weightChart": "مخطط اتجاه الوزن",
-    "weightChartAvg": "اتجاه الوزن مع المتوسط المتحرك لسبعة أيام"
+    "weightChartAvg": "اتجاه الوزن مع المتوسط المتحرك لسبعة أيام",
+    "photosEvicted_zero": "تم الحفظ.",
+    "photosEvicted_one": "تم الحفظ. حُذفت أقدم صورة لتوفير المساحة.",
+    "photosEvicted_two": "تم الحفظ. حُذفت أقدم صورتين لتوفير المساحة.",
+    "photosEvicted_few": "تم الحفظ. حُذفت أقدم {{count}} صور لتوفير المساحة.",
+    "photosEvicted_many": "تم الحفظ. حُذفت أقدم {{count}} صورة لتوفير المساحة.",
+    "photosEvicted_other": "تم الحفظ. حُذفت أقدم {{count}} صورة لتوفير المساحة."
   },
   "profile": {
     "title": "الملف الشخصي",
@@ -383,7 +394,11 @@
     "barOnly": "البار فقط · {{weight}} {{unit}}",
     "addPlatePair": "أضف زوج أقراص {{weight}} {{unit}}",
     "useWeight": "استخدم {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} يصبح {{to}} {{unit}} — لا توجد أقراص تغطي الفرق."
+    "plateSeedRounded": "{{from}} يصبح {{to}} {{unit}} — لا توجد أقراص تغطي الفرق.",
+    "lastSession": "آخر مرة · {{date}}",
+    "restSeconds": "راحة {{secs}} ث",
+    "restrictionAvoid": "{{label}} — مُعلَّم للتجنّب",
+    "restrictionModify": "{{label}} — عدّل الحمل أو المدى"
   },
   "program": {
     "title": "البرامج",
@@ -414,6 +429,7 @@
     "addSession": "إضافة جلسة",
     "addPhase": "إضافة مرحلة",
     "phaseNamePlaceholder": "اسم المرحلة",
+    "deletePhaseConfirm": "حذف المرحلة «{{name}}» وجلساتها؟ تبقى التمارين المكتملة في «التقدّم».",
     "weekStart": "أسبوع البداية",
     "weekEnd": "أسبوع النهاية",
     "weekRange": "أسبوع {{start}}–{{end}}",
@@ -499,7 +515,10 @@
     "customEquipPlaceholder": "مثل الزلاجة"
   },
   "notif": {
-    "sessionTitle": "تمرين {{day}}"
+    "sessionTitle": "تمرين {{day}}",
+    "channelName": "تذكيرات التمرين",
+    "channelDescription": "تذكير الساعة 9 صباحًا في الأيام التي فيها جلسة مجدولة",
+    "startAction": "ابدأ الجلسة"
   },
   "health": {
     "stepsWeekLabel": "الخطوات خلال آخر 7 أيام",
@@ -531,7 +550,22 @@
     "signOut": "تسجيل الخروج",
     "autoPush": "إرسال تلقائي عند الإنهاء",
     "retryNow": "أعد المحاولة الآن",
-    "orUseEmail": "أو استخدم البريد الإلكتروني"
+    "orUseEmail": "أو استخدم البريد الإلكتروني",
+    "on": "مُفعّل",
+    "off": "مُعطّل",
+    "queued_zero": "لا تمارين في قائمة الانتظار",
+    "queued_one": "تمرين واحد في قائمة الانتظار",
+    "queued_two": "تمرينان في قائمة الانتظار",
+    "queued_few": "{{count}} تمارين في قائمة الانتظار",
+    "queued_many": "{{count}} تمرينًا في قائمة الانتظار",
+    "queued_other": "{{count}} تمرين في قائمة الانتظار",
+    "queueEmpty": "قائمة الانتظار فارغة",
+    "queuedSignedOut_zero": "لا تمارين في قائمة الانتظار.",
+    "queuedSignedOut_one": "تمرين واحد في قائمة الانتظار — ستتم المزامنة بعد تسجيل الدخول.",
+    "queuedSignedOut_two": "تمرينان في قائمة الانتظار — ستتم المزامنة بعد تسجيل الدخول.",
+    "queuedSignedOut_few": "{{count}} تمارين في قائمة الانتظار — ستتم المزامنة بعد تسجيل الدخول.",
+    "queuedSignedOut_many": "{{count}} تمرينًا في قائمة الانتظار — ستتم المزامنة بعد تسجيل الدخول.",
+    "queuedSignedOut_other": "{{count}} تمرين في قائمة الانتظار — ستتم المزامنة بعد تسجيل الدخول."
   },
   "jump": {
     "title": "تسجيل القفز العمودي",

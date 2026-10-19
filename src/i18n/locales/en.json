@@ -154,7 +154,10 @@
     "noJumpsBody": "Track your vertical jump to monitor athletic progress.",
     "unknownExercise": "Unknown exercise",
     "stallWeightPlateau": "Weight plateau",
-    "stallRpeCreep": "RPE creep"
+    "stallRpeCreep": "RPE creep",
+    "unknownSession": "Unknown session",
+    "loadCaption": "{{unit}} — top set per session",
+    "ormCaption": "{{unit}} — estimated 1RM, best per session"
   },
   "today": {
     "noProgramTitle": "No active program",
@@ -185,7 +188,9 @@
     "stallAlert_one": "{{count}} stall flag detected — consider a deload",
     "stallAlert_other": "{{count}} stall flags detected — consider a deload",
     "deloadAdvance": "{{missed}}/{{total}} sets fell short over your last 3 sessions — consider advancing to a deload phase.",
-    "deloadSchedule": "{{missed}}/{{total}} sets fell short over your last 3 sessions — consider scheduling a deload."
+    "deloadSchedule": "{{missed}}/{{total}} sets fell short over your last 3 sessions — consider scheduling a deload.",
+    "startedOn": "Started {{date}}",
+    "resumeWorkout": "Resume workout"
   },
   "settings": {
     "errorReports": "Send error reports",
@@ -260,7 +265,9 @@
     "deletePhotoConfirm": "Delete photo from {{date}}?",
     "unitSystem": "Unit system",
     "weightChart": "Weight trend chart",
-    "weightChartAvg": "Weight trend with 7-day moving average"
+    "weightChartAvg": "Weight trend with 7-day moving average",
+    "photosEvicted_one": "Saved. Oldest {{count}} photo removed to free space.",
+    "photosEvicted_other": "Saved. Oldest {{count}} photos removed to free space."
   },
   "program": {
     "title": "Programs",
@@ -283,6 +290,7 @@
     "addSession": "Add session",
     "addPhase": "Add phase",
     "phaseNamePlaceholder": "Phase name",
+    "deletePhaseConfirm": "Delete the phase “{{name}}” and its sessions? Finished workouts stay in Progress.",
     "weekStart": "Week start",
     "weekEnd": "Week end",
     "weekRange": "Wk {{start}}–{{end}}",
@@ -464,10 +472,17 @@
     "barOnly": "Bar only · {{weight}} {{unit}}",
     "addPlatePair": "Add a pair of {{weight}} {{unit}} plates",
     "useWeight": "Use {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — no plates make the difference."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — no plates make the difference.",
+    "lastSession": "Last · {{date}}",
+    "restSeconds": "{{secs}}s rest",
+    "restrictionAvoid": "{{label}} — flagged as avoid",
+    "restrictionModify": "{{label}} — modify load/range"
   },
   "notif": {
-    "sessionTitle": "{{day}} session"
+    "sessionTitle": "{{day}} session",
+    "channelName": "Workout Reminders",
+    "channelDescription": "Daily 9 AM reminder on days you have a session scheduled",
+    "startAction": "Start session"
   },
   "health": {
     "stepsWeekLabel": "Steps over the last 7 days",
@@ -499,7 +514,14 @@
     "signOut": "Sign out",
     "autoPush": "Auto-push on finish",
     "retryNow": "Retry now",
-    "orUseEmail": "or use email"
+    "orUseEmail": "or use email",
+    "on": "On",
+    "off": "Off",
+    "queued_one": "{{count}} workout queued",
+    "queued_other": "{{count}} workouts queued",
+    "queueEmpty": "Queue empty",
+    "queuedSignedOut_one": "{{count}} workout queued — will sync after sign-in.",
+    "queuedSignedOut_other": "{{count}} workouts queued — will sync after sign-in."
   },
   "jump": {
     "title": "Log vertical jump",

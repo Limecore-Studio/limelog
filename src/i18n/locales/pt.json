@@ -156,7 +156,10 @@
     "noJumpsBody": "Acompanhe seu salto vertical para monitorar sua evolução atlética.",
     "unknownExercise": "Exercício desconhecido",
     "stallWeightPlateau": "Estagnação de carga",
-    "stallRpeCreep": "Aumento de RPE"
+    "stallRpeCreep": "Aumento de RPE",
+    "unknownSession": "Sessão desconhecida",
+    "loadCaption": "{{unit}} — série mais pesada por sessão",
+    "ormCaption": "{{unit}} — 1RM estimado, o melhor por sessão"
   },
   "today": {
     "noProgramTitle": "Nenhum programa ativo",
@@ -189,7 +192,9 @@
     "stallAlert_many": "{{count}} sinais de estagnação detectados — considere um deload",
     "stallAlert_other": "{{count}} sinais de estagnação detectados — considere um deload",
     "deloadAdvance": "{{missed}}/{{total}} séries ficaram abaixo do alvo nos seus últimos 3 treinos — considere avançar para uma fase de deload.",
-    "deloadSchedule": "{{missed}}/{{total}} séries ficaram abaixo do alvo nos seus últimos 3 treinos — considere agendar um deload."
+    "deloadSchedule": "{{missed}}/{{total}} séries ficaram abaixo do alvo nos seus últimos 3 treinos — considere agendar um deload.",
+    "startedOn": "Iniciado em {{date}}",
+    "resumeWorkout": "Retomar treino"
   },
   "settings": {
     "errorReports": "Enviar relatórios de erro",
@@ -284,7 +289,10 @@
     "deletePhotoConfirm": "Excluir foto de {{date}}?",
     "unitSystem": "Sistema de unidades",
     "weightChart": "Gráfico de tendência do peso",
-    "weightChartAvg": "Tendência do peso com média móvel de 7 dias"
+    "weightChartAvg": "Tendência do peso com média móvel de 7 dias",
+    "photosEvicted_one": "Salva. A foto mais antiga foi removida para liberar espaço.",
+    "photosEvicted_many": "Salva. As {{count}} fotos mais antigas foram removidas para liberar espaço.",
+    "photosEvicted_other": "Salva. As {{count}} fotos mais antigas foram removidas para liberar espaço."
   },
   "profile": {
     "title": "Perfil",
@@ -371,7 +379,11 @@
     "barOnly": "Só a barra · {{weight}} {{unit}}",
     "addPlatePair": "Adicionar um par de discos de {{weight}} {{unit}}",
     "useWeight": "Usar {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — nenhum disco cobre a diferença."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — nenhum disco cobre a diferença.",
+    "lastSession": "Última vez · {{date}}",
+    "restSeconds": "{{secs}} s de descanso",
+    "restrictionAvoid": "{{label}} — marcado para evitar",
+    "restrictionModify": "{{label}} — ajuste a carga ou a amplitude"
   },
   "program": {
     "title": "Programas",
@@ -396,6 +408,7 @@
     "addSession": "Adicionar treino",
     "addPhase": "Adicionar fase",
     "phaseNamePlaceholder": "Nome da fase",
+    "deletePhaseConfirm": "Excluir a fase “{{name}}” e os seus treinos? Os treinos concluídos continuam em Progresso.",
     "weekStart": "Semana inicial",
     "weekEnd": "Semana final",
     "weekRange": "Sem {{start}}–{{end}}",
@@ -475,7 +488,10 @@
     "customEquipPlaceholder": "ex.: trenó"
   },
   "notif": {
-    "sessionTitle": "Treino de {{day}}"
+    "sessionTitle": "Treino de {{day}}",
+    "channelName": "Lembretes de treino",
+    "channelDescription": "Lembrete às 9h nos dias com uma sessão agendada",
+    "startAction": "Iniciar treino"
   },
   "health": {
     "stepsWeekLabel": "Passos dos últimos 7 dias",
@@ -507,7 +523,16 @@
     "signOut": "Sair",
     "autoPush": "Enviar automaticamente ao finalizar",
     "retryNow": "Tentar novamente",
-    "orUseEmail": "ou usar e-mail"
+    "orUseEmail": "ou usar e-mail",
+    "on": "Ligado",
+    "off": "Desligado",
+    "queued_one": "{{count}} treino na fila",
+    "queued_many": "{{count}} treinos na fila",
+    "queued_other": "{{count}} treinos na fila",
+    "queueEmpty": "Fila vazia",
+    "queuedSignedOut_one": "{{count}} treino na fila — será sincronizado após entrar na conta.",
+    "queuedSignedOut_many": "{{count}} treinos na fila — serão sincronizados após entrar na conta.",
+    "queuedSignedOut_other": "{{count}} treinos na fila — serão sincronizados após entrar na conta."
   },
   "jump": {
     "title": "Registrar salto vertical",

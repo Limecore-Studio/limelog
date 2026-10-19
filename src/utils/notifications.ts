@@ -117,31 +117,43 @@ async function cancelAllSlots(): Promise<void> {
   await LocalNotifications.cancel({ notifications: allSlotIds });
 }
 
+/**
+ * Create the channel and register the action type, in the app's current
+ * language. v1.18.1 (LimeLog#75): both were English in every language. Android
+ * keeps what was registered, so App calls this again when the language changes
+ * (re-creating an existing channel id renames it) and then re-schedules the
+ * reminders, which are built with the button as registered at that moment.
+ */
+export async function labelNotifications(): Promise<void> {
+  if (!Capacitor.isNativePlatform()) return;
+  await LocalNotifications.createChannel({
+    id: CHANNEL_ID,
+    name: i18n.t('notif.channelName'),
+    description: i18n.t('notif.channelDescription'),
+    importance: 4, // IMPORTANCE_HIGH
+    vibration: true,
+    sound: 'default',
+    lights: true,
+  });
+  // Register the action-type (idempotent — re-registering with the same
+  // id replaces the prior set). Must happen before any notification with
+  // `actionTypeId: 'workout-reminder'` fires, or the button won't render.
+  await LocalNotifications.registerActionTypes({
+    types: [
+      {
+        id: ACTION_TYPE_ID,
+        actions: [
+          { id: WORKOUT_ACTION_START, title: i18n.t('notif.startAction') },
+        ],
+      },
+    ],
+  });
+}
+
 export async function setupNotificationChannel(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
   try {
-    await LocalNotifications.createChannel({
-      id: CHANNEL_ID,
-      name: 'Workout Reminders',
-      description: 'Daily 9 AM reminder on days you have a session scheduled',
-      importance: 4, // IMPORTANCE_HIGH
-      vibration: true,
-      sound: 'default',
-      lights: true,
-    });
-    // Register the action-type (idempotent — re-registering with the same
-    // id replaces the prior set). Must happen before any notification with
-    // `actionTypeId: 'workout-reminder'` fires, or the button won't render.
-    await LocalNotifications.registerActionTypes({
-      types: [
-        {
-          id: ACTION_TYPE_ID,
-          actions: [
-            { id: WORKOUT_ACTION_START, title: 'Start session' },
-          ],
-        },
-      ],
-    });
+    await labelNotifications();
     // App-startup defensive sweep: blind-cancel every slot in case AlarmManager
     // is still holding phantom alarms from a previous install / data clear /
     // older program. `scheduleWorkoutReminders` will re-issue fresh schedules

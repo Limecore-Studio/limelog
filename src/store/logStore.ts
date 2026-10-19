@@ -5,7 +5,7 @@ import type { SessionLog, SetLog, VerticalJumpLog, StallFlag, StallFlagType, Ses
 import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { mapSessionLogToNexus } from '@/lib/nexusSync';
-import { enqueue as outboxEnqueue } from '@/lib/outbox';
+import { enqueue as outboxEnqueue, cancel as outboxCancel } from '@/lib/outbox';
 import { detectNewPRs, currentPR } from '@/lib/prDetection';
 
 interface LogStore {
@@ -76,6 +76,33 @@ interface LogStore {
   // Selectors
   getSetsForExercise: (exerciseId: string) => SetLog[];
   getLastSessionLog: (sessionTemplateId: string) => SessionLog | null;
+}
+
+// v1.18.1 (LimeLog#72) — a PR belongs to the finished workout it was detected
+// in. Undo reopens that workout and Discard deletes it, so both retract its
+// PRs: dropped here and deleted upstream. They used to stay for good, so a
+// typo'd 1000 kg fixed after Undo, or a discarded workout, left a phantom PR
+// that every later lift was measured against. Finishing again detects them
+// afresh against the PRs that remain. currentPR is derived from the rows, so it
+// falls back to the best remaining one by itself.
+function retractSessionPRs(logId: string): void {
+  const { exercisePRs, lastCelebratedPRs } = useLogStore.getState();
+  const gone = exercisePRs.filter((p) => p.sessionId === logId);
+  if (gone.length === 0) return;
+  const kept = exercisePRs.filter((p) => p.sessionId !== logId);
+  storage.setExercisePRs(kept);
+  useLogStore.setState({
+    exercisePRs: kept,
+    lastCelebratedPRs: lastCelebratedPRs?.some((p) => p.sessionId === logId) ? null : lastCelebratedPRs,
+  });
+  // An insert still queued is dropped whatever the sync setting.
+  const ids = new Set(gone.map((p) => p.id));
+  outboxCancel('upsert_exercise_pr', (p) => ids.has(p.id));
+  // Same gate as the push in finalizeSession and the discard tombstone.
+  const nexus = useNexusStore.getState();
+  if (!nexus.configured || !nexus.syncEnabled) return;
+  for (const pr of gone) outboxEnqueue('delete_exercise_pr', { id: pr.id });
+  nexus.refreshPendingCount();
 }
 
 export const useLogStore = create<LogStore>((set, get) => ({
@@ -185,6 +212,12 @@ export const useLogStore = create<LogStore>((set, get) => ({
       set({ exercisePRs, lastCelebratedPRs: newPRs });
     }
 
+    // v1.18.1 (LimeLog#75) — stall detection runs here, once per finished
+    // workout, for each exercise it has completed sets of. It used to run on
+    // every set tick against the workout still in progress.
+    const done = new Set(finalizedLog.sets.filter((s) => s.completed).map((s) => s.exerciseId));
+    for (const exerciseId of done) get().checkAndFlagStalls(exerciseId);
+
     const nexus = useNexusStore.getState();
     if (!nexus.configured || !nexus.syncEnabled) return;
 
@@ -226,12 +259,14 @@ export const useLogStore = create<LogStore>((set, get) => ({
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    retractSessionPRs(logId);
   },
 
   discardSession: (logId) => {
     const sessionLogs = get().sessionLogs.filter((l) => l.id !== logId);
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    retractSessionPRs(logId);
     // v1.7 (BUG-6) — tombstone the discard so recovery-hydrate never resurrects
     // this workout from its still-present cloud row (push-only = no cloud
     // delete). Deduped; the list only grows with intentional discards.
@@ -328,20 +363,21 @@ export const useLogStore = create<LogStore>((set, get) => ({
   },
 
   checkAndFlagStalls: (exerciseId) => {
-    const allSets = get().getSetsForExercise(exerciseId);
-    if (allSets.length < 9) return;
+    // v1.18.1 (LimeLog#75): finished workouts and completed sets only. This
+    // counted the workout in progress, unfinished rows included, so after two
+    // flat sessions the first set of a third flagged a plateau, and the flag
+    // stayed when the lifter then went on to add weight.
+    const counts = (s: SetLog) => s.exerciseId === exerciseId && s.completed && s.weightKg !== null;
+    const finished = get().sessionLogs.filter((l) => l.finalizedAt && l.sets.some(counts));
+    if (finished.reduce((n, l) => n + l.sets.filter(counts).length, 0) < 9) return;
 
-    const logs = get().sessionLogs
-      .filter((l) => l.sets.some((s) => s.exerciseId === exerciseId))
+    const logs = finished
       .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
       .slice(0, 3);
 
     if (logs.length < 3) return;
 
-    const topWeights = logs.map((l) => {
-      const exSets = l.sets.filter((s) => s.exerciseId === exerciseId && s.weightKg !== null);
-      return exSets.length > 0 ? Math.max(...exSets.map((s) => s.weightKg!)) : 0;
-    });
+    const topWeights = logs.map((l) => Math.max(...l.sets.filter(counts).map((s) => s.weightKg!)));
 
     const isPlateaued = topWeights[0] <= topWeights[1] && topWeights[1] <= topWeights[2];
     if (!isPlateaued) return;

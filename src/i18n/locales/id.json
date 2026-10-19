@@ -152,7 +152,10 @@
     "noJumpsBody": "Lacak lompatan vertikalmu untuk memantau kemajuan atletik.",
     "unknownExercise": "Latihan tidak dikenal",
     "stallWeightPlateau": "Stagnasi beban",
-    "stallRpeCreep": "Kenaikan RPE"
+    "stallRpeCreep": "Kenaikan RPE",
+    "unknownSession": "Sesi tidak dikenal",
+    "loadCaption": "{{unit}} — set terberat per sesi",
+    "ormCaption": "{{unit}} — estimasi 1RM, terbaik per sesi"
   },
   "today": {
     "noProgramTitle": "Tidak ada program aktif",
@@ -181,7 +184,9 @@
     "e1rmTitle": "Estimasi 1RM terbaik dari catatan latihanmu",
     "stallAlert_other": "{{count}} tanda stagnasi terdeteksi — pertimbangkan deload",
     "deloadAdvance": "{{missed}}/{{total}} set kurang dari target dalam 3 sesi terakhir — pertimbangkan masuk ke fase deload.",
-    "deloadSchedule": "{{missed}}/{{total}} set kurang dari target dalam 3 sesi terakhir — pertimbangkan menjadwalkan deload."
+    "deloadSchedule": "{{missed}}/{{total}} set kurang dari target dalam 3 sesi terakhir — pertimbangkan menjadwalkan deload.",
+    "startedOn": "Dimulai {{date}}",
+    "resumeWorkout": "Lanjutkan latihan"
   },
   "settings": {
     "errorReports": "Kirim laporan kesalahan",
@@ -276,7 +281,8 @@
     "deletePhotoConfirm": "Hapus foto tanggal {{date}}?",
     "unitSystem": "Sistem satuan",
     "weightChart": "Grafik tren berat badan",
-    "weightChartAvg": "Tren berat badan dengan rata-rata bergerak 7 hari"
+    "weightChartAvg": "Tren berat badan dengan rata-rata bergerak 7 hari",
+    "photosEvicted_other": "Tersimpan. {{count}} foto terlama dihapus untuk mengosongkan ruang."
   },
   "profile": {
     "title": "Profil",
@@ -363,7 +369,11 @@
     "barOnly": "Barbel saja · {{weight}} {{unit}}",
     "addPlatePair": "Tambah sepasang beban {{weight}} {{unit}}",
     "useWeight": "Pakai {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — tidak ada beban yang pas untuk selisihnya."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — tidak ada beban yang pas untuk selisihnya.",
+    "lastSession": "Terakhir · {{date}}",
+    "restSeconds": "Istirahat {{secs}} dtk",
+    "restrictionAvoid": "{{label}} — ditandai untuk dihindari",
+    "restrictionModify": "{{label}} — sesuaikan beban atau rentang gerak"
   },
   "program": {
     "title": "Program",
@@ -384,6 +394,7 @@
     "addSession": "Tambah sesi",
     "addPhase": "Tambah fase",
     "phaseNamePlaceholder": "Nama fase",
+    "deletePhaseConfirm": "Hapus fase “{{name}}” beserta sesinya? Latihan yang selesai tetap ada di Progres.",
     "weekStart": "Minggu awal",
     "weekEnd": "Minggu akhir",
     "weekRange": "Mgg {{start}}–{{end}}",
@@ -459,7 +470,10 @@
     "customEquipPlaceholder": "mis. sled"
   },
   "notif": {
-    "sessionTitle": "Latihan {{day}}"
+    "sessionTitle": "Latihan {{day}}",
+    "channelName": "Pengingat latihan",
+    "channelDescription": "Pengingat pukul 09.00 pada hari dengan sesi terjadwal",
+    "startAction": "Mulai sesi"
   },
   "health": {
     "stepsWeekLabel": "Langkah selama 7 hari terakhir",
@@ -491,7 +505,12 @@
     "signOut": "Keluar",
     "autoPush": "Kirim otomatis saat selesai",
     "retryNow": "Coba lagi sekarang",
-    "orUseEmail": "atau gunakan email"
+    "orUseEmail": "atau gunakan email",
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "queued_other": "{{count}} latihan dalam antrean",
+    "queueEmpty": "Antrean kosong",
+    "queuedSignedOut_other": "{{count}} latihan dalam antrean — akan disinkronkan setelah masuk."
   },
   "jump": {
     "title": "Catat lompatan vertikal",

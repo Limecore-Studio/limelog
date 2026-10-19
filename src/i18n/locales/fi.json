@@ -154,7 +154,10 @@
     "noJumpsBody": "Seuraa vertikaalihyppyäsi urheilullisen kehityksen mittarina.",
     "unknownExercise": "Tuntematon liike",
     "stallWeightPlateau": "Painon tasanne",
-    "stallRpeCreep": "RPE:n nousu"
+    "stallRpeCreep": "RPE:n nousu",
+    "unknownSession": "Tuntematon treeni",
+    "loadCaption": "{{unit}} — treenin raskain sarja",
+    "ormCaption": "{{unit}} — arvioitu 1RM, treenin paras"
   },
   "today": {
     "noProgramTitle": "Ei aktiivista ohjelmaa",
@@ -185,7 +188,9 @@
     "stallAlert_one": "{{count}} pysähtymismerkintä havaittu — harkitse kevennysjaksoa",
     "stallAlert_other": "{{count}} pysähtymismerkintää havaittu — harkitse kevennysjaksoa",
     "deloadAdvance": "{{missed}}/{{total}} sarjaa jäi tavoitteesta kolmen viime treenin aikana — harkitse siirtymistä kevennysjaksoon.",
-    "deloadSchedule": "{{missed}}/{{total}} sarjaa jäi tavoitteesta kolmen viime treenin aikana — harkitse kevennysjakson ajoittamista."
+    "deloadSchedule": "{{missed}}/{{total}} sarjaa jäi tavoitteesta kolmen viime treenin aikana — harkitse kevennysjakson ajoittamista.",
+    "startedOn": "Aloitettu {{date}}",
+    "resumeWorkout": "Jatka treeniä"
   },
   "settings": {
     "errorReports": "Lähetä virheraportit",
@@ -260,7 +265,9 @@
     "deletePhotoConfirm": "Poistetaanko kuva päivältä {{date}}?",
     "unitSystem": "Yksikköjärjestelmä",
     "weightChart": "Painon trendikaavio",
-    "weightChartAvg": "Painon trendi 7 päivän liukuvalla keskiarvolla"
+    "weightChartAvg": "Painon trendi 7 päivän liukuvalla keskiarvolla",
+    "photosEvicted_one": "Tallennettu. Vanhin kuva poistettiin tilan vapauttamiseksi.",
+    "photosEvicted_other": "Tallennettu. {{count}} vanhinta kuvaa poistettiin tilan vapauttamiseksi."
   },
   "program": {
     "title": "Ohjelmat",
@@ -283,6 +290,7 @@
     "addSession": "Lisää harjoitus",
     "addPhase": "Lisää vaihe",
     "phaseNamePlaceholder": "Vaiheen nimi",
+    "deletePhaseConfirm": "Poistetaanko vaihe ”{{name}}” ja sen harjoitukset? Tehdyt treenit jäävät Edistymiseen.",
     "weekStart": "Alkuviikko",
     "weekEnd": "Loppuviikko",
     "weekRange": "Vk {{start}}–{{end}}",
@@ -464,10 +472,17 @@
     "barOnly": "Pelkkä tanko · {{weight}} {{unit}}",
     "addPlatePair": "Lisää pari {{weight}} {{unit}} levyjä",
     "useWeight": "Käytä {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — erotusta ei saa levyillä."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — erotusta ei saa levyillä.",
+    "lastSession": "Viimeksi · {{date}}",
+    "restSeconds": "{{secs}} s lepo",
+    "restrictionAvoid": "{{label}} — merkitty vältettäväksi",
+    "restrictionModify": "{{label}} — muokkaa kuormaa tai liikerataa"
   },
   "notif": {
-    "sessionTitle": "{{day}}n treeni"
+    "sessionTitle": "{{day}}n treeni",
+    "channelName": "Treenimuistutukset",
+    "channelDescription": "Muistutus klo 9 päivinä, joille on ajoitettu treeni",
+    "startAction": "Aloita treeni"
   },
   "health": {
     "stepsWeekLabel": "Askeleet viimeisen 7 päivän ajalta",
@@ -499,7 +514,14 @@
     "signOut": "Kirjaudu ulos",
     "autoPush": "Lähetä automaattisesti lopetettaessa",
     "retryNow": "Yritä uudelleen",
-    "orUseEmail": "tai käytä sähköpostia"
+    "orUseEmail": "tai käytä sähköpostia",
+    "on": "Päällä",
+    "off": "Pois",
+    "queued_one": "{{count}} treeni jonossa",
+    "queued_other": "{{count}} treeniä jonossa",
+    "queueEmpty": "Jono on tyhjä",
+    "queuedSignedOut_one": "{{count}} treeni jonossa — synkronoidaan kirjautumisen jälkeen.",
+    "queuedSignedOut_other": "{{count}} treeniä jonossa — synkronoidaan kirjautumisen jälkeen."
   },
   "jump": {
     "title": "Kirjaa vertikaalihyppy",

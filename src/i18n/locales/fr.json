@@ -156,7 +156,10 @@
     "noJumpsBody": "Suivez votre saut vertical pour mesurer vos progrès athlétiques.",
     "unknownExercise": "Exercice inconnu",
     "stallWeightPlateau": "Plateau de charge",
-    "stallRpeCreep": "Hausse du RPE"
+    "stallRpeCreep": "Hausse du RPE",
+    "unknownSession": "Séance inconnue",
+    "loadCaption": "{{unit}} — série la plus lourde par séance",
+    "ormCaption": "{{unit}} — 1RM estimé, meilleur par séance"
   },
   "today": {
     "noProgramTitle": "Aucun programme actif",
@@ -189,7 +192,9 @@
     "stallAlert_many": "{{count}} signes de stagnation détectés — envisagez un deload",
     "stallAlert_other": "{{count}} signes de stagnation détectés — envisagez un deload",
     "deloadAdvance": "{{missed}}/{{total}} séries en dessous de l'objectif sur vos 3 dernières séances — envisagez de passer à une phase de deload.",
-    "deloadSchedule": "{{missed}}/{{total}} séries en dessous de l'objectif sur vos 3 dernières séances — envisagez de programmer un deload."
+    "deloadSchedule": "{{missed}}/{{total}} séries en dessous de l'objectif sur vos 3 dernières séances — envisagez de programmer un deload.",
+    "startedOn": "Commencée le {{date}}",
+    "resumeWorkout": "Reprendre la séance"
   },
   "settings": {
     "errorReports": "Envoyer les rapports d’erreur",
@@ -264,7 +269,10 @@
     "deletePhotoConfirm": "Supprimer la photo du {{date}} ?",
     "unitSystem": "Système d’unités",
     "weightChart": "Graphique de tendance du poids",
-    "weightChartAvg": "Tendance du poids avec moyenne mobile sur 7 jours"
+    "weightChartAvg": "Tendance du poids avec moyenne mobile sur 7 jours",
+    "photosEvicted_one": "Enregistrée. La photo la plus ancienne a été supprimée pour libérer de l’espace.",
+    "photosEvicted_many": "Enregistrée. Les {{count}} photos les plus anciennes ont été supprimées pour libérer de l’espace.",
+    "photosEvicted_other": "Enregistrée. Les {{count}} photos les plus anciennes ont été supprimées pour libérer de l’espace."
   },
   "program": {
     "title": "Programmes",
@@ -287,6 +295,7 @@
     "addSession": "Ajouter une séance",
     "addPhase": "Ajouter une phase",
     "phaseNamePlaceholder": "Nom de la phase",
+    "deletePhaseConfirm": "Supprimer la phase « {{name}} » et ses séances ? Les entraînements terminés restent dans Progrès.",
     "weekStart": "Semaine de début",
     "weekEnd": "Semaine de fin",
     "weekRange": "Sem. {{start}}–{{end}}",
@@ -472,10 +481,17 @@
     "barOnly": "Barre seule · {{weight}} {{unit}}",
     "addPlatePair": "Ajouter une paire de disques de {{weight}} {{unit}}",
     "useWeight": "Utiliser {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — aucun disque ne fait la différence."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — aucun disque ne fait la différence.",
+    "lastSession": "Dernière séance · {{date}}",
+    "restSeconds": "{{secs}} s de repos",
+    "restrictionAvoid": "{{label}} — à éviter",
+    "restrictionModify": "{{label}} — adapter la charge ou l’amplitude"
   },
   "notif": {
-    "sessionTitle": "Séance du {{day}}"
+    "sessionTitle": "Séance du {{day}}",
+    "channelName": "Rappels d’entraînement",
+    "channelDescription": "Rappel à 9 h les jours où une séance est prévue",
+    "startAction": "Démarrer la séance"
   },
   "health": {
     "stepsWeekLabel": "Pas sur les 7 derniers jours",
@@ -507,7 +523,16 @@
     "signOut": "Se déconnecter",
     "autoPush": "Envoi auto à la fin",
     "retryNow": "Réessayer",
-    "orUseEmail": "ou utiliser l’e-mail"
+    "orUseEmail": "ou utiliser l’e-mail",
+    "on": "Activé",
+    "off": "Désactivé",
+    "queued_one": "{{count}} séance en attente",
+    "queued_many": "{{count}} séances en attente",
+    "queued_other": "{{count}} séances en attente",
+    "queueEmpty": "File d’attente vide",
+    "queuedSignedOut_one": "{{count}} séance en attente — synchronisée après connexion.",
+    "queuedSignedOut_many": "{{count}} séances en attente — synchronisées après connexion.",
+    "queuedSignedOut_other": "{{count}} séances en attente — synchronisées après connexion."
   },
   "jump": {
     "title": "Enregistrer un saut vertical",

@@ -5,8 +5,8 @@ import { useProgramStore } from '@/store/programStore';
 import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
 import type { SessionTemplate } from '@/types/program';
-import { getDayOfWeek, formatWeight } from '@/utils/helpers';
-import { sessionsForDay } from '@/lib/todaySessions';
+import { getDayOfWeek, formatWeight, formatDate } from '@/utils/helpers';
+import { sessionsForDay, resolvePhase, deloadTargetReps, todaysLog, resumableLogs } from '@/lib/todaySessions';
 import { bestEstimateForExercise, missedRepRatio } from '@/utils/oneRepMax';
 import { EmptyState, Button, Badge } from '@/components/ui';
 import { Dumbbell, AlertTriangle, CheckCircle2, TrendingUp, ChevronRight, Footprints } from 'lucide-react';
@@ -14,15 +14,6 @@ import { HealthTodayStrip } from '@/components/HealthConnect';
 import { CardioLogModal } from '@/components/CardioLogModal';
 import { useConfirm } from '@/components/confirmContext';
 import './TodayPage.css';
-
-function isSameLocalDay(iso: string, now: Date): boolean {
-  const d = new Date(iso);
-  return (
-    d.getFullYear() === now.getFullYear() &&
-    d.getMonth() === now.getMonth() &&
-    d.getDate() === now.getDate()
-  );
-}
 
 export function TodayPage() {
   const { t, i18n } = useTranslation();
@@ -32,7 +23,7 @@ export function TodayPage() {
   // someone who only runs has no program, so gating it behind the program view
   // would hide it from exactly the person it exists for.
   const [showCardio, setShowCardio] = useState(false);
-  const { activeProgram, exercises, advancePhase } = useProgramStore();
+  const { programs, activeProgram, exercises, advancePhase } = useProgramStore();
   const { sessionLogs, startSession, unfinalizeSession, discardSession, stallFlags } = useLogStore();
   const unit = useUserStore((s) => s.profile.unitPreference);
 
@@ -43,26 +34,35 @@ export function TodayPage() {
 
   // v1.2 — phase tracking honors Program.activePhaseId when set. Old
   // programs without the field fall back to lowest-orderIndex (matches
-  // v1.1 behavior). Sorted explicitly so the "next phase" lookup is
-  // stable regardless of how phases are stored.
-  function getCurrentPhaseAndNext() {
-    if (!activeProgram || activeProgram.phases.length === 0) {
-      return { current: null, next: null };
-    }
-    const sorted = [...activeProgram.phases].sort((a, b) => a.orderIndex - b.orderIndex);
-    const idx = activeProgram.activePhaseId
-      ? sorted.findIndex((ph) => ph.id === activeProgram.activePhaseId)
-      : 0;
-    const safeIdx = idx < 0 ? 0 : idx;
-    return {
-      current: sorted[safeIdx] ?? null,
-      next: safeIdx < sorted.length - 1 ? sorted[safeIdx + 1] : null,
-    };
-  }
-  const { current: phase, next: nextPhase } = getCurrentPhaseAndNext();
+  // v1.1 behavior). v1.18.1 (LimeLog#73): resolved by the same function
+  // advancePhase uses, so "Next phase" always has somewhere to go.
+  const { current: phase, next: nextPhase } = resolvePhase(activeProgram);
 
   // limelog#43 - the active phase's sessions for today, not every phase's.
   const todaySessions: SessionTemplate[] = sessionsForDay(activeProgram, today, phase?.id);
+
+  // v1.18.1 (LimeLog#74) — any unfinished workout the cards below do not show,
+  // whatever day it was started, so one begun before midnight stays reachable.
+  const resumeCards = resumableLogs(sessionLogs, todaySessions, now).map((l) => (
+    <div key={l.id} className="today-session">
+      <div className="today-session__header">
+        <div className="today-session__title-block">
+          <span className="today-session__name">
+            {programs.flatMap((p) => p.sessions).find((s) => s.id === l.sessionTemplateId)?.name ?? t('progress.unknownSession')}
+          </span>
+          <span className="today-session__sub">{t('today.startedOn', { date: formatDate(l.loggedAt) })}</span>
+        </div>
+        <div className="today-session__active-actions">
+          <Button variant="primary" size="md" onClick={() => handleResume(l.id)}>
+            {t('today.resumeWorkout')}
+          </Button>
+          <button className="today-session__discard" onClick={() => handleDiscard(l.id)} aria-label={t('today.discard')}>
+            {t('today.discard')}
+          </button>
+        </div>
+      </div>
+    </div>
+  ));
 
   // v1.2 — deload suggestion. Walks the last 3 finalized sessions and
   // compares logged reps to each exercise's targetReps lower-bound.
@@ -71,15 +71,9 @@ export function TodayPage() {
   const deloadSuggestion = useMemo(() => {
     if (!activeProgram) return null;
     if (phase?.type === 'deload') return null; // already on a deload phase
-    const targetReps = new Map<string, string>();
-    for (const session of activeProgram.sessions) {
-      for (const se of session.exercises) {
-        // Only first occurrence wins — different sessions can prescribe
-        // different rep ranges for the same exercise; we use whichever
-        // appears first as a reasonable default.
-        if (!targetReps.has(se.exerciseId)) targetReps.set(se.exerciseId, se.targetReps);
-      }
-    }
+    // v1.18.1 (LimeLog#73): each workout is judged against its own session's
+    // targets, not whichever phase listed the exercise first.
+    const targetReps = deloadTargetReps(activeProgram, phase?.id);
     const recent = [...sessionLogs]
       .filter((l) => l.finalizedAt)
       .sort((a, b) => new Date(b.finalizedAt!).getTime() - new Date(a.finalizedAt!).getTime());
@@ -88,7 +82,7 @@ export function TodayPage() {
     if (result.totalSets < 10) return null;
     if (result.ratio < 0.3) return null;
     return result;
-  }, [activeProgram, sessionLogs, phase?.type]);
+  }, [activeProgram, sessionLogs, phase?.type, phase?.id]);
 
   function handleAdvancePhase() {
     if (!activeProgram || !nextPhase) return;
@@ -127,6 +121,7 @@ export function TodayPage() {
             <span className="today-header__date">{dateStr}</span>
           </div>
         </div>
+        {resumeCards}
         <EmptyState
           icon={<Dumbbell size={36} />}
           title={t('today.noProgramTitle')}
@@ -168,6 +163,8 @@ export function TodayPage() {
       {/* v1.3 BUG-20 — Health Connect daily activity strip. Renders nothing
           when Health Connect is unavailable (web / F-Droid / no HC app). */}
       <HealthTodayStrip />
+
+      {resumeCards}
 
       {/* v1.9 (Item 4) — a run or ride belongs to no program, so it sits
           outside the session list rather than inside it. */}
@@ -234,9 +231,7 @@ export function TodayPage() {
       ) : (
         todaySessions.map((session) => {
           // Only today's logs count as "active for today" — last week's data stays in the past.
-          const log = sessionLogs.find((l) =>
-            l.sessionTemplateId === session.id && isSameLocalDay(l.loggedAt, now)
-          );
+          const log = todaysLog(sessionLogs, session.id, now);
           const isDone = log !== undefined && log.finalizedAt !== undefined;
           const isActive = log !== undefined && !isDone;
 

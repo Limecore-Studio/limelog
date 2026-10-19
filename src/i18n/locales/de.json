@@ -154,7 +154,10 @@
     "noJumpsBody": "Verfolge deinen Vertikalsprung, um athletische Fortschritte zu sehen.",
     "unknownExercise": "Unbekannte Übung",
     "stallWeightPlateau": "Gewichtsplateau",
-    "stallRpeCreep": "RPE-Anstieg"
+    "stallRpeCreep": "RPE-Anstieg",
+    "unknownSession": "Unbekanntes Training",
+    "loadCaption": "{{unit}} — schwerster Satz pro Training",
+    "ormCaption": "{{unit}} — geschätztes 1RM, bester Wert pro Training"
   },
   "today": {
     "noProgramTitle": "Kein aktives Programm",
@@ -185,7 +188,9 @@
     "stallAlert_one": "{{count}} Stagnations-Hinweis erkannt — Deload erwägen",
     "stallAlert_other": "{{count}} Stagnations-Hinweise erkannt — Deload erwägen",
     "deloadAdvance": "{{missed}}/{{total}} Sätze blieben in den letzten 3 Einheiten hinter dem Ziel — erwäge, zur Deload-Phase zu wechseln.",
-    "deloadSchedule": "{{missed}}/{{total}} Sätze blieben in den letzten 3 Einheiten hinter dem Ziel — erwäge, einen Deload einzuplanen."
+    "deloadSchedule": "{{missed}}/{{total}} Sätze blieben in den letzten 3 Einheiten hinter dem Ziel — erwäge, einen Deload einzuplanen.",
+    "startedOn": "Begonnen am {{date}}",
+    "resumeWorkout": "Training fortsetzen"
   },
   "settings": {
     "errorReports": "Fehlerberichte senden",
@@ -260,7 +265,9 @@
     "deletePhotoConfirm": "Foto vom {{date}} löschen?",
     "unitSystem": "Einheitensystem",
     "weightChart": "Diagramm des Gewichtsverlaufs",
-    "weightChartAvg": "Gewichtsverlauf mit gleitendem 7-Tage-Durchschnitt"
+    "weightChartAvg": "Gewichtsverlauf mit gleitendem 7-Tage-Durchschnitt",
+    "photosEvicted_one": "Gespeichert. Das älteste Foto wurde entfernt, um Platz zu schaffen.",
+    "photosEvicted_other": "Gespeichert. Die {{count}} ältesten Fotos wurden entfernt, um Platz zu schaffen."
   },
   "program": {
     "title": "Programme",
@@ -283,6 +290,7 @@
     "addSession": "Einheit hinzufügen",
     "addPhase": "Phase hinzufügen",
     "phaseNamePlaceholder": "Phasenname",
+    "deletePhaseConfirm": "Phase „{{name}}“ und ihre Einheiten löschen? Abgeschlossene Workouts bleiben unter Fortschritt.",
     "weekStart": "Startwoche",
     "weekEnd": "Endwoche",
     "weekRange": "Wo. {{start}}–{{end}}",
@@ -464,10 +472,17 @@
     "barOnly": "Nur die Stange · {{weight}} {{unit}}",
     "addPlatePair": "Ein Paar {{weight}}-{{unit}}-Scheiben hinzufügen",
     "useWeight": "{{weight}} {{unit}} übernehmen",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — die Differenz lässt sich nicht auflegen."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — die Differenz lässt sich nicht auflegen.",
+    "lastSession": "Zuletzt · {{date}}",
+    "restSeconds": "{{secs}} s Pause",
+    "restrictionAvoid": "{{label}} — als „vermeiden“ markiert",
+    "restrictionModify": "{{label}} — Last oder Bewegungsumfang anpassen"
   },
   "notif": {
-    "sessionTitle": "Training am {{day}}"
+    "sessionTitle": "Training am {{day}}",
+    "channelName": "Trainingserinnerungen",
+    "channelDescription": "Erinnerung um 9 Uhr an Tagen mit geplantem Training",
+    "startAction": "Training starten"
   },
   "health": {
     "stepsWeekLabel": "Schritte der letzten 7 Tage",
@@ -499,7 +514,14 @@
     "signOut": "Abmelden",
     "autoPush": "Automatisch senden am Ende",
     "retryNow": "Jetzt erneut versuchen",
-    "orUseEmail": "oder E-Mail verwenden"
+    "orUseEmail": "oder E-Mail verwenden",
+    "on": "An",
+    "off": "Aus",
+    "queued_one": "{{count}} Training in der Warteschlange",
+    "queued_other": "{{count}} Trainings in der Warteschlange",
+    "queueEmpty": "Warteschlange leer",
+    "queuedSignedOut_one": "{{count}} Training in der Warteschlange — wird nach der Anmeldung synchronisiert.",
+    "queuedSignedOut_other": "{{count}} Trainings in der Warteschlange — werden nach der Anmeldung synchronisiert."
   },
   "jump": {
     "title": "Vertikalsprung erfassen",

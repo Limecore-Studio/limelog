@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
 import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
-import { formatWeight } from '@/utils/helpers';
+import { formatWeight, toDisplayWeight, fromDisplayWeight, parseWeightInput } from '@/utils/helpers';
 import { playRestComplete } from '@/utils/audio';
 import { getLastSessionSets, type LastSessionRef } from '@/lib/lastSessionSets';
 import { resolveDone } from '@/lib/setCompletion';
@@ -89,17 +89,20 @@ export function WorkoutPage() {
   const confirm = useConfirm();
   const { logId = '' } = useParams();
   const navigate = useNavigate();
-  const { activeProgram, exercises, updateSessionExercise } = useProgramStore();
-  const { sessionLogs, logSet, updateSet, deleteSet, swapExercise, checkAndFlagStalls, setPerceivedFatigue, finalizeSession, discardSession, currentPRFor } = useLogStore();
+  const { programs, exercises, updateSessionExercise } = useProgramStore();
+  const { sessionLogs, logSet, updateSet, deleteSet, swapExercise, setPerceivedFatigue, finalizeSession, discardSession, currentPRFor } = useLogStore();
   const { profile } = useUserStore();
   // v1.14 Item 13 — the bay is a Cast Iron idea, so the weight-up modal
   // asks the same question ExerciseSection already asks further down.
   const pageTheme = useThemeStore((s) => s.theme);
 
   const log = sessionLogs.find((l) => l.id === logId) ?? null;
+  // v1.18.1 (LimeLog#74 review): looked up in every program, not just the
+  // active one, so a workout Today offers to resume always opens: one started
+  // under another program, or in a phase deleted since (deletePhase keeps it).
   const session = useMemo(
-    () => activeProgram?.sessions.find((s) => s.id === log?.sessionTemplateId) ?? null,
-    [activeProgram, log?.sessionTemplateId]
+    () => programs.flatMap((p) => p.sessions).find((s) => s.id === log?.sessionTemplateId) ?? null,
+    [programs, log?.sessionTemplateId]
   );
 
   const [rest, setRest] = useState<RestState | null>(null);
@@ -168,7 +171,7 @@ export function WorkoutPage() {
     });
   }, [logId]);
 
-  if (!log || !session || !activeProgram) {
+  if (!log || !session) {
     return (
       <div className="workout-page workout-page--missing">
         <button className="workout-page__back" onClick={() => navigate('/today')}>
@@ -397,10 +400,11 @@ export function WorkoutPage() {
               onDeleteSet={(setId) => deleteSet(log.id, setId)}
               onCompleteSet={(setId, completed, restSecs) => {
                 updateSet(log.id, setId, { completed });
-                if (completed) {
-                  checkAndFlagStalls(exercise.id);
-                  startRest(restSecs ?? DEFAULT_REST_SECONDS, exercise.name);
-                }
+                // v1.18.1 (LimeLog#75): no stall check here any more. It ran on
+                // every tick against the workout still in progress, so the first
+                // set of a session flagged a plateau the rest of it then broke.
+                // finalizeSession runs it once, on completed sets.
+                if (completed) startRest(restSecs ?? DEFAULT_REST_SECONDS, exercise.name);
               }}
             />
           );
@@ -453,6 +457,34 @@ export function WorkoutPage() {
         />
       )}
     </div>
+  );
+}
+
+// v1.18.1 (LimeLog#71): the column is headed with the user's unit, so the
+// field shows and takes that unit. It used to show and store the raw number, so
+// an lb user's 225 was saved as 225 kg (496 lb everywhere else). The set still
+// stores kg. While the field has focus it keeps the user's own text: a value
+// with more decimals than the display keeps (226.25 lb) would otherwise be
+// rewritten mid-typing by the round trip through kg.
+function WeightInput({ weightKg, unit, placeholder, onChange }: {
+  weightKg: number | null;
+  unit: 'kg' | 'lb';
+  placeholder: string;
+  onChange: (weightKg: number | null) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="number" inputMode="decimal" min="0" step="0.5"
+      // kg as stored (101.25 stays 101.25); lb converted, to one decimal.
+      value={draft ?? (weightKg == null ? '' : unit === 'kg' ? weightKg : toDisplayWeight(weightKg, unit))}
+      placeholder={placeholder}
+      onBlur={() => setDraft(null)}
+      onChange={(e) => {
+        setDraft(e.target.value);
+        onChange(parseWeightInput(e.target.value, unit));
+      }}
+    />
   );
 }
 
@@ -590,7 +622,7 @@ function ExerciseSection({
             <span><strong>{targetSetsCount}</strong>×{targetReps}</span>
             {targetRpe !== undefined && <span>{t('log.colRpe')} {targetRpe}</span>}
             {targetWeight !== undefined && <span>{formatWeight(targetWeight, unit)}</span>}
-            {restSeconds !== undefined && <span>{restSeconds}s rest</span>}
+            {restSeconds !== undefined && <span>{t('log.restSeconds', { secs: restSeconds })}</span>}
             {pr && (
               <span className="ex-section__pr" title={t('log.currentPr')}>
                 PR {formatWeight(pr.weightKg, unit)}×{pr.reps}
@@ -619,7 +651,7 @@ function ExerciseSection({
 
       {restriction && (
         <div className={`ex-section__flag${restriction.severity === 'avoid' ? ' ex-section__flag--avoid' : ' ex-section__flag--warn'}`}>
-          <span>{restriction.label} — {restriction.severity === 'avoid' ? 'flagged as avoid' : 'modify load/range'}</span>
+          <span>{t(restriction.severity === 'avoid' ? 'log.restrictionAvoid' : 'log.restrictionModify', { label: restriction.label })}</span>
           {restriction.severity === 'avoid' && !override && (
             <button onClick={() => setOverride(true)}>{t('log.override')}</button>
           )}
@@ -643,11 +675,13 @@ function ExerciseSection({
           drawBar={castIron}
           onClose={() => setKeypadOpen(false)}
           // The keypad works in the DISPLAYED unit and the set stores kg, so
-          // the answer is converted back on the way in. `convertLoad` snaps to
-          // a load the plates can build, so a lb round trip lands on a real
-          // bar rather than on 102.05903 kg.
+          // the answer is converted back on the way in. v1.18.1 (LimeLog#71):
+          // exactly, the same way the weight field converts. It used to snap
+          // to KILO plates (`convertLoad(total, unit, 'kg')`), so 225 lb of
+          // pound plates was stored as 102.5 kg and read back as 226 lb. The
+          // total is already a load the user's own plates build.
           onDone={(total) => {
-            onUpdateSet(nextSet.id, { weightKg: convertLoad(total, unit, 'kg') });
+            onUpdateSet(nextSet.id, { weightKg: fromDisplayWeight(total, unit) });
             setKeypadOpen(false);
           }}
         />
@@ -658,7 +692,7 @@ function ExerciseSection({
           {/* v1.6 — progressive overload reference: what you did last time. */}
           {lastSession ? (
             <div className="ex-section__last">
-              <span className="ex-section__last-label">Last · {lastSession.date.slice(5)}</span>
+              <span className="ex-section__last-label">{t('log.lastSession', { date: lastSession.date.slice(5) })}</span>
               <div className="ex-section__last-sets">
                 {lastSession.sets.map((s) => (
                   <span key={s.id} className="ex-section__last-set">
@@ -693,10 +727,11 @@ function ExerciseSection({
               >
                 {s.completed ? '✓' : s.setNumber}
               </button>
-              <input
-                type="number" inputMode="decimal" min="0" step="0.5"
-                value={s.weightKg ?? ''} placeholder={targetWeight !== undefined ? String(targetWeight) : '—'}
-                onChange={(e) => onUpdateSet(s.id, { weightKg: e.target.value === '' ? null : Math.max(0, Number(e.target.value)) })}
+              <WeightInput
+                weightKg={s.weightKg}
+                unit={unit}
+                placeholder={targetWeight !== undefined ? String(toDisplayWeight(targetWeight, unit)) : '—'}
+                onChange={(weightKg) => onUpdateSet(s.id, { weightKg })}
               />
               <input
                 type="number" inputMode="numeric" min="0" step="1"

@@ -1,4 +1,4 @@
-import { kgToLb } from '@/types/bodyMetrics';
+import { kgToLb, lbToKg } from '@/types/bodyMetrics';
 import i18n from '@/i18n';
 
 export function generateId(): string {
@@ -18,6 +18,21 @@ export function cn(...classes: (string | undefined | null | false)[]): string {
  *  For call sites that render their own unit label (charts, table rows). */
 export function toDisplayWeight(kg: number, unit: 'kg' | 'lb'): number {
   return Math.round((unit === 'lb' ? kgToLb(kg) : kg) * 10) / 10;
+}
+
+/** The inverse of toDisplayWeight: a weight typed in the user's unit, as the
+ *  kilograms every set stores. Not rounded, so the 225 an lb user types reads
+ *  back as 225 rather than as whatever a rounded kg value converts to
+ *  (v1.18.1, LimeLog#71). */
+export function fromDisplayWeight(value: number, unit: 'kg' | 'lb'): number {
+  return unit === 'lb' ? lbToKg(value) : value;
+}
+
+/** What a set's weight field holds once the user has typed `text` into it:
+ *  null when cleared, otherwise kilograms, never below zero. */
+export function parseWeightInput(text: string, unit: 'kg' | 'lb'): number | null {
+  const n = Number(text);
+  return text === '' || !Number.isFinite(n) ? null : fromDisplayWeight(Math.max(0, n), unit);
 }
 
 /** A lift weight in the user's chosen unit, with the unit label. */
