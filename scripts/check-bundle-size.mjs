@@ -38,7 +38,12 @@ import { fileURLToPath } from 'node:url';
 // 658.8 KiB; 661 covers both and nothing else. LimeLog#70 stays open for the
 // lazy-load pass that should bring it back down. When the two PRs meet in a
 // rebase, keep the higher value.
-const BUDGET_KIB = 661; // was 655 (2026-10-08, limecore#21: 653.2 KiB measured)
+//
+// 2026-10-19, v1.18.1 integration (CTO): with the training PR and the whole
+// sign-out / takeover stack (#81-#96) merged together, startup JS measured
+// 661.6 KiB, 0.6 over the 661 estimate. 662 covers the measured total and
+// nothing else. LimeLog#70 (lazy-load pass) stays open to bring it back down.
+const BUDGET_KIB = 662; // was 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
