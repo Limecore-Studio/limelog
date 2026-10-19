@@ -154,6 +154,7 @@ export async function labelNotifications(): Promise<void> {
   });
 }
 
+/**
  * v1.19 — LL#63: memoised, and awaited by every schedule. App.tsx fired this
  * without awaiting it and scheduled from an effect in the same commit, so the
  * start-up sweep below (a blind cancel of IDs 0–999) raced the schedule and

@@ -12,6 +12,8 @@ import type { ExercisePR, SessionLog, SetLog } from '@/types/logging';
 const USER = 'user-1';
 type Write = { table: string; op: 'update' | 'delete' | 'upsert'; row?: unknown; eq?: [string, unknown] };
 
+// v1.18.1 (LimeLog#92): accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 const holder = vi.hoisted(() => ({ client: null as unknown as ReturnType<typeof makeClient> }));
 vi.mock('./supabase', () => ({
   isNexusConfigured: true,
@@ -84,6 +86,8 @@ const queued = () =>
 beforeEach(() => {
   vi.stubGlobal('localStorage', storage());
   vi.stubGlobal('navigator', { onLine: false }); // enqueue must not drain on its own
+  // v1.18.1 (LimeLog#88): drain only runs for the account the local data belongs to.
+  localStorage.setItem('limelog.dataOwner', USER);
   holder.client = makeClient();
   useNexusStore.setState({ configured: true, syncEnabled: true });
   useLogStore.setState({
