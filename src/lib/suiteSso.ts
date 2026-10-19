@@ -15,6 +15,7 @@
 // { ok: false } show the reason and fall back to the existing sign-in UI.
 
 import { Capacitor, registerPlugin } from '@capacitor/core';
+import { FunctionsFetchError } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 interface SuiteSsoPluginAndroid {
@@ -57,6 +58,28 @@ interface InheritResult {
 // unreachable (offline, not yet deployed, an older backend) the old behaviour
 // is still better than refusing to sign in. It is strictly the degraded path -
 // it restores the collision risk - so it says so in the log.
+//
+// v1.19 - LL#64: except offline. A request that never reached the function
+// says nothing about the backend, only that there is no network, and
+// setSession() with an expired access token would then run auth-js's refresh
+// retry chain over that same dead network (~25 s, or never returning on a
+// network that hangs instead of failing). Fail fast and leave the manual
+// "Continue with Nexus" for when there is signal.
+const offline = (e: unknown) => e instanceof FunctionsFetchError || e instanceof TypeError;
+const OFFLINE: InheritResult = { ok: false, reason: 'Nexus sign-in needs a network connection.' };
+// v1.19 (LimeLog#67 review): the time limit below also ends in a fetch
+// error, and on a slow but working network "needs a network connection" was
+// the wrong thing to say. The abort shows as an AbortError/TimeoutError on the
+// error or its `context`; with the device online, say it timed out instead.
+const timedOut = (e: unknown) => {
+  const inner = (e as { context?: unknown } | null)?.context ?? e;
+  const name = (inner as { name?: string } | null)?.name;
+  return name === 'AbortError' || name === 'TimeoutError';
+};
+const TIMED_OUT: InheritResult = { ok: false, reason: 'Nexus sign-in timed out. Check the connection and try again.' };
+const failFast = (e: unknown): InheritResult =>
+  timedOut(e) && typeof navigator !== 'undefined' && navigator.onLine !== false ? TIMED_OUT : OFFLINE;
+
 async function adoptSession(bundle: {
   access_token: string;
   refresh_token: string;
@@ -66,7 +89,13 @@ async function adoptSession(bundle: {
     const { data, error } = await supabase.functions.invoke('suite-session', {
       body: { app: 'limelog' },
       headers: { Authorization: 'Bearer ' + bundle.access_token },
+      // v1.19 - LL#64: bounded. Unset, a network that hangs rather than fails
+      // holds this call until the OS gives up on the socket. The abort
+      // surfaces as a FunctionsFetchError, so it takes the offline exit below.
+      // 10 s rather than 5: a slow mobile network needs the room.
+      timeout: 10000,
     });
+    if (offline(error)) return failFast(error);
     if (error) {
       console.warn('[sso] suite-session unavailable, using shared-token fallback:', error.message);
     } else if (data?.token_hash) {
@@ -104,6 +133,7 @@ async function adoptSession(bundle: {
       console.warn('[sso] one-time credential rejected, using fallback:', otpErr?.message);
     }
   } catch (e) {
+    if (offline(e)) return failFast(e);
     console.warn('[sso] suite-session threw, using shared-token fallback:', (e as Error).message);
   }
 

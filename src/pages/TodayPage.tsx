@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { lazy, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
@@ -10,10 +10,18 @@ import { sessionsForDay, resolvePhase, deloadTargetReps, todaysLog, resumableLog
 import { bestEstimateForExercise, missedRepRatio } from '@/utils/oneRepMax';
 import { EmptyState, Button, Badge } from '@/components/ui';
 import { Dumbbell, AlertTriangle, CheckCircle2, TrendingUp, ChevronRight, Footprints } from 'lucide-react';
-import { HealthTodayStrip } from '@/components/HealthConnect';
-import { CardioLogModal } from '@/components/CardioLogModal';
 import { useConfirm } from '@/components/confirmContext';
 import './TodayPage.css';
+import { OptionalChunk } from '@/components/OptionalChunk';
+
+// v1.18.1 (LimeLog#70) — out of the startup chunk. The cardio form opens only
+// on a tap. The Health Connect strip renders nothing until its async
+// capability and permission checks finish, so loading it after first paint
+// changes nothing on screen; its code is shared with the Body page's card.
+// Each sits in its own Suspense with no fallback: suspending to Layout's
+// boundary would blank the whole page while the chunk loads.
+const CardioLogModal = lazy(() => import('@/components/CardioLogModal').then((m) => ({ default: m.CardioLogModal })));
+const HealthTodayStrip = lazy(() => import('@/components/HealthConnect').then((m) => ({ default: m.HealthTodayStrip })));
 
 export function TodayPage() {
   const { t, i18n } = useTranslation();
@@ -134,7 +142,11 @@ export function TodayPage() {
         <Button variant="ghost" fullWidth onClick={() => setShowCardio(true)}>
           <Footprints size={16} /> {t('cardio.logButton')}
         </Button>
-        {showCardio && <CardioLogModal onClose={() => setShowCardio(false)} />}
+        {showCardio && (
+          <OptionalChunk onFail={() => setShowCardio(false)}>
+            <CardioLogModal onClose={() => setShowCardio(false)} />
+          </OptionalChunk>
+        )}
       </div>
     );
   }
@@ -162,7 +174,9 @@ export function TodayPage() {
 
       {/* v1.3 BUG-20 — Health Connect daily activity strip. Renders nothing
           when Health Connect is unavailable (web / F-Droid / no HC app). */}
-      <HealthTodayStrip />
+      <OptionalChunk>
+        <HealthTodayStrip />
+      </OptionalChunk>
 
       {resumeCards}
 
@@ -173,7 +187,11 @@ export function TodayPage() {
           <Footprints size={15} /> {t('cardio.logButton')}
         </Button>
       </div>
-      {showCardio && <CardioLogModal onClose={() => setShowCardio(false)} />}
+      {showCardio && (
+        <OptionalChunk onFail={() => setShowCardio(false)}>
+          <CardioLogModal onClose={() => setShowCardio(false)} />
+        </OptionalChunk>
+      )}
 
       {activeStalls.length > 0 && (
         <div className="today-alert">

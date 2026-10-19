@@ -7,6 +7,8 @@ import type { NexusWorkoutPayload } from './nexusSync';
 
 type Row = Record<string, unknown>;
 const sent = vi.hoisted(() => ({ sessions: [] as Row[] }));
+// v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('./supabase', () => {
   const ok = { error: null };
   // Just enough of the builder for pushWorkoutToNexus: session upsert, set
@@ -53,6 +55,8 @@ const workout = (over: Partial<NexusWorkoutPayload> = {}): NexusWorkoutPayload =
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.stubGlobal('localStorage', storage());
+  // v1.18.1 (LimeLog#88) — the outbox sends only for the recorded owner.
+  localStorage.setItem('limelog.dataOwner', 'user-1');
   sent.sessions = [];
   outbox.resetWorkoutStamps();
 });
