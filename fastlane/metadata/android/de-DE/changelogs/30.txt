@@ -1,0 +1,3 @@
+Unter der Haube.
+
+LimeLog wechselt auf React 19 und neuere Übersetzungs- und Symbolbibliotheken. An der Bedienung ändert sich nichts; diese Version bereitet die nächsten Korrekturen vor.

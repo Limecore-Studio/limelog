@@ -1,0 +1,3 @@
+Konepellin alla.
+
+LimeLog siirtyy React 19:ään ja uudempiin käännös- ja kuvakekirjastoihin. Käyttö ei muutu; tämä versio valmistelee seuraavia korjauksia.
