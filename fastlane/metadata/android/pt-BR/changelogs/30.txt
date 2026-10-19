@@ -1,0 +1,3 @@
+Por dentro.
+
+O LimeLog passa para React 19 e bibliotecas de tradução e ícones mais novas. Nada muda no uso do app; esta versão prepara as próximas correções.

@@ -1,0 +1,3 @@
+Sous le capot.
+
+LimeLog passe à React 19 et à des bibliothèques de traduction et d'icônes plus récentes. Rien ne change à l'usage ; cette version prépare les prochains correctifs.
