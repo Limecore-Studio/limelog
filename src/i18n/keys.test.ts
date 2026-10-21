@@ -21,10 +21,10 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
   return out;
 }
 
-function lookup(key: string): unknown {
+function lookup(key: string, root: object = en): unknown {
   return key.split('.').reduce<unknown>(
     (node, part) => (node && typeof node === 'object' ? (node as Record<string, unknown>)[part] : undefined),
-    en,
+    root,
   );
 }
 
@@ -44,6 +44,27 @@ describe('i18n keys', () => {
     }
     // Guards the scan itself: a regex that silently matched nothing would pass.
     expect(seen).toBeGreaterThan(400);
+    expect(missing).toEqual([]);
+  });
+
+  // v1.18.1 (LimeLog#74, #75): the strings that were hard-coded English, and
+  // the Resume card's, are translated in every language, not only present in
+  // the English fallback. Plurals are checked by their `_other` form, which
+  // every language has.
+  it('the v1.18.1 keys exist in every locale', () => {
+    const KEYS = [
+      'log.lastSession', 'log.restSeconds', 'log.restrictionAvoid', 'log.restrictionModify',
+      'sync.on', 'sync.off', 'sync.queued_other', 'sync.queueEmpty', 'sync.queuedSignedOut_other',
+      'progress.unknownSession', 'progress.loadCaption', 'progress.ormCaption', 'body.photosEvicted_other',
+      'notif.channelName', 'notif.channelDescription', 'notif.startAction',
+      'today.startedOn', 'today.resumeWorkout',
+    ];
+    const dir = join(__dirname, 'locales');
+    const missing: string[] = [];
+    for (const file of readdirSync(dir)) {
+      const strings = JSON.parse(readFileSync(join(dir, file), 'utf8'));
+      for (const key of KEYS) if (typeof lookup(key, strings) !== 'string') missing.push(`${file}: ${key}`);
+    }
     expect(missing).toEqual([]);
   });
 });

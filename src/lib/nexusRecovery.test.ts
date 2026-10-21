@@ -139,4 +139,13 @@ describe('pullWorkoutsFromCloud', () => {
     holder.client = client({ workout_sessions: [], workout_sets: [] });
     expect(await pullWorkoutsFromCloud([])).toEqual([]);
   });
+
+  // v1.18.1 (LimeLog#85) — a pull started for one account, run after another
+  // signed in, must not fetch the other account's workouts.
+  it('refuses to pull when someone else is signed in than it was started for', async () => {
+    const h = history(2, 1);
+    holder.client = client({ workout_sessions: h.sessionRows, workout_sets: h.setRows });
+    await expect(pullWorkoutsFromCloud([], 'user-2')).rejects.toThrow(/account changed/);
+    expect(await pullWorkoutsFromCloud([], USER)).toHaveLength(2);
+  });
 });

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { getLastSessionSets, topWeight } from './lastSessionSets';
 import type { SessionLog, SetLog } from '@/types/logging';
 
@@ -18,6 +18,13 @@ function set(over: Partial<SetLog> = {}): SetLog {
     ...over,
   } as SetLog;
 }
+
+// LAST is dated by the lifter's local day (v1.18.1, LimeLog#75), so the dates
+// below are pinned to UTC; the test about time zones sets its own.
+process.env.TZ = 'UTC';
+afterEach(() => {
+  process.env.TZ = 'UTC';
+});
 
 function log(id: string, loggedAt: string, sets: SetLog[]): SessionLog {
   return { id, loggedAt, sets } as SessionLog;
@@ -153,6 +160,14 @@ describe('getLastSessionSets', () => {
     expect(
       getLastSessionSets([log('current', '2026-01-09T10:00:00.000Z', [set()])], 'squat', 'current'),
     ).toBeNull();
+  });
+
+  // v1.18.1 (LimeLog#75): the local day, not the UTC one.
+  it('dates LAST by the lifter\'s own calendar day', () => {
+    process.env.TZ = 'America/New_York';
+    // 20:00 on 7 January in New York is already the 8th in UTC.
+    const out = getLastSessionSets([log('evening', '2026-01-08T01:00:00.000Z', [set()])], 'squat', 'current');
+    expect(out?.date).toBe('2026-01-07');
   });
 });
 

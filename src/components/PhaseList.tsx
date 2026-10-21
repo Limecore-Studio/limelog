@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
+import { useLogStore } from '@/store/logStore';
+import { useConfirm } from '@/components/confirmContext';
 import type { Program, PhaseType } from '@/types/program';
 import { Button, Badge } from '@/components/ui';
 import { SessionEditor } from '@/components/SessionEditor';
@@ -17,16 +19,29 @@ interface Props { program: Program; }
 export function PhaseList({ program }: Props) {
   const { t } = useTranslation();
   const { addPhase, deletePhase, addSession } = useProgramStore();
+  const sessionLogs = useLogStore((s) => s.sessionLogs);
+  const confirm = useConfirm();
   const [openPhase, setOpenPhase] = useState<string | null>(program.phases[0]?.id ?? null);
   const [addingPhase, setAddingPhase] = useState(false);
   const [phaseForm, setPhaseForm] = useState({ name: '', type: 'accumulation' as PhaseType, weekStart: 1, weekEnd: 4 });
+
+  // v1.18.1 (LimeLog#73 review): asks first, as it now takes the phase's
+  // sessions with it, and keeps those with workouts logged so they keep their
+  // names in Progress (and an unfinished one can still be resumed).
+  async function handleDeletePhase(phaseId: string, name: string) {
+    if (!(await confirm({ message: t('program.deletePhaseConfirm', { name }) }))) return;
+    const logged = new Set(sessionLogs.map((l) => l.sessionTemplateId).filter((id): id is string => !!id));
+    deletePhase(program.id, phaseId, logged);
+  }
 
   function handleAddPhase() {
     if (!phaseForm.name.trim()) return;
     addPhase(program.id, {
       name: phaseForm.name.trim(),
       type: phaseForm.type,
-      orderIndex: program.phases.length,
+      // After a delete, phases.length can repeat an order already taken, and
+      // Next phase could no longer tell which comes next (LimeLog#77 item 1).
+      orderIndex: program.phases.reduce((m, ph) => Math.max(m, ph.orderIndex + 1), 0),
       weekStart: phaseForm.weekStart,
       weekEnd: phaseForm.weekEnd,
     });
@@ -48,7 +63,7 @@ export function PhaseList({ program }: Props) {
             </div>
             <div className="phase-list__header-right">
               <span className="phase-list__weeks">{t('program.weekRange', { start: phase.weekStart, end: phase.weekEnd })}</span>
-              <button className="phase-list__del" onClick={(e) => { e.stopPropagation(); deletePhase(program.id, phase.id); }}>
+              <button className="phase-list__del" onClick={(e) => { e.stopPropagation(); void handleDeletePhase(phase.id, phase.name); }}>
                 <Trash2 size={13} />
               </button>
               {openPhase === phase.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}

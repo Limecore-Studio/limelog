@@ -3,6 +3,7 @@ import type { SessionLog, VerticalJumpLog, StallFlag, ExercisePR } from '@/types
 import type { UserProfile, InjuryRestriction } from '@/types/user';
 import type { ThemeId } from '@/types/theme';
 import { estimate1RMRaw } from '@/utils/oneRepMax';
+import i18n from '@/i18n';
 
 const KEYS = {
   programs: 'wt_programs',
@@ -80,10 +81,10 @@ function set<T>(key: string, value: T): void {
       // Surface it so the user learns their data didn't persist (rather than
       // discovering a lost workout later). Progress photos are the usual
       // culprit — deleting some frees room for logs.
+      // v1.18.1 (LimeLog#77) — outside React, so through the i18n instance
+      // itself, as notifications.ts and helpers.ts do.
       try {
-        alert(
-          'Storage is full, so this change could not be saved. Free up space (e.g. delete some progress photos) and try again.',
-        );
+        alert(i18n.t('common.storageFull'));
       } catch {
         /* alert unavailable (non-UI context) — the console.error above still fires */
       }

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { currentPR, detectNewPRs } from './prDetection';
 import { estimate1RM } from '@/utils/oneRepMax';
 import type { SessionLog, ExercisePR, SetLog } from '@/types/logging';
@@ -8,6 +8,13 @@ import type { SessionLog, ExercisePR, SetLog } from '@/types/logging';
 // than the raw weight, so the rules about which sets qualify are the whole
 // feature. This module previously carried its own uncapped Epley, which
 // claimed PRs the Est. 1RM chart then refused to plot.
+
+// A PR is dated by the lifter's local day (v1.18.1, LimeLog#75), so the dates
+// below are pinned to UTC; the tests that are about time zones set their own.
+process.env.TZ = 'UTC';
+afterEach(() => {
+  process.env.TZ = 'UTC';
+});
 
 function set(over: Partial<SetLog> = {}): SetLog {
   return {
@@ -148,6 +155,18 @@ describe('detectNewPRs', () => {
     expect(out[0].date).toBe('2025-11-30');
   });
 
+  // v1.18.1 (LimeLog#75): the local day, not the UTC one.
+  it('dates the PR by the lifter\'s own calendar day', () => {
+    process.env.TZ = 'America/New_York';
+    // 20:00 on 5 January in New York is already the 6th in UTC.
+    const west = detectNewPRs(session([set()], { loggedAt: '2026-01-06T01:00:00.000Z' }), [], name, makeId);
+    expect(west[0].date).toBe('2026-01-05');
+    process.env.TZ = 'Asia/Tokyo';
+    // 07:00 on the 6th in Tokyo is still the 5th in UTC.
+    const east = detectNewPRs(session([set()], { loggedAt: '2026-01-05T22:00:00.000Z' }), [], name, makeId);
+    expect(east[0].date).toBe('2026-01-06');
+  });
+
   it('takes ids from the supplied factory, so this stays free of app singletons', () => {
     const out = detectNewPRs(session([set()]), [], name, () => 'fixed-id');
     expect(out[0].id).toBe('fixed-id');
@@ -155,5 +174,36 @@ describe('detectNewPRs', () => {
 
   it('returns nothing for a session with no sets', () => {
     expect(detectNewPRs(session([]), [], name, makeId)).toEqual([]);
+  });
+
+  // v1.18.1 (LimeLog#72): the stored estimate is rounded to two decimals, and
+  // the comparison used to take the unrounded one. 100 x 4 stores 109.09 but
+  // scores 109.0909, so the same set claimed a new PR every time it was done.
+  describe('re-hitting the same set', () => {
+    const sq = (weightKg: number, reps: number, id: string) =>
+      session([set({ weightKg, reps })], { id });
+
+    it('is not a new PR, in another workout or in the same one finished again', () => {
+      const first = detectNewPRs(sq(100, 4, 'a'), [], name, makeId);
+      expect(first.map((p) => p.oneRepMaxKg)).toEqual([109.09]);
+      expect(detectNewPRs(sq(100, 4, 'b'), first, name, makeId)).toEqual([]);
+      expect(detectNewPRs(sq(100, 4, 'a'), first, name, makeId)).toEqual([]);
+    });
+
+    it('is not a new PR for any common weight and rep count', () => {
+      const repeated: string[] = [];
+      for (let w = 20; w <= 300; w += 2.5) {
+        for (let r = 2; r <= 12; r++) {
+          const first = detectNewPRs(sq(w, r, 'a'), [], name, makeId);
+          if (detectNewPRs(sq(w, r, 'b'), first, name, makeId).length > 0) repeated.push(`${w}x${r}`);
+        }
+      }
+      expect(repeated).toEqual([]);
+    });
+
+    it('still lets a set that beats the stored estimate by a hundredth through', () => {
+      const prior = [{ id: 'p', exerciseId: 'squat', oneRepMaxKg: 109.08 }] as ExercisePR[];
+      expect(detectNewPRs(sq(100, 4, 'b'), prior, name, makeId)).toHaveLength(1);
+    });
   });
 });

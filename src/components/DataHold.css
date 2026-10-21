@@ -1,0 +1,37 @@
+/* v1.18.1 (LimeLog#94) — the holding screen (DataHold.tsx), on the splash. */
+.data-hold {
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.data-hold__spinner {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-default);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: data-hold-spin 0.9s linear infinite;
+}
+
+@keyframes data-hold-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .data-hold__spinner { animation-duration: 2.4s; }
+}
+
+.data-hold__text {
+  max-width: 320px;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.data-hold__actions {
+  display: flex;
+  gap: 8px;
+}

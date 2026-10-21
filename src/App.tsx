@@ -2,25 +2,31 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — installed separately; see notifications.ts setup comment
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Layout } from '@/components/Layout';
 import { TodayPage } from '@/pages/TodayPage';
 import { FirstLaunchAuth } from '@/components/FirstLaunchAuth';
-import { ReferralPrompt } from '@/components/ReferralPrompt';
-import { PRCelebrationModal } from '@/components/PRCelebrationModal';
 import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { useLogStore } from '@/store/logStore';
 import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud } from '@/lib/onboarding';
 import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
+import { phaseSessions, resolvePhase } from '@/lib/todaySessions';
+import { createRecoveryGate } from '@/lib/recoveryGate';
+import { readOwner } from '@/lib/accountOwner';
 import {
   setupNotificationChannel,
+  labelNotifications,
   scheduleWorkoutReminders,
   WORKOUT_ACTION_START,
 } from '@/utils/notifications';
+import { OptionalChunk } from '@/components/OptionalChunk';
+import { useDataReady, showsSignIn } from '@/lib/dataReady';
+import { DataHold } from '@/components/DataHold';
 
 // v1.17 (limecore#13): every page a launch does not open on is its own chunk,
 // loaded the first time it is visited. Today (the index route) and the
@@ -32,6 +38,28 @@ const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ defa
 const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
 const WorkoutPage = lazy(() => import('@/pages/WorkoutPage').then((m) => ({ default: m.WorkoutPage })));
 const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
+// v1.18.1 (LimeLog#70) — the two root overlays render nothing at launch (the
+// PR card waits for a finished workout, the referral card for a 1.2 s beat
+// and a new account), so they load after first paint. Still mounted from the
+// start, each in its own Suspense, so neither waits on its chunk at the
+// moment it has to appear.
+const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
+const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
+
+// v1.18.1 (LimeLog#85) — the recovery pull, once per sign-in rather than once
+// per launch (see lib/recoveryGate.ts). Module scope, not a ref, so the dev
+// StrictMode remount does not pull twice.
+// v1.18.1 (LimeLog#88) — and only into local data that is that account's. The
+// auth paths take the data up before they set the account, so this holds
+// unless the previous account's data could not be cleared (accountOwner.ts):
+// then the pull waits, unspent, until a retry clears it.
+const recoveryGate = createRecoveryGate({
+  read: () => useNexusStore.getState(),
+  pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
+  apply: (logs) =>
+    readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
+  ready: (userId) => readOwner() === userId,
+});
 
 /**
  * Subscribes to action-button taps on workout reminders and routes the user
@@ -71,11 +99,18 @@ function NotificationActionBridge() {
 }
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { activeProgram } = useProgramStore();
-  const userEmail = useNexusStore((s) => s.userEmail);
+  // v1.18.1 (LimeLog#94) — the gates below key on the account id, which is
+  // set only with a session. `userEmail` is also set by a sign-up still
+  // waiting for its code, and keying on it took that sign-up off the
+  // sign-in screen (and its code step) into the views.
+  const userId = useNexusStore((s) => s.userId);
   const sessionUnverified = useNexusStore((s) => s.sessionUnverified);
   const isNexusConfigured = useNexusStore((s) => s.configured);
+  // v1.18.1 (LimeLog#94) — whether the local data is the signed-in
+  // account's yet; until it is, the views below are not rendered.
+  const dataReady = useDataReady();
 
   // Auth-gate state: whether the first-launch screen should be shown.
   // `null` while the guest-mode flag and the nexusStore are both still
@@ -93,31 +128,40 @@ export default function App() {
   const [onboardChecked, setOnboardChecked] = useState(false);
 
   // v1.10 - ask the ACCOUNT whether onboarding is already done, not just this
-  // device. Keyed on userEmail rather than nexusInitialized because it must
+  // device. Keyed on the account (userEmail until v1.18.1, LimeLog#94: the
+  // id, set only with a session) rather than nexusInitialized because it must
   // re-run when the user actually changes, not only on first init. Gated
   // behind `onboardChecked` so a signed-in user never sees a frame of the
   // wizard before the answer lands; signed out it resolves immediately,
   // because there is no account to ask.
   useEffect(() => {
     if (!nexusInitialized) return;
-    if (!userEmail) { setOnboardChecked(true); return; }
+    if (!userId) { setOnboardChecked(true); return; }
     let cancelled = false;
     setOnboardChecked(false);
-    void hydrateOnboardedFromCloud().then((done) => {
+    // v1.18.1 (LimeLog#82) — a definite "no" now turns it off as well. This
+    // state was read once at launch, so the next person signing in on the
+    // same launch kept the previous person's "done". An answer that could not
+    // be had ('unknown') changes nothing: the wizard is never shown on
+    // uncertainty.
+    void hydrateOnboardedFromCloud().then((answer) => {
       if (cancelled) return;
-      if (done) setOnboardedState(true);
+      if (answer !== 'unknown') setOnboardedState(answer === 'yes');
       setOnboardChecked(true);
     });
     return () => { cancelled = true; };
-  }, [userEmail, nexusInitialized]);
+  }, [userId, nexusInitialized]);
 
-  // One-time channel creation + nexusStore init. The init() call awaits
-  // supabase.auth.getSession(), which is what sets userEmail to its restored
-  // value; we set nexusInitialized after init resolves so the gate below
-  // doesn't show the auth screen mid-restore. (It was getUser() until v1.13 —
-  // a network round trip standing between a returning user and their own app.)
+  // One-time channel creation + nexusStore init. init() sets userEmail to its
+  // restored value before it resolves; we set nexusInitialized after that so
+  // the gate below doesn't show the auth screen mid-restore. (It was getUser()
+  // until v1.13 — a network round trip standing between a returning user and
+  // their own app. v1.19 — LL#64: with a session in storage init() resolves
+  // from storage alone, and getSession() finishes in the background.)
+  // The channel setup is not awaited here; scheduleWorkoutReminders awaits it
+  // (v1.19 — LL#63).
   useEffect(() => {
-    setupNotificationChannel();
+    void setupNotificationChannel();
     void (async () => {
       const guest = await isGuestMode();
       setGuestModeState(guest);
@@ -152,41 +196,76 @@ export default function App() {
     return () => window.removeEventListener('online', onOnline);
   }, []);
 
-  // v1.7 (BUG-6) — recovery hydrate. Once, after Nexus init resolves with a
+  // v1.7 (BUG-6) — recovery hydrate. After Nexus init resolves with a
   // signed-in user, pull cloud workouts and reinstate any whose id is missing
   // locally (skipping tombstoned discards). This is the ONLY read of workout
   // data LimeLog performs, and it only refills genuine gaps — a reinstall / new
   // device / lost-data situation gets its pushed history back instead of it
   // being stranded in the cloud. Fire-and-forget; never blocks the UI.
-  const recoveryRan = useRef(false);
+  //
+  // v1.19 — LL#64: waits for `sessionUnverified` to clear, so an offline
+  // start that opened on the stored session (expired token) does not spend
+  // the pull before the session is confirmed. It is not a network check:
+  // offline with a still-valid token, auth-js confirms the session at once,
+  // and the pull runs, fails and is not retried until the next sign-in.
+  //
+  // v1.18.1 (LimeLog#85) — once per sign-in, not once per launch: a sign-out
+  // wipes the local history, and the next sign-in pulls it back. Driven by a
+  // store subscription rather than effect deps, which sees every change (a
+  // sign-out and a sign-in batched into one render would look like nothing
+  // happened). The onboarding gate below needs nothing new: it reads
+  // `sessionCount` live, so a pull that lands while the wizard is up for
+  // empty logs takes it away, as on a first launch.
   useEffect(() => {
-    if (recoveryRan.current) return;
-    if (!nexusInitialized || !isNexusConfigured || !userEmail) return;
-    recoveryRan.current = true;
-    void (async () => {
-      try {
-        const exercises = useProgramStore.getState().exercises;
-        const cloudSessions = await pullWorkoutsFromCloud(exercises);
-        const restored = useLogStore.getState().recoverSessions(cloudSessions);
-        if (restored > 0) {
-          console.log(`[recovery] reinstated ${restored} workout(s) from cloud`);
-        }
-      } catch (e) {
-        console.warn('[recovery] workout hydrate failed:', (e as Error).message);
-      }
-    })();
-  }, [nexusInitialized, isNexusConfigured, userEmail]);
+    if (!nexusInitialized) return;
+    recoveryGate.evaluate();
+    return useNexusStore.subscribe(() => recoveryGate.evaluate());
+  }, [nexusInitialized]);
 
+  // v1.18.1 (LimeLog#94) — not held for the take-over (DataHold below): the
+  // reminders come from the program store, which is device configuration
+  // that no clear removes (accountWipe.ts), not the previous account's data.
+  //
   // Re-schedule whenever the active program changes. Pass the exercise
   // library so the notification body can preview the first few exercises
   // by display name (the SessionExercise FK only carries exerciseId).
   // Library is read at effect-fire time so a new exercise added later
   // surfaces on the next program edit.
+  //
+  // v1.18.1 (LimeLog#73): the active phase's sessions only, the ones Today
+  // offers. Every phase's were scheduled, so a day with no session in the
+  // current phase still got a reminder, sometimes under another phase's
+  // session name.
+  //
+  // Also re-run on a language change (LimeLog#75). A reminder is built in the
+  // language of the moment it is scheduled, and the channel name and the
+  // "Start session" button are registered with Android the same way, so those
+  // are registered again first (at launch setupNotificationChannel does it).
+  //
+  // v1.19 — LL#63: and on every resume. Each reminder is a one-shot alarm for
+  // the next occurrence now, so something has to arm the week after it fires.
+  // Mount covers a cold start, but tapping the reminder usually RESUMES a
+  // backgrounded app rather than starting one, and nothing else re-ran this.
+  // The resume path never prompts for permission (see the option's comment).
   const exerciseLibrary = useProgramStore((s) => s.exercises);
+  const labelledIn = useRef(i18n.language);
   useEffect(() => {
-    const sessions = activeProgram?.sessions ?? [];
-    scheduleWorkoutReminders(sessions, exerciseLibrary);
-  }, [activeProgram, exerciseLibrary]);
+    const sessions = phaseSessions(activeProgram, resolvePhase(activeProgram).current?.id);
+    void (async () => {
+      if (labelledIn.current !== i18n.language) {
+        labelledIn.current = i18n.language;
+        await labelNotifications().catch(() => { /* best-effort, as at launch */ });
+      }
+      await scheduleWorkoutReminders(sessions, exerciseLibrary);
+    })();
+    if (!Capacitor.isNativePlatform()) return;
+    const handle = CapacitorApp.addListener('resume', () => {
+      void scheduleWorkoutReminders(sessions, exerciseLibrary, { prompt: false });
+    });
+    return () => {
+      void handle.then((h) => h.remove());
+    };
+  }, [activeProgram, exerciseLibrary, i18n.language]);
 
   // Auth gate: show the first-launch screen on a fresh install (no email,
   // not in guest mode). Skipped when Supabase isn't configured (env vars
@@ -202,8 +281,13 @@ export default function App() {
   // behaviour while the answer is unknown is to open the app and let the
   // auto-refresh resolve it — onAuthStateChange clears the flag either way.
   const isResolving = guestMode === null || !nexusInitialized;
+  //
+  // v1.18.1 (LimeLog#94) — and with no account signed in while the local data
+  // is still an account's ('held': a sign-out whose clear failed), guest mode
+  // or not: signing in as it keeps it, "Continue as guest" asks first.
   const shouldShowAuth =
-    !isResolving && !userEmail && !sessionUnverified && !guestMode && isNexusConfigured;
+    !isResolving &&
+    showsSignIn({ userId, sessionUnverified, guestMode: Boolean(guestMode), configured: isNexusConfigured, readiness: dataReady });
 
   if (isResolving) {
     return (
@@ -231,6 +315,13 @@ export default function App() {
       />
     );
   }
+
+  // v1.18.1 (LimeLog#94) — it is not yet known whose the local data is (the
+  // owner record is still being read), or it is still the previous account's
+  // (its clear failed): a holding screen instead of the views, which would
+  // show that account's logs, body metrics, photos and records. Before the
+  // onboarding gate, which counts those logs.
+  if (dataReady === 'pending' || dataReady === 'waiting') return <DataHold state={dataReady} />;
 
   // Onboarding gate — only after auth is satisfied, for a genuinely fresh
   // user (no sessions logged). Skipping or finishing sets the persisted flag.
@@ -272,10 +363,14 @@ export default function App() {
       </Suspense>
       {/* v1.6 — global PR celebration; mounted outside Routes so it survives
           the post-finish navigate('/today'). */}
-      <PRCelebrationModal />
+      <OptionalChunk>
+        <PRCelebrationModal />
+      </OptionalChunk>
       {/* Item 8 — asks once per account, inside the account-age window only.
           Non-blocking by design; see the component. */}
-      <ReferralPrompt />
+      <OptionalChunk>
+        <ReferralPrompt />
+      </OptionalChunk>
     </BrowserRouter>
   );
 }

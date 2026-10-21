@@ -39,6 +39,11 @@
     "back": "Kembali",
     "guest": "Lanjutkan sebagai tamu",
     "guestNote": "Hanya lokal — latihan tetap di perangkat ini. Kamu bisa masuk nanti lewat Profil → Pengaturan.",
+    "guestHeldTitle": "Lanjutkan sebagai tamu?",
+    "guestHeldEmail": "Perangkat ini menyimpan data lokal milik akun {{email}}.",
+    "guestHeldAccount": "Perangkat ini menyimpan data lokal milik akun yang sebelumnya masuk.",
+    "guestHeldRemove": "Jika kamu lanjut sebagai tamu, data itu akan dihapus dari perangkat ini. Masuk lagi untuk menyimpannya.",
+    "guestClearFailed": "Data tidak dapat dihapus dari perangkat ini. Coba lagi.",
     "notConfigured": "Supabase belum dikonfigurasi — proses masuk tidak tersedia. Ketuk Lanjutkan sebagai tamu untuk memakai aplikasi secara lokal.",
     "errNexus": "Tidak dapat mewarisi sesi Nexus.",
     "errInvalidCredentials": "Email atau kata sandi salah.",
@@ -77,7 +82,8 @@
     "continue": "Lanjutkan",
     "loading": "Memuat…",
     "undo": "Urungkan",
-    "clear": "Kosongkan"
+    "clear": "Kosongkan",
+    "storageFull": "Penyimpanan penuh, jadi perubahan ini tidak dapat disimpan. Kosongkan ruang (mis. hapus beberapa foto progres) lalu coba lagi."
   },
   "nav": {
     "today": "Hari ini",
@@ -152,7 +158,10 @@
     "noJumpsBody": "Lacak lompatan vertikalmu untuk memantau kemajuan atletik.",
     "unknownExercise": "Latihan tidak dikenal",
     "stallWeightPlateau": "Stagnasi beban",
-    "stallRpeCreep": "Kenaikan RPE"
+    "stallRpeCreep": "Kenaikan RPE",
+    "unknownSession": "Sesi tidak dikenal",
+    "loadCaption": "{{unit}} — set terberat per sesi",
+    "ormCaption": "{{unit}} — estimasi 1RM, terbaik per sesi"
   },
   "today": {
     "noProgramTitle": "Tidak ada program aktif",
@@ -181,7 +190,9 @@
     "e1rmTitle": "Estimasi 1RM terbaik dari catatan latihanmu",
     "stallAlert_other": "{{count}} tanda stagnasi terdeteksi — pertimbangkan deload",
     "deloadAdvance": "{{missed}}/{{total}} set kurang dari target dalam 3 sesi terakhir — pertimbangkan masuk ke fase deload.",
-    "deloadSchedule": "{{missed}}/{{total}} set kurang dari target dalam 3 sesi terakhir — pertimbangkan menjadwalkan deload."
+    "deloadSchedule": "{{missed}}/{{total}} set kurang dari target dalam 3 sesi terakhir — pertimbangkan menjadwalkan deload.",
+    "startedOn": "Dimulai {{date}}",
+    "resumeWorkout": "Lanjutkan latihan"
   },
   "settings": {
     "errorReports": "Kirim laporan kesalahan",
@@ -274,9 +285,15 @@
     "noPhotos": "Belum ada foto tersimpan. Foto hanya ada di perangkat ini — tidak pernah diunggah.",
     "deleteEntryConfirm": "Hapus entri tanggal {{date}}?",
     "deletePhotoConfirm": "Hapus foto tanggal {{date}}?",
+    "photoNoImage": "Kamera tidak mengembalikan gambar.",
+    "photoSaveFailed": "Tidak dapat menyimpan foto.",
+    "photoReadFailed": "Tidak dapat membaca gambar yang diambil.",
+    "photoStorageFull": "Ruang penyimpanan tidak cukup untuk menyimpan foto ini. Hapus beberapa foto lama lalu coba lagi.",
+    "photoAlt": "Foto progres dari {{date}}",
     "unitSystem": "Sistem satuan",
     "weightChart": "Grafik tren berat badan",
-    "weightChartAvg": "Tren berat badan dengan rata-rata bergerak 7 hari"
+    "weightChartAvg": "Tren berat badan dengan rata-rata bergerak 7 hari",
+    "photosEvicted_other": "Tersimpan. {{count}} foto terlama dihapus untuk mengosongkan ruang."
   },
   "profile": {
     "title": "Profil",
@@ -363,7 +380,11 @@
     "barOnly": "Barbel saja · {{weight}} {{unit}}",
     "addPlatePair": "Tambah sepasang beban {{weight}} {{unit}}",
     "useWeight": "Pakai {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — tidak ada beban yang pas untuk selisihnya."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — tidak ada beban yang pas untuk selisihnya.",
+    "lastSession": "Terakhir · {{date}}",
+    "restSeconds": "Istirahat {{secs}} dtk",
+    "restrictionAvoid": "{{label}} — ditandai untuk dihindari",
+    "restrictionModify": "{{label}} — sesuaikan beban atau rentang gerak"
   },
   "program": {
     "title": "Program",
@@ -409,7 +430,8 @@
       "fri": "Jum",
       "sat": "Sab"
     },
-    "deactivate": "Nonaktifkan"
+    "deactivate": "Nonaktifkan",
+    "deletePhaseConfirm": "Hapus fase “{{name}}” beserta sesinya? Latihan yang selesai tetap ada di Progres."
   },
   "library": {
     "title": "Pustaka gerakan",
@@ -459,7 +481,10 @@
     "customEquipPlaceholder": "mis. sled"
   },
   "notif": {
-    "sessionTitle": "Latihan {{day}}"
+    "sessionTitle": "Latihan {{day}}",
+    "channelName": "Pengingat latihan",
+    "channelDescription": "Pengingat pukul 09.00 pada hari dengan sesi terjadwal",
+    "startAction": "Mulai sesi"
   },
   "health": {
     "stepsWeekLabel": "Langkah selama 7 hari terakhir",
@@ -489,9 +514,28 @@
     "changeEmailInvalid": "Itu sepertinya bukan alamat email.",
     "changeEmailGoogle": "Anda masuk dengan Google, jadi email Anda adalah alamat Google Anda.",
     "signOut": "Keluar",
+    "signOutConfirm": "Keluar? Latihan, ukuran tubuh, dan foto progres akan dihapus dari perangkat ini.",
+    "signOutUnsynced_other": "{{count}} perubahan belum sampai ke akunmu dan akan hilang.",
+    "signOutSyncOff": "Sinkronisasi mati, jadi latihanmu di perangkat ini belum tersimpan di akunmu: semuanya akan hilang.",
+    "signOutPhotos_other": "{{count}} foto progres hanya ada di perangkat ini dan akan dihapus.",
     "autoPush": "Kirim otomatis saat selesai",
+    "retrying": "Mencoba lagi…",
+    "retrySent_other": "Terkirim {{sent}}, {{count}} masih dalam antrean",
+    "retryRemaining_other": "{{count}} masih dalam antrean",
+    "lastPush": "Terakhir dikirim: {{time}}",
+    "stuck_other": "{{count}} item macet setelah beberapa kali dicoba — periksa koneksi atau masuk lagi.",
+    "lastError": "Kesalahan terakhir: {{error}}",
+    "waitingForClear": "Sinkronisasi menunggu: data akun sebelumnya tidak dapat dihapus dari perangkat ini. Ketuk Coba lagi sekarang untuk mencoba lagi.",
+    "waitingOpens": "Aplikasi akan terbuka setelah data akun sebelumnya dihapus dari perangkat ini.",
     "retryNow": "Coba lagi sekarang",
-    "orUseEmail": "atau gunakan email"
+    "gettingReady": "Menyiapkan data Anda…",
+    "gettingReadySlow": "Ini memakan waktu lebih lama dari biasanya.",
+    "orUseEmail": "atau gunakan email",
+    "queueEmpty": "Antrean kosong",
+    "queued_other": "{{count}} perubahan dalam antrean",
+    "queuedSignedOut_other": "{{count}} perubahan dalam antrean — akan disinkronkan setelah masuk.",
+    "on": "Aktif",
+    "off": "Nonaktif"
   },
   "jump": {
     "title": "Catat lompatan vertikal",

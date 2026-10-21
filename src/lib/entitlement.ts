@@ -68,12 +68,14 @@ export function isEntitled(now: number = Date.now()): boolean {
   return Number.isNaN(expires) ? false : expires > now;
 }
 
-function writeCache(rec: EntitlementRecord | null): void {
+function writeCache(rec: EntitlementRecord | null): boolean {
   try {
     if (rec) localStorage.setItem(CACHE_KEY, JSON.stringify(rec));
     else localStorage.removeItem(CACHE_KEY);
+    return true;
   } catch {
     /* storage unavailable — fall through to the un-entitled default */
+    return false;
   }
 }
 
@@ -81,8 +83,10 @@ function writeCache(rec: EntitlementRecord | null): void {
  * Called on sign-out. Leaving a previous account's entitlement behind on a
  * shared device would hand the next user a paid theme.
  */
-export function clearEntitlement(): void {
-  writeCache(null);
+// v1.18.1 (LimeLog#88) — false when storage refused, so an account switch
+// can tell a clear that did not happen (accountWipe.ts).
+export function clearEntitlement(): boolean {
+  return writeCache(null);
 }
 
 let inFlight: Promise<boolean> | null = null;

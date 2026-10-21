@@ -34,7 +34,8 @@
     "continue": "Weiter",
     "loading": "Wird geladen…",
     "undo": "Rückgängig",
-    "clear": "Leeren"
+    "clear": "Leeren",
+    "storageFull": "Der Speicher ist voll, deshalb konnte diese Änderung nicht gespeichert werden. Schaffe Platz (z. B. indem du Fortschrittsfotos löschst) und versuche es erneut."
   },
   "nav": {
     "today": "Heute",
@@ -71,6 +72,11 @@
     "back": "Zurück",
     "guest": "Als Gast fortfahren",
     "guestNote": "Nur lokal — Workouts bleiben auf diesem Gerät. Du kannst dich später unter Profil → Einstellungen anmelden.",
+    "guestHeldTitle": "Als Gast fortfahren?",
+    "guestHeldEmail": "Auf diesem Gerät sind lokale Daten des Kontos {{email}} gespeichert.",
+    "guestHeldAccount": "Auf diesem Gerät sind lokale Daten des zuletzt angemeldeten Kontos gespeichert.",
+    "guestHeldRemove": "Wenn du als Gast fortfährst, werden sie von diesem Gerät entfernt. Melde dich erneut an, um sie zu behalten.",
+    "guestClearFailed": "Die Daten konnten nicht von diesem Gerät entfernt werden. Versuche es noch einmal.",
     "notConfigured": "Supabase nicht konfiguriert — Anmeldung nicht verfügbar. Tippe auf Als Gast fortfahren, um die App lokal zu nutzen.",
     "errNexus": "Nexus-Sitzung konnte nicht übernommen werden.",
     "errInvalidCredentials": "E-Mail oder Passwort ist falsch.",
@@ -154,7 +160,10 @@
     "noJumpsBody": "Verfolge deinen Vertikalsprung, um athletische Fortschritte zu sehen.",
     "unknownExercise": "Unbekannte Übung",
     "stallWeightPlateau": "Gewichtsplateau",
-    "stallRpeCreep": "RPE-Anstieg"
+    "stallRpeCreep": "RPE-Anstieg",
+    "unknownSession": "Unbekanntes Training",
+    "loadCaption": "{{unit}} — schwerster Satz pro Training",
+    "ormCaption": "{{unit}} — geschätztes 1RM, bester Wert pro Training"
   },
   "today": {
     "noProgramTitle": "Kein aktives Programm",
@@ -185,7 +194,9 @@
     "stallAlert_one": "{{count}} Stagnations-Hinweis erkannt — Deload erwägen",
     "stallAlert_other": "{{count}} Stagnations-Hinweise erkannt — Deload erwägen",
     "deloadAdvance": "{{missed}}/{{total}} Sätze blieben in den letzten 3 Einheiten hinter dem Ziel — erwäge, zur Deload-Phase zu wechseln.",
-    "deloadSchedule": "{{missed}}/{{total}} Sätze blieben in den letzten 3 Einheiten hinter dem Ziel — erwäge, einen Deload einzuplanen."
+    "deloadSchedule": "{{missed}}/{{total}} Sätze blieben in den letzten 3 Einheiten hinter dem Ziel — erwäge, einen Deload einzuplanen.",
+    "startedOn": "Begonnen am {{date}}",
+    "resumeWorkout": "Training fortsetzen"
   },
   "settings": {
     "errorReports": "Fehlerberichte senden",
@@ -258,9 +269,16 @@
     "noPhotos": "Noch keine Fotos. Sie bleiben nur auf diesem Gerät — nie hochgeladen.",
     "deleteEntryConfirm": "Eintrag vom {{date}} löschen?",
     "deletePhotoConfirm": "Foto vom {{date}} löschen?",
+    "photoNoImage": "Die Kamera hat kein Bild geliefert.",
+    "photoSaveFailed": "Foto konnte nicht gespeichert werden.",
+    "photoReadFailed": "Das aufgenommene Bild konnte nicht gelesen werden.",
+    "photoStorageFull": "Nicht genug Speicherplatz für dieses Foto. Lösche ein paar ältere Fotos und versuche es erneut.",
+    "photoAlt": "Fortschrittsfoto vom {{date}}",
     "unitSystem": "Einheitensystem",
     "weightChart": "Diagramm des Gewichtsverlaufs",
-    "weightChartAvg": "Gewichtsverlauf mit gleitendem 7-Tage-Durchschnitt"
+    "weightChartAvg": "Gewichtsverlauf mit gleitendem 7-Tage-Durchschnitt",
+    "photosEvicted_one": "Gespeichert. Das älteste Foto wurde entfernt, um Platz zu schaffen.",
+    "photosEvicted_other": "Gespeichert. Die {{count}} ältesten Fotos wurden entfernt, um Platz zu schaffen."
   },
   "program": {
     "title": "Programme",
@@ -309,7 +327,8 @@
       "fri": "Fr",
       "sat": "Sa"
     },
-    "deactivate": "Deaktivieren"
+    "deactivate": "Deaktivieren",
+    "deletePhaseConfirm": "Phase „{{name}}“ und ihre Einheiten löschen? Abgeschlossene Workouts bleiben unter Fortschritt."
   },
   "library": {
     "title": "Übungsbibliothek",
@@ -464,10 +483,17 @@
     "barOnly": "Nur die Stange · {{weight}} {{unit}}",
     "addPlatePair": "Ein Paar {{weight}}-{{unit}}-Scheiben hinzufügen",
     "useWeight": "{{weight}} {{unit}} übernehmen",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — die Differenz lässt sich nicht auflegen."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — die Differenz lässt sich nicht auflegen.",
+    "lastSession": "Zuletzt · {{date}}",
+    "restSeconds": "{{secs}} s Pause",
+    "restrictionAvoid": "{{label}} — als „vermeiden“ markiert",
+    "restrictionModify": "{{label}} — Last oder Bewegungsumfang anpassen"
   },
   "notif": {
-    "sessionTitle": "Training am {{day}}"
+    "sessionTitle": "Training am {{day}}",
+    "channelName": "Trainingserinnerungen",
+    "channelDescription": "Erinnerung um 9 Uhr an Tagen mit geplantem Training",
+    "startAction": "Training starten"
   },
   "health": {
     "stepsWeekLabel": "Schritte der letzten 7 Tage",
@@ -497,9 +523,35 @@
     "changeEmailInvalid": "Das sieht nicht nach einer E-Mail-Adresse aus.",
     "changeEmailGoogle": "Du meldest dich mit Google an, deshalb ist deine E-Mail deine Google-Adresse.",
     "signOut": "Abmelden",
+    "signOutConfirm": "Abmelden? Deine Workouts, Körpermaße und Fortschrittsfotos werden von diesem Gerät entfernt.",
+    "signOutUnsynced_one": "{{count}} Änderung ist noch nicht in deinem Konto angekommen und geht verloren.",
+    "signOutUnsynced_other": "{{count}} Änderungen sind noch nicht in deinem Konto angekommen und gehen verloren.",
+    "signOutSyncOff": "Der Sync ist aus, daher wurden deine Workouts auf diesem Gerät nicht in deinem Konto gespeichert: Sie gehen verloren.",
+    "signOutPhotos_one": "{{count}} Fortschrittsfoto ist nur auf diesem Gerät gespeichert und wird gelöscht.",
+    "signOutPhotos_other": "{{count}} Fortschrittsfotos sind nur auf diesem Gerät gespeichert und werden gelöscht.",
     "autoPush": "Automatisch senden am Ende",
+    "retrying": "Neuer Versuch…",
+    "retrySent_one": "{{sent}} gesendet, {{count}} noch in der Warteschlange",
+    "retrySent_other": "{{sent}} gesendet, {{count}} noch in der Warteschlange",
+    "retryRemaining_one": "{{count}} noch in der Warteschlange",
+    "retryRemaining_other": "{{count}} noch in der Warteschlange",
+    "lastPush": "Zuletzt gesendet: {{time}}",
+    "stuck_one": "{{count}} Eintrag hängt nach mehreren Versuchen fest — prüfe die Verbindung oder melde dich erneut an.",
+    "stuck_other": "{{count}} Einträge hängen nach mehreren Versuchen fest — prüfe die Verbindung oder melde dich erneut an.",
+    "lastError": "Letzter Fehler: {{error}}",
+    "waitingForClear": "Die Synchronisierung wartet: Die Daten des vorherigen Kontos konnten nicht von diesem Gerät entfernt werden. Tippe auf Jetzt erneut versuchen.",
+    "waitingOpens": "Die App öffnet sich, sobald die Daten des vorherigen Kontos von diesem Gerät entfernt sind.",
     "retryNow": "Jetzt erneut versuchen",
-    "orUseEmail": "oder E-Mail verwenden"
+    "gettingReady": "Deine Daten werden vorbereitet…",
+    "gettingReadySlow": "Das dauert länger als sonst.",
+    "orUseEmail": "oder E-Mail verwenden",
+    "queueEmpty": "Warteschlange leer",
+    "queued_one": "{{count}} Änderung in der Warteschlange",
+    "queued_other": "{{count}} Änderungen in der Warteschlange",
+    "queuedSignedOut_one": "{{count}} Änderung in der Warteschlange — wird nach der Anmeldung synchronisiert.",
+    "queuedSignedOut_other": "{{count}} Änderungen in der Warteschlange — werden nach der Anmeldung synchronisiert.",
+    "on": "An",
+    "off": "Aus"
   },
   "jump": {
     "title": "Vertikalsprung erfassen",

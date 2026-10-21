@@ -4,6 +4,7 @@
 // decide whether to push. Pure helper over the in-memory session logs.
 
 import type { SessionLog, SetLog } from '@/types/logging';
+import { localDateKey } from '@/utils/localDate';
 
 export interface LastSessionRef {
   date: string;          // 'YYYY-MM-DD' of that session
@@ -38,7 +39,8 @@ export function getLastSessionSets(
       .filter(counts)
       .sort((a, b) => a.setNumber - b.setNumber);
     if (sets.length > 0) {
-      return { date: log.loggedAt.slice(0, 10), sets };
+      // Local day, not UTC's (v1.18.1, LimeLog#75).
+      return { date: localDateKey(log.loggedAt), sets };
     }
   }
   return null;

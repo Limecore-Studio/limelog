@@ -129,14 +129,24 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
     set({ entitled });
     // Losing entitlement (a lapse, a refund, a reinstall on a fresh account)
     // must not leave the app sitting in a paid theme.
+    //
+    // v1.19 (LimeLog#67 review): shown, not saved. A cold start whose token
+    // refresh was refused emits SIGNED_OUT, which lands here as `false`, and
+    // the NCC inherit signs the user back in a moment later. Saving 'lime'
+    // here lost a supporter's chosen theme for good on that path. The stored
+    // choice stays; resolveStoredTheme() already refuses a paid theme without
+    // entitlement, and the theme comes back when the entitlement does.
     if (!entitled && isPaidTheme(get().theme)) {
       apply('lime');
-      try {
-        storage.setTheme('lime');
-      } catch {
-        /* nothing to do — the applied theme is already correct */
-      }
       set({ theme: 'lime' });
+      return;
+    }
+    if (entitled) {
+      const stored = resolveStoredTheme();
+      if (stored !== get().theme && isPaidTheme(stored)) {
+        apply(stored);
+        set({ theme: stored });
+      }
     }
   },
 

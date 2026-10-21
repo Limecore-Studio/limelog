@@ -1,12 +1,17 @@
-import { Suspense } from 'react';
+import { lazy, Suspense } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
 import { PolicyUpdatedNote } from '@/components/PolicyUpdatedNote';
 import { useTranslation } from 'react-i18next';
 import { Calendar, BarChart2, Layers, BookOpen, Scale } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
 import { useNexusStore } from '@/store/nexusStore';
-import { FdroidUpdateNote } from '@/components/FdroidUpdateNote';
 import './Layout.css';
+import { OptionalChunk } from '@/components/OptionalChunk';
+
+// v1.18.1 (LimeLog#70) — out of the startup chunk. It renders nothing until a
+// check that runs 4 s after mount finds a newer build, so it never needed to
+// be in the first paint.
+const FdroidUpdateNote = lazy(() => import('@/components/FdroidUpdateNote').then((m) => ({ default: m.FdroidUpdateNote })));
 
 // v1.7 — labels resolved via i18n at render time (labelKey → t()).
 const NAV_ITEMS = [
@@ -110,7 +115,9 @@ export function Layout() {
       <main className="app-main">
         {/* v1.16 (#26) — Android only, once a day, off in Settings. Renders
             nothing unless F-Droid has a newer build than this one. */}
-        <FdroidUpdateNote />
+        <OptionalChunk>
+          <FdroidUpdateNote />
+        </OptionalChunk>
         {/* v1.17 (limecore#13) — pages are lazy chunks; the boundary sits
             inside the layout so the bottom nav stays put while one loads. */}
         <Suspense fallback={null}>
