@@ -1,0 +1,3 @@
+Correções e confiabilidade.
+
+Pesos em lb ficam como foram digitados, e recordes, fases e treinos depois da meia-noite são contados corretamente. O LimeLog inicia offline sem voltar ao login, e o lembrete semanal chega na hora. Sair da conta pede confirmação, mostra o que seria perdido e funciona offline. Seus dados, recordes e perfil ficam com sua conta quando outra pessoa entra. Os textos que ainda estavam em inglês foram traduzidos.

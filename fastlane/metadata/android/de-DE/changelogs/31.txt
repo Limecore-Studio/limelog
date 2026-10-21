@@ -1,0 +1,3 @@
+Korrekturen und Zuverlässigkeit.
+
+Gewichte in lb bleiben wie eingegeben, und Bestleistungen, Phasen und Trainings über Mitternacht werden richtig gezählt. LimeLog startet offline, ohne zur Anmeldung zurückzufallen, und die wöchentliche Erinnerung kommt pünktlich. Die Abmeldung fragt zuerst, zeigt, was verloren ginge, und funktioniert offline. Deine Daten, Bestleistungen und dein Profil bleiben bei deinem Konto, wenn sich jemand anderes anmeldet. Restliche englische Texte sind übersetzt.
