@@ -1,3 +1,3 @@
 Perbaikan dan keandalan.
 
-Berat dalam lb tetap seperti yang dimasukkan, dan rekor, fase, serta latihan yang melewati tengah malam dihitung dengan benar. LimeLog dapat dibuka offline tanpa kembali ke layar masuk, dan pengingat mingguan datang tepat waktu. Keluar akun meminta konfirmasi, menunjukkan apa yang akan hilang, dan berfungsi offline. Data, rekor, dan profil Anda tetap di akun Anda saat orang lain masuk. Teks bahasa Inggris yang tersisa sudah diterjemahkan.
+Berat dalam lb tetap seperti yang dimasukkan, rekor dan fase bekerja dengan benar, dan latihan yang belum selesai setelah tengah malam dapat dilanjutkan. LimeLog dapat dibuka offline tanpa kembali ke layar masuk, dan pengingat mingguan datang tepat waktu. Keluar akun meminta konfirmasi, menunjukkan apa yang akan hilang, dan berfungsi offline. Data, rekor, dan profil Anda tetap di akun Anda saat orang lain masuk. Teks bahasa Inggris yang tersisa sudah diterjemahkan.

@@ -1,3 +1,3 @@
 Correcciones y fiabilidad.
 
-Los pesos en lb se mantienen tal como se introducen, y los récords, las fases y los entrenamientos pasada la medianoche se cuentan bien. LimeLog arranca sin conexión sin volver al inicio de sesión, y el recordatorio semanal llega a tiempo. Cerrar sesión pide confirmación, muestra lo que se perdería y funciona sin conexión. Tus datos, récords y perfil se quedan con tu cuenta cuando otra persona inicia sesión. Los textos que quedaban en inglés están traducidos.
+Los pesos en lb se mantienen tal como se introducen, los récords y las fases funcionan bien, y un entrenamiento sin terminar pasada la medianoche se puede retomar. LimeLog arranca sin conexión sin volver al inicio de sesión, y el recordatorio semanal llega a tiempo. Cerrar sesión pide confirmación, muestra lo que se perdería y funciona sin conexión. Tus datos, récords y perfil se quedan con tu cuenta cuando otra persona inicia sesión.
