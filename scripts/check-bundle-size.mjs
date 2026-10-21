@@ -28,7 +28,22 @@ import { fileURLToPath } from 'node:url';
 // Measured one package at a time on the same commit: react-router 7 +15.5,
 // React 19 +78.6, zustand 5 -3.0 KiB. 590 -> 655 covers that and nothing else;
 // from here the budget only goes down again.
-const BUDGET_KIB = 655; // measured 2026-10-08 after limecore#21 (on top of #22): 653.2 KiB
+//
+// Raised again (2026-10-12, LimeLog#70, under the owner's v1.18.1 cloud-build
+// rules on limecore#57: "raise slightly in the first PR that needs it, with a
+// note"). Two held v1.18.1 PRs add startup code: PR #67 (offline start,
+// reminders; +2.0 KiB, raises this to 658 on its own branch) and this
+// training PR (Today's resume card, the phase rules, PR retraction, the
+// localized strings that are always bundled; +3.6 KiB). Together about
+// 658.8 KiB; 661 covers both and nothing else. LimeLog#70 stays open for the
+// lazy-load pass that should bring it back down. When the two PRs meet in a
+// rebase, keep the higher value.
+//
+// 2026-10-19, v1.18.1 integration (CTO): with the training PR and the whole
+// sign-out / takeover stack (#81-#96) merged together, startup JS measured
+// 661.6 KiB, 0.6 over the 661 estimate. 662 covers the measured total and
+// nothing else. LimeLog#70 (lazy-load pass) stays open to bring it back down.
+const BUDGET_KIB = 662; // was 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');

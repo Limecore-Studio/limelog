@@ -34,7 +34,8 @@
     "continue": "Continuar",
     "loading": "Cargando…",
     "undo": "Deshacer",
-    "clear": "Vaciar"
+    "clear": "Vaciar",
+    "storageFull": "El almacenamiento está lleno, así que este cambio no se pudo guardar. Libera espacio (p. ej., borra algunas fotos de progreso) y vuelve a intentarlo."
   },
   "nav": {
     "today": "Hoy",
@@ -71,6 +72,11 @@
     "back": "Atrás",
     "guest": "Continuar como invitado",
     "guestNote": "Solo local: los entrenamientos se quedan en este dispositivo. Puedes iniciar sesión más tarde desde Perfil → Ajustes.",
+    "guestHeldTitle": "¿Continuar como invitado?",
+    "guestHeldEmail": "Este dispositivo tiene datos locales de la cuenta {{email}}.",
+    "guestHeldAccount": "Este dispositivo tiene datos locales de la cuenta que tenía la sesión iniciada.",
+    "guestHeldRemove": "Si continúas como invitado, se eliminarán de este dispositivo. Vuelve a iniciar sesión para conservarlos.",
+    "guestClearFailed": "No se pudieron eliminar los datos de este dispositivo. Inténtalo de nuevo.",
     "notConfigured": "Supabase no configurado: inicio de sesión no disponible. Toca Continuar como invitado para usar la app en local.",
     "errNexus": "No se pudo heredar la sesión de Nexus.",
     "errInvalidCredentials": "Correo o contraseña incorrectos.",
@@ -156,7 +162,10 @@
     "noJumpsBody": "Registra tu salto vertical para seguir tu progreso atlético.",
     "unknownExercise": "Ejercicio desconocido",
     "stallWeightPlateau": "Estancamiento de peso",
-    "stallRpeCreep": "Aumento de RPE"
+    "stallRpeCreep": "Aumento de RPE",
+    "unknownSession": "Sesión desconocida",
+    "loadCaption": "{{unit}} — serie más pesada por sesión",
+    "ormCaption": "{{unit}} — 1RM estimado, el mejor por sesión"
   },
   "today": {
     "noProgramTitle": "Sin programa activo",
@@ -189,7 +198,9 @@
     "stallAlert_many": "{{count}} señales de estancamiento detectadas: considera un deload",
     "stallAlert_other": "{{count}} señales de estancamiento detectadas: considera un deload",
     "deloadAdvance": "{{missed}}/{{total}} series se quedaron cortas en tus últimas 3 sesiones: considera pasar a una fase de deload.",
-    "deloadSchedule": "{{missed}}/{{total}} series se quedaron cortas en tus últimas 3 sesiones: considera programar un deload."
+    "deloadSchedule": "{{missed}}/{{total}} series se quedaron cortas en tus últimas 3 sesiones: considera programar un deload.",
+    "startedOn": "Empezado el {{date}}",
+    "resumeWorkout": "Reanudar entrenamiento"
   },
   "settings": {
     "errorReports": "Enviar informes de errores",
@@ -262,9 +273,17 @@
     "noPhotos": "Aún no hay fotos. Viven solo en este dispositivo — nunca se suben.",
     "deleteEntryConfirm": "¿Eliminar la entrada del {{date}}?",
     "deletePhotoConfirm": "¿Eliminar la foto del {{date}}?",
+    "photoNoImage": "La cámara no devolvió ninguna imagen.",
+    "photoSaveFailed": "No se pudo guardar la foto.",
+    "photoReadFailed": "No se pudo leer la imagen capturada.",
+    "photoStorageFull": "No hay espacio suficiente para guardar esta foto. Borra algunas fotos antiguas y vuelve a intentarlo.",
+    "photoAlt": "Foto de progreso del {{date}}",
     "unitSystem": "Sistema de unidades",
     "weightChart": "Gráfico de tendencia del peso",
-    "weightChartAvg": "Tendencia del peso con media móvil de 7 días"
+    "weightChartAvg": "Tendencia del peso con media móvil de 7 días",
+    "photosEvicted_one": "Guardada. Se eliminó la foto más antigua para liberar espacio.",
+    "photosEvicted_many": "Guardada. Se eliminaron las {{count}} fotos más antiguas para liberar espacio.",
+    "photosEvicted_other": "Guardada. Se eliminaron las {{count}} fotos más antiguas para liberar espacio."
   },
   "program": {
     "title": "Programas",
@@ -316,7 +335,8 @@
     "phases_many": "{{count}} fases",
     "sessions_many": "{{count}} sesiones",
     "exercises_many": "{{count}} ejercicios",
-    "deactivate": "Desactivar"
+    "deactivate": "Desactivar",
+    "deletePhaseConfirm": "¿Eliminar la fase «{{name}}» y sus sesiones? Los entrenamientos terminados se quedan en Progreso."
   },
   "library": {
     "title": "Biblioteca de ejercicios",
@@ -472,10 +492,17 @@
     "barOnly": "Solo la barra · {{weight}} {{unit}}",
     "addPlatePair": "Añadir un par de discos de {{weight}} {{unit}}",
     "useWeight": "Usar {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — ningún disco cubre la diferencia."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — ningún disco cubre la diferencia.",
+    "lastSession": "Última vez · {{date}}",
+    "restSeconds": "{{secs}} s de descanso",
+    "restrictionAvoid": "{{label}} — marcado para evitar",
+    "restrictionModify": "{{label}} — ajusta la carga o el recorrido"
   },
   "notif": {
-    "sessionTitle": "Sesión del {{day}}"
+    "sessionTitle": "Sesión del {{day}}",
+    "channelName": "Recordatorios de entrenamiento",
+    "channelDescription": "Recordatorio a las 9:00 los días con una sesión programada",
+    "startAction": "Empezar sesión"
   },
   "health": {
     "stepsWeekLabel": "Pasos de los últimos 7 días",
@@ -505,9 +532,42 @@
     "changeEmailInvalid": "Eso no parece un correo electrónico.",
     "changeEmailGoogle": "Inicias sesión con Google, así que tu correo es tu dirección de Google.",
     "signOut": "Cerrar sesión",
+    "signOutConfirm": "¿Cerrar sesión? Tus entrenamientos, medidas corporales y fotos de progreso se eliminarán de este dispositivo.",
+    "signOutUnsynced_one": "{{count}} cambio aún no ha llegado a tu cuenta y se perderá.",
+    "signOutUnsynced_many": "{{count}} cambios aún no han llegado a tu cuenta y se perderán.",
+    "signOutUnsynced_other": "{{count}} cambios aún no han llegado a tu cuenta y se perderán.",
+    "signOutSyncOff": "La sincronización está desactivada, así que tus entrenamientos de este dispositivo no se han guardado en tu cuenta: se perderán.",
+    "signOutPhotos_one": "{{count}} foto de progreso solo está en este dispositivo y se eliminará.",
+    "signOutPhotos_many": "{{count}} fotos de progreso solo están en este dispositivo y se eliminarán.",
+    "signOutPhotos_other": "{{count}} fotos de progreso solo están en este dispositivo y se eliminarán.",
     "autoPush": "Enviar automáticamente al terminar",
+    "retrying": "Reintentando…",
+    "retrySent_one": "Enviados: {{sent}}, aún en cola: {{count}}",
+    "retrySent_many": "Enviados: {{sent}}, aún en cola: {{count}}",
+    "retrySent_other": "Enviados: {{sent}}, aún en cola: {{count}}",
+    "retryRemaining_one": "Aún en cola: {{count}}",
+    "retryRemaining_many": "Aún en cola: {{count}}",
+    "retryRemaining_other": "Aún en cola: {{count}}",
+    "lastPush": "Último envío: {{time}}",
+    "stuck_one": "{{count}} elemento atascado tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
+    "stuck_many": "{{count}} elementos atascados tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
+    "stuck_other": "{{count}} elementos atascados tras varios intentos: revisa la conexión o vuelve a iniciar sesión.",
+    "lastError": "Último error: {{error}}",
+    "waitingForClear": "La sincronización está en espera: no se pudieron eliminar de este dispositivo los datos de la cuenta anterior. Toca Reintentar ahora.",
+    "waitingOpens": "La app se abrirá cuando se eliminen de este dispositivo los datos de la cuenta anterior.",
     "retryNow": "Reintentar ahora",
-    "orUseEmail": "o usa el correo"
+    "gettingReady": "Preparando tus datos…",
+    "gettingReadySlow": "Esto está tardando más de lo habitual.",
+    "orUseEmail": "o usa el correo",
+    "queueEmpty": "Cola vacía",
+    "queued_one": "{{count}} cambio en cola",
+    "queued_many": "{{count}} cambios en cola",
+    "queued_other": "{{count}} cambios en cola",
+    "queuedSignedOut_one": "{{count}} cambio en cola — se sincronizará al iniciar sesión.",
+    "queuedSignedOut_many": "{{count}} cambios en cola — se sincronizarán al iniciar sesión.",
+    "queuedSignedOut_other": "{{count}} cambios en cola — se sincronizarán al iniciar sesión.",
+    "on": "Activado",
+    "off": "Desactivado"
   },
   "jump": {
     "title": "Registrar salto vertical",

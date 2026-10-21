@@ -16,6 +16,8 @@
 // library picker on iOS). No Capacitor plugin needed — keeping the
 // dependency surface unchanged for this v1.2 feature.
 
+import i18n from '@/i18n';
+
 const STORAGE_KEY = 'limelog-progress-photos';
 const MAX_PHOTOS = 30;
 const MAX_WIDTH = 600;     // px — longest edge after resize
@@ -31,6 +33,37 @@ export interface ProgressPhoto {
 }
 
 type PhotoIndex = Record<string, ProgressPhoto>;
+
+// v1.18.1 (LimeLog#82) — these errors reach the photo notice through
+// err.message, and were English. The message is translated here, through the
+// i18n instance as storage.ts does (this is not React), and `code` says which
+// failure it was without parsing text. The UI shows the message of a
+// PhotoError only; anything else (a camera plugin error, say) gets the
+// generic "could not save" line instead of whatever English the platform
+// produced.
+export type PhotoErrorCode = 'storage_full' | 'save_failed' | 'unreadable';
+
+const MESSAGE_KEY: Record<PhotoErrorCode, string> = {
+  storage_full: 'body.photoStorageFull',
+  save_failed: 'body.photoSaveFailed',
+  unreadable: 'body.photoReadFailed',
+};
+
+export class PhotoError extends Error {
+  readonly code: PhotoErrorCode;
+  constructor(code: PhotoErrorCode) {
+    super(i18n.t(MESSAGE_KEY[code]));
+    this.name = 'PhotoError';
+    this.code = code;
+  }
+}
+
+function isQuotaError(e: unknown): boolean {
+  return (
+    e instanceof DOMException &&
+    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22)
+  );
+}
 
 function loadIndex(): PhotoIndex {
   try {
@@ -48,9 +81,9 @@ function saveIndex(idx: PhotoIndex): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(idx));
   } catch (e) {
     // Quota-exceeded → caller catches via the savePhoto promise rejection.
-    throw new Error(
-      e instanceof Error ? `Photo save failed: ${e.message}` : 'Photo save failed',
-    );
+    // The browser's own text stays in the console, where it is useful.
+    console.error('[photos] save failed:', e);
+    throw new PhotoError(isQuotaError(e) ? 'storage_full' : 'save_failed');
   }
 }
 
@@ -70,7 +103,15 @@ function evictOldestIfFull(idx: PhotoIndex): { evicted: number } {
  *  honored on modern Android Chromium and Safari via the implicit canvas
  *  drawImage. */
 async function fileToResizedJpeg(file: File): Promise<string> {
-  const imageBitmap = await createImageBitmap(file);
+  // v1.18.1 (LimeLog#82) — a file the WebView cannot decode (HEIC on some
+  // devices) rejects here with the browser's English DOMException text.
+  let imageBitmap: ImageBitmap;
+  try {
+    imageBitmap = await createImageBitmap(file);
+  } catch (e) {
+    console.error('[photos] could not decode the image:', e);
+    throw new PhotoError('unreadable');
+  }
   const ratio = imageBitmap.height / imageBitmap.width;
   const w = Math.min(MAX_WIDTH, imageBitmap.width);
   const h = Math.round(w * ratio);
@@ -78,7 +119,7 @@ async function fileToResizedJpeg(file: File): Promise<string> {
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('Canvas 2D context unavailable');
+  if (!ctx) throw new PhotoError('save_failed'); // no 2D canvas in this WebView
   ctx.drawImage(imageBitmap, 0, 0, w, h);
   return canvas.toDataURL('image/jpeg', JPEG_QUALITY);
 }
@@ -107,7 +148,7 @@ export async function savePhotoFromDataUrl(
   dataUrl: string,
 ): Promise<{ photo: ProgressPhoto; evicted: number }> {
   if (!dataUrl.startsWith('data:image/')) {
-    throw new Error('Invalid image data');
+    throw new PhotoError('unreadable'); // not an image data URL
   }
   const photo: ProgressPhoto = {
     date,

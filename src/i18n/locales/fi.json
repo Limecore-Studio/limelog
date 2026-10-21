@@ -34,7 +34,8 @@
     "continue": "Jatka",
     "loading": "Ladataan…",
     "undo": "Kumoa",
-    "clear": "Tyhjennä"
+    "clear": "Tyhjennä",
+    "storageFull": "Tallennustila on täynnä, joten muutosta ei voitu tallentaa. Vapauta tilaa (esim. poista edistymiskuvia) ja yritä uudelleen."
   },
   "nav": {
     "today": "Tänään",
@@ -71,6 +72,11 @@
     "back": "Takaisin",
     "guest": "Jatka vieraana",
     "guestNote": "Vain paikallinen — treenit pysyvät tällä laitteella. Voit kirjautua myöhemmin kohdasta Profiili → Asetukset.",
+    "guestHeldTitle": "Jatketaanko vieraana?",
+    "guestHeldEmail": "Tällä laitteella on tilin {{email}} tietoja.",
+    "guestHeldAccount": "Tällä laitteella on aiemmin sisään kirjautuneen tilin tietoja.",
+    "guestHeldRemove": "Jos jatkat vieraana, ne poistetaan tältä laitteelta. Kirjaudu uudelleen sisään, niin ne säilyvät.",
+    "guestClearFailed": "Tietoja ei voitu poistaa tältä laitteelta. Yritä uudelleen.",
     "notConfigured": "Supabasea ei ole määritetty — kirjautuminen ei ole käytettävissä. Valitse Jatka vieraana käyttääksesi sovellusta paikallisesti.",
     "errNexus": "Nexus-istuntoa ei voitu periä.",
     "errInvalidCredentials": "Väärä sähköposti tai salasana.",
@@ -154,7 +160,10 @@
     "noJumpsBody": "Seuraa vertikaalihyppyäsi urheilullisen kehityksen mittarina.",
     "unknownExercise": "Tuntematon liike",
     "stallWeightPlateau": "Painon tasanne",
-    "stallRpeCreep": "RPE:n nousu"
+    "stallRpeCreep": "RPE:n nousu",
+    "unknownSession": "Tuntematon treeni",
+    "loadCaption": "{{unit}} — treenin raskain sarja",
+    "ormCaption": "{{unit}} — arvioitu 1RM, treenin paras"
   },
   "today": {
     "noProgramTitle": "Ei aktiivista ohjelmaa",
@@ -185,7 +194,9 @@
     "stallAlert_one": "{{count}} pysähtymismerkintä havaittu — harkitse kevennysjaksoa",
     "stallAlert_other": "{{count}} pysähtymismerkintää havaittu — harkitse kevennysjaksoa",
     "deloadAdvance": "{{missed}}/{{total}} sarjaa jäi tavoitteesta kolmen viime treenin aikana — harkitse siirtymistä kevennysjaksoon.",
-    "deloadSchedule": "{{missed}}/{{total}} sarjaa jäi tavoitteesta kolmen viime treenin aikana — harkitse kevennysjakson ajoittamista."
+    "deloadSchedule": "{{missed}}/{{total}} sarjaa jäi tavoitteesta kolmen viime treenin aikana — harkitse kevennysjakson ajoittamista.",
+    "startedOn": "Aloitettu {{date}}",
+    "resumeWorkout": "Jatka treeniä"
   },
   "settings": {
     "errorReports": "Lähetä virheraportit",
@@ -258,9 +269,16 @@
     "noPhotos": "Ei tallennettuja kuvia. Ne pysyvät vain tällä laitteella — ei ladata.",
     "deleteEntryConfirm": "Poistetaanko merkintä päivältä {{date}}?",
     "deletePhotoConfirm": "Poistetaanko kuva päivältä {{date}}?",
+    "photoNoImage": "Kamera ei palauttanut kuvaa.",
+    "photoSaveFailed": "Kuvaa ei voitu tallentaa.",
+    "photoReadFailed": "Otettua kuvaa ei voitu lukea.",
+    "photoStorageFull": "Tila ei riitä tämän kuvan tallentamiseen. Poista vanhempia kuvia ja yritä uudelleen.",
+    "photoAlt": "Edistymiskuva {{date}}",
     "unitSystem": "Yksikköjärjestelmä",
     "weightChart": "Painon trendikaavio",
-    "weightChartAvg": "Painon trendi 7 päivän liukuvalla keskiarvolla"
+    "weightChartAvg": "Painon trendi 7 päivän liukuvalla keskiarvolla",
+    "photosEvicted_one": "Tallennettu. Vanhin kuva poistettiin tilan vapauttamiseksi.",
+    "photosEvicted_other": "Tallennettu. {{count}} vanhinta kuvaa poistettiin tilan vapauttamiseksi."
   },
   "program": {
     "title": "Ohjelmat",
@@ -309,7 +327,8 @@
       "fri": "Pe",
       "sat": "La"
     },
-    "deactivate": "Poista käytöstä"
+    "deactivate": "Poista käytöstä",
+    "deletePhaseConfirm": "Poistetaanko vaihe ”{{name}}” ja sen harjoitukset? Tehdyt treenit jäävät Edistymiseen."
   },
   "library": {
     "title": "Liikekirjasto",
@@ -464,10 +483,17 @@
     "barOnly": "Pelkkä tanko · {{weight}} {{unit}}",
     "addPlatePair": "Lisää pari {{weight}} {{unit}} levyjä",
     "useWeight": "Käytä {{weight}} {{unit}}",
-    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — erotusta ei saa levyillä."
+    "plateSeedRounded": "{{from}} → {{to}} {{unit}} — erotusta ei saa levyillä.",
+    "lastSession": "Viimeksi · {{date}}",
+    "restSeconds": "{{secs}} s lepo",
+    "restrictionAvoid": "{{label}} — merkitty vältettäväksi",
+    "restrictionModify": "{{label}} — muokkaa kuormaa tai liikerataa"
   },
   "notif": {
-    "sessionTitle": "{{day}}n treeni"
+    "sessionTitle": "{{day}}n treeni",
+    "channelName": "Treenimuistutukset",
+    "channelDescription": "Muistutus klo 9 päivinä, joille on ajoitettu treeni",
+    "startAction": "Aloita treeni"
   },
   "health": {
     "stepsWeekLabel": "Askeleet viimeisen 7 päivän ajalta",
@@ -497,9 +523,35 @@
     "changeEmailInvalid": "Tämä ei näytä sähköpostiosoitteelta.",
     "changeEmailGoogle": "Kirjaudut Googlella, joten sähköpostisi on Google-osoitteesi.",
     "signOut": "Kirjaudu ulos",
+    "signOutConfirm": "Kirjaudutaanko ulos? Treenisi, kehon mitat ja edistymiskuvat poistetaan tältä laitteelta.",
+    "signOutUnsynced_one": "{{count}} muutos ei ole vielä tallentunut tilillesi ja menetetään.",
+    "signOutUnsynced_other": "{{count}} muutosta ei ole vielä tallentunut tilillesi ja ne menetetään.",
+    "signOutSyncOff": "Synkronointi on pois päältä, joten tämän laitteen treenejäsi ei ole tallennettu tilillesi: ne menetetään.",
+    "signOutPhotos_one": "{{count}} edistymiskuva on vain tällä laitteella ja poistetaan.",
+    "signOutPhotos_other": "{{count}} edistymiskuvaa on vain tällä laitteella ja ne poistetaan.",
     "autoPush": "Lähetä automaattisesti lopetettaessa",
+    "retrying": "Yritetään uudelleen…",
+    "retrySent_one": "Lähetetty {{sent}}, jonossa vielä {{count}}",
+    "retrySent_other": "Lähetetty {{sent}}, jonossa vielä {{count}}",
+    "retryRemaining_one": "Jonossa vielä {{count}}",
+    "retryRemaining_other": "Jonossa vielä {{count}}",
+    "lastPush": "Viimeisin lähetys: {{time}}",
+    "stuck_one": "{{count}} kohde on jumissa uusintayritysten jälkeen — tarkista yhteys tai kirjaudu uudelleen sisään.",
+    "stuck_other": "{{count}} kohdetta on jumissa uusintayritysten jälkeen — tarkista yhteys tai kirjaudu uudelleen sisään.",
+    "lastError": "Viimeisin virhe: {{error}}",
+    "waitingForClear": "Synkronointi odottaa: edellisen tilin tietoja ei voitu poistaa tältä laitteelta. Napauta Yritä uudelleen.",
+    "waitingOpens": "Sovellus avautuu, kun edellisen tilin tiedot on poistettu tältä laitteelta.",
     "retryNow": "Yritä uudelleen",
-    "orUseEmail": "tai käytä sähköpostia"
+    "gettingReady": "Tietojasi valmistellaan…",
+    "gettingReadySlow": "Tämä kestää tavallista kauemmin.",
+    "orUseEmail": "tai käytä sähköpostia",
+    "queueEmpty": "Jono on tyhjä",
+    "queued_one": "{{count}} muutos jonossa",
+    "queued_other": "{{count}} muutosta jonossa",
+    "queuedSignedOut_one": "{{count}} muutos jonossa — synkronoidaan kirjautumisen jälkeen.",
+    "queuedSignedOut_other": "{{count}} muutosta jonossa — synkronoidaan kirjautumisen jälkeen.",
+    "on": "Päällä",
+    "off": "Pois"
   },
   "jump": {
     "title": "Kirjaa vertikaalihyppy",

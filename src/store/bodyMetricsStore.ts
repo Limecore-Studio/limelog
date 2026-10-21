@@ -118,10 +118,11 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
   },
 
   remove(id) {
+    const gone = get().metrics.find((m) => m.id === id);
     const next = get().metrics.filter((m) => m.id !== id);
     saveToStorage(next);
     set({ metrics: next });
-    enqueue('delete_body_metric', { id });
+    enqueue('delete_body_metric', { id, date: gone?.date });
   },
 
   updatePrefs(patch) {

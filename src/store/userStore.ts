@@ -3,6 +3,18 @@ import { storage } from '@/utils/storage';
 import { generateId } from '@/utils/helpers';
 import type { UserProfile, InjuryRestriction } from '@/types/user';
 
+// v1.18.1 (LimeLog#90) — a fresh default, for the store after the account
+// clear sets the profile aside (lib/parkedData.ts).
+export function defaultProfile(): UserProfile {
+  return {
+    ...DEFAULT_PROFILE,
+    id: generateId(),
+    deloadThresholds: { ...DEFAULT_PROFILE.deloadThresholds },
+    activeRestrictions: [],
+    createdAt: new Date().toISOString(),
+  };
+}
+
 const DEFAULT_PROFILE: UserProfile = {
   id: generateId(),
   name: 'Athlete',

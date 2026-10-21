@@ -10,6 +10,8 @@ const USER = 'user-1';
 type Write = { table: string; op: 'update' | 'delete'; row?: Record<string, unknown>; eq?: [string, unknown] };
 
 const holder = vi.hoisted(() => ({ client: null as unknown as ReturnType<typeof makeClient> }));
+// v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('./supabase', () => ({
   isNexusConfigured: true,
   get supabase() {
@@ -70,6 +72,8 @@ const LOG = '6f1c2a4e-0b7d-4c9a-8e3f-2d5b1a7c9e01';
 
 beforeEach(() => {
   vi.stubGlobal('localStorage', storage());
+  // v1.18.1 (LimeLog#88) — the outbox sends only for the recorded owner.
+  localStorage.setItem('limelog.dataOwner', USER);
   vi.stubGlobal('navigator', { onLine: false }); // enqueue must not drain on its own
   holder.client = makeClient();
   useLogStore.setState({

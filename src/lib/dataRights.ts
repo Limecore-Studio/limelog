@@ -12,6 +12,8 @@ import { storage } from '@/utils/storage';
 import { supabase, isNexusConfigured } from './supabase';
 import { listPhotos } from './progressPhotos';
 import { selectAll } from './selectAll';
+import { clearOwner, ownerMirrorSettled } from './accountOwner';
+import { forgetParked } from './parkedData';
 
 const EXPORT_SCHEMA_VERSION = 1;
 
@@ -36,11 +38,22 @@ interface ExportPayload {
  */
 export const SERVER_ONLY_TABLES = ['feedback', 'client_errors'] as const;
 
+// v1.18.1 (LimeLog#76): signed-in users may read only these columns of
+// `feedback` (the grant in StudyDesk's 20261005_feedback_status_columns
+// migration). `select('*')` and the user_id filter both asked for a column
+// outside it, so the export held "permission denied" instead of the user's
+// feedback. RLS already limits the rows to the user's own. `client_errors` still has every column granted,
+// user_id included. Same list as NCC's and StudyDesk's.
+export const FEEDBACK_EXPORT_COLUMNS = 'id, app, app_version, category, rating, message, status, shipped_in, created_at';
+
 export async function serverOnlyData(userId: string): Promise<Record<string, unknown[] | { error: string }>> {
   const out: Record<string, unknown[] | { error: string }> = {};
   for (const table of SERVER_ONLY_TABLES) {
     try {
-      const { data, error } = await selectAll(supabase, table, { filter: (q) => q.eq('user_id', userId) });
+      const { data, error } =
+        table === 'feedback'
+          ? await selectAll(supabase, table, { columns: FEEDBACK_EXPORT_COLUMNS })
+          : await selectAll(supabase, table, { filter: (q) => q.eq('user_id', userId) });
       out[table] = error ? { error: error.message } : (data ?? []);
     } catch (e) {
       out[table] = { error: (e as Error).message };
@@ -142,17 +155,50 @@ export async function downloadExport(
  * Remove every LimeLog key from local storage.
  *
  * Prefix-based rather than a list of names, deliberately. nexusStore.signOut
- * wipes an explicit six keys, which is right for sign-out — programs and
- * exercise definitions are not personal data and a returning user wants them
- * kept. Erasure is the opposite case: anything missed is data surviving a
+ * wipes an explicit list of keys (since v1.18.1, LimeLog#82, some of the
+ * `limelog.` flags below too; see there), which is right for sign-out — programs
+ * and exercise definitions are not personal data and a returning user wants
+ * them kept. Erasure is the opposite case: anything missed is data surviving a
  * deletion request, so the default has to be "remove it" and a hand-written
  * list would silently miss whatever gets added next.
+ *
+ * v1.18.1 (LimeLog#77) — `limelog.` (dot) was missing, so these survived an
+ * erasure. Each is about the person, not the device:
+ *   - `limelog.onboarded`: "this person has done the first-run wizard". v1.10
+ *     moved its truth to the account (user_preferences); the local copy is a
+ *     cache of an account fact, and the account is gone.
+ *   - `limelog.guestMode`: "this person chose to use the app without an
+ *     account". Kept, the next launch would skip the first-launch screen and
+ *     treat whoever opens the app next as having made that choice.
+ *   - `limelog.lastAppOpen`: the local day this account's app-open row was
+ *     last queued (appOpens.ts). It is a record of the erased person's use,
+ *     and kept, it would stop a new account's first open that day from being
+ *     recorded. Losing it costs at most one duplicate queue item, which the
+ *     table's primary key already collapses.
+ *   - `limelog.trainingGoal` and `limelog.referralAsked` are the person's
+ *     answers to the wizard and the referral prompt, so they go too (the
+ *     training PR, #79, also names these two one by one).
+ * v1.18.1 (LimeLog#90/#91/#92) — also under `limelog.`: the account the
+ * local data is tied to and its email (`limelog.dataOwner`,
+ * `limelog.dataOwnerEmail`), and the records and profiles set aside per
+ * account at sign-out (`limelog.parked`, every slot: an erase leaves nothing
+ * of LimeLog's here). The owner's Preferences mirror goes in deleteAccount
+ * (clearOwner).
+ * The language (`limecore_lang`) is a device setting shared with the other
+ * apps, so it stays, as before.
  */
 export function wipeAllLocalData(): void {
-  const PREFIXES = ['wt_', 'limelog-'];
+  const PREFIXES = ['wt_', 'limelog-', 'limelog.'];
+  // Device settings under those prefixes that are not the person's data: the
+  // F-Droid update check (fdroidUpdate.ts) is a choice about this device, and
+  // an erase silently turned it back on.
+  const KEEP = new Set(['limelog-fdroid-check']);
+  // v1.18.1 (LimeLog#75): keys no prefix covers, named one by one (the two
+  // auth-metadata names, in case anything mirrored them here).
+  const KEYS = ['referral_source', 'limecore_origin'];
   try {
     const doomed = Object.keys(localStorage).filter((k) =>
-      PREFIXES.some((p) => k.startsWith(p)),
+      !KEEP.has(k) && (KEYS.includes(k) || PREFIXES.some((p) => k.startsWith(p))),
     );
     for (const k of doomed) localStorage.removeItem(k);
   } catch {
@@ -180,8 +226,22 @@ export async function deleteAccount({
 }: {
   clearLocal: () => Promise<void>;
 }): Promise<{ deleted: 'local' | 'account' }> {
-  if (!isNexusConfigured) {
+  // v1.18.1 (LimeLog#88) — the local data has no owner after an erase. The
+  // prefix wipe removes the record too (`limelog.`); this does not depend on
+  // the caller's clearLocal doing so.
+  // v1.18.1 (LimeLog#90) — and the deleted account's records and profile set
+  // aside on this device (parkedData.ts) go with it. The prefix wipe removes
+  // every slot too (`limelog.parked`); this does not depend on it either.
+  const clearAll = async (userId?: string) => {
     await clearLocal();
+    if (userId) forgetParked(userId);
+    clearOwner();
+    // The caller reloads next (ProfilePage); the Preferences clear has to
+    // land first, or the deleted account's id and email outlive it there.
+    await ownerMirrorSettled();
+  };
+  if (!isNexusConfigured) {
+    await clearAll();
     return { deleted: 'local' };
   }
 
@@ -189,7 +249,7 @@ export async function deleteAccount({
   if (!session) {
     // Guest: there is no server-side account. Clearing the device is the whole
     // of the erasure.
-    await clearLocal();
+    await clearAll();
     return { deleted: 'local' };
   }
 
@@ -203,6 +263,6 @@ export async function deleteAccount({
   } catch {
     // The user row is already gone, so the sign-out call may fail. Not fatal.
   }
-  await clearLocal();
+  await clearAll(session.user.id);
   return { deleted: 'account' };
 }

@@ -1,0 +1,3 @@
+Fixes and reliability.
+
+Weights in lb stay as entered, PR detection and phases work correctly, and an unfinished workout past midnight can be resumed. LimeLog starts offline without falling back to sign-in, and the weekly reminder fires on time. Sign-out asks first, shows what would be lost and works offline. Your data, PRs and profile stay with your account when someone else signs in. Leftover English text is translated.

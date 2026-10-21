@@ -3,6 +3,7 @@ import { storage } from '@/utils/storage';
 import { generateId } from '@/utils/helpers';
 import type { Exercise, Program, Phase, SessionTemplate, SessionExercise, WorkoutTemplate } from '@/types/program';
 import { BUILTIN_EXERCISES } from '@/data/builtinExercises';
+import { resolvePhase } from '@/lib/todaySessions';
 
 function seedExercisesIfEmpty(stored: Exercise[]): Exercise[] {
   if (stored.length > 0) return stored;
@@ -35,7 +36,9 @@ interface ProgramStore {
   // Phase CRUD
   addPhase: (programId: string, p: Omit<Phase, 'id' | 'programId'>) => void;
   updatePhase: (programId: string, phaseId: string, updates: Partial<Phase>) => void;
-  deletePhase: (programId: string, phaseId: string) => void;
+  /** `keepSessionIds`: sessions of the phase that have workouts logged. They
+   *  stay (never offered or reminded about) so History can still name them. */
+  deletePhase: (programId: string, phaseId: string, keepSessionIds?: ReadonlySet<string>) => void;
   /** Advance the program's `activePhaseId` to the next phase by orderIndex.
    *  No-ops if already on the last phase. Returns the new active phase or
    *  null if no advance happened (useful for UI flash messaging). */
@@ -155,27 +158,30 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
     set({ programs, activeProgram: programs.find((p) => p.status === 'active') ?? null });
   },
 
-  deletePhase: (programId, phaseId) => {
-    const programs = get().programs.map((prog) =>
-      prog.id === programId
-        ? { ...prog, phases: prog.phases.filter((ph) => ph.id !== phaseId) }
-        : prog
-    );
+  // v1.18.1 (LimeLog#73): the phase's sessions go with it, as the editor shows
+  // them inside it. They used to stay behind invisible, still scheduling
+  // reminders. And an activePhaseId naming it moves to the phase after it (the
+  // one before, if it was the last) rather than dangling.
+  deletePhase: (programId, phaseId, keepSessionIds) => {
+    const programs = get().programs.map((prog) => {
+      if (prog.id !== programId) return prog;
+      const phases = prog.phases.filter((ph) => ph.id !== phaseId);
+      const sessions = prog.sessions.filter((s) => s.phaseId !== phaseId || keepSessionIds?.has(s.id));
+      if (prog.activePhaseId !== phaseId) return { ...prog, phases, sessions };
+      const sorted = [...prog.phases].sort((a, b) => a.orderIndex - b.orderIndex);
+      const i = sorted.findIndex((ph) => ph.id === phaseId);
+      return { ...prog, phases, sessions, activePhaseId: (sorted[i + 1] ?? sorted[i - 1])?.id };
+    });
     storage.setPrograms(programs);
     set({ programs, activeProgram: programs.find((p) => p.status === 'active') ?? null });
   },
 
   advancePhase: (programId) => {
-    const prog = get().programs.find((p) => p.id === programId);
-    if (!prog || prog.phases.length === 0) return null;
-    // Sort by orderIndex for stable progression regardless of array order.
-    const sorted = [...prog.phases].sort((a, b) => a.orderIndex - b.orderIndex);
-    // Find current — explicit activePhaseId wins; otherwise fall back to first.
-    const currentIdx = prog.activePhaseId
-      ? sorted.findIndex((ph) => ph.id === prog.activePhaseId)
-      : 0;
-    if (currentIdx < 0 || currentIdx >= sorted.length - 1) return null;
-    const next = sorted[currentIdx + 1];
+    // The same resolution Today shows "Next phase" from (v1.18.1, LimeLog#73),
+    // so an activePhaseId naming no phase advances from the first phase, as
+    // Today displays it, instead of the button doing nothing.
+    const next = resolvePhase(get().programs.find((p) => p.id === programId)).next;
+    if (!next) return null;
     const programs = get().programs.map((p) =>
       p.id === programId ? { ...p, activePhaseId: next.id } : p
     );

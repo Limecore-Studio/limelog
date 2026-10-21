@@ -109,7 +109,7 @@ export function OneRMChart({ exerciseId, sessionLogs, unit }: Props) {
           {min.toFixed(1)}
         </text>
       </svg>
-      <p className="load-chart__unit">{unit} — estimated 1RM, best per session</p>
+      <p className="load-chart__unit">{t('progress.ormCaption', { unit })}</p>
     </div>
   );
 }

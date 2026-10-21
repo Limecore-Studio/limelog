@@ -6,6 +6,10 @@ import { inheritFromNexus } from '@/lib/suiteSso';
 import { Button, Card, Badge } from '@/components/ui';
 import { Cloud, CloudOff } from 'lucide-react';
 import { ChangeEmail } from '@/components/ChangeEmail';
+import { useConfirm } from '@/components/confirmContext';
+import { useLogStore } from '@/store/logStore';
+import { listPhotos } from '@/lib/progressPhotos';
+import { formatTime } from '@/utils/helpers';
 import './NexusSyncCard.css';
 
 // Inline plugin handle for the "is NCC session available?" probe. We can't
@@ -22,6 +26,7 @@ export function NexusSyncCard() {
     configured,
     syncEnabled,
     userEmail,
+    userId,
     loading,
     lastError,
     pendingCount,
@@ -31,23 +36,50 @@ export function NexusSyncCard() {
     signUp,
     signInWithGoogle,
     signOut,
+    signOutPending,
     setSyncEnabled,
     retryPending,
   } = useNexusStore();
 
+  // v1.18.1 (LimeLog#94) — signed in means a session (the account id), as
+  // in App.tsx's gate: a sign-up waiting for its code sets the email alone.
+  const signedInAs = userId ? userEmail : null;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [localError, setLocalError] = useState<string | null>(null);
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [nexusAvailable, setNexusAvailable] = useState(false);
+  const confirm = useConfirm();
+
+  // v1.18.1 (LimeLog#66): sign-out wipes this device's workouts, body
+  // measurements and progress photos (shared-device privacy). Photos are never
+  // uploaded, and with sync off nothing is, so one tap could delete what
+  // exists nowhere else. Say what will be lost, and ask.
+  async function handleSignOut() {
+    const parts = [t('sync.signOutConfirm')];
+    // Queued changes are counted whatever the sync setting: body metrics are
+    // queued with sync off too. Workouts are not queued while it is off.
+    if (pendingCount > 0) parts.push(t('sync.signOutUnsynced', { count: pendingCount }));
+    if (!syncEnabled && useLogStore.getState().sessionLogs.length > 0) parts.push(t('sync.signOutSyncOff'));
+    const photos = listPhotos().length;
+    if (photos > 0) parts.push(t('sync.signOutPhotos', { count: photos }));
+    if (!(await confirm({ message: parts.join(' '), confirmLabel: t('sync.signOut') }))) return;
+    try {
+      await signOut();
+    } catch {
+      // signOut does not throw for a server it cannot reach (it signs out
+      // here instead); anything else is unexpected and must not escape the
+      // click handler.
+    }
+  }
 
   // v1.4 — probe NCC's SessionContentProvider on mount. Silent on failure:
   // if NCC isn't installed or signing certs don't match, the affordance
   // simply doesn't render and the user sees the Google/email flow alone.
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    if (userEmail) return; // already signed in; no probe needed
+    if (signedInAs) return; // already signed in; no probe needed
     let cancelled = false;
     void (async () => {
       try {
@@ -58,14 +90,14 @@ export function NexusSyncCard() {
       }
     })();
     return () => { cancelled = true; };
-  }, [userEmail]);
+  }, [signedInAs]);
 
   async function handleNexus() {
     setLocalError(null);
     try {
       const result = await inheritFromNexus();
       if (!result.ok) {
-        setLocalError(result.reason || 'Could not inherit Nexus session.');
+        setLocalError(result.reason || t('auth.errNexus'));
       }
       // On success, nexusStore.init's auth listener takes over.
     } catch (err) {
@@ -97,15 +129,24 @@ export function NexusSyncCard() {
     }
   }
 
+  // v1.18.1 (LimeLog#77) — the retry status, the last-push and error lines
+  // and the stuck warning below were still English. (On/Off is translated by
+  // the training PR, #79.)
+  //
+  // v1.18.1 (LimeLog#82) — the two queue lines say "changes", not "workouts":
+  // pendingCount is the whole outbox (body metrics, PRs, app opens and
+  // deletions as well as workouts), and Retry sends all of it. The calls are
+  // the training PR's (#79) word for word, so the two merge cleanly; only the
+  // wording of sync.queued / sync.queuedSignedOut differs.
   async function handleRetry() {
-    setRetryStatus('Retrying…');
+    setRetryStatus(t('sync.retrying'));
     const result = await retryPending();
     setRetryStatus(
       result.sent > 0
-        ? `Sent ${result.sent}, ${result.remaining} still queued`
+        ? t('sync.retrySent', { sent: result.sent, count: result.remaining })
         : result.remaining > 0
-          ? `${result.remaining} still queued`
-          : 'Queue empty'
+          ? t('sync.retryRemaining', { count: result.remaining })
+          : t('sync.queueEmpty')
     );
     setTimeout(() => setRetryStatus(null), 3000);
   }
@@ -133,16 +174,16 @@ export function NexusSyncCard() {
       <div className="nexus-card__header">
         <Cloud size={18} />
         <span className="settings-field__label" style={{ margin: 0 }}>{t('sync.title')}</span>
-        {userEmail && <Badge label={t('sync.connected')} variant="success" />}
+        {signedInAs && <Badge label={t('sync.connected')} variant="success" />}
       </div>
 
-      {userEmail ? (
+      {signedInAs ? (
         <>
           <p className="nexus-card__signed-in">
-            {t('sync.signedInAs')} <strong>{userEmail}</strong>
+            {t('sync.signedInAs')} <strong>{signedInAs}</strong>
           </p>
           {/* v1.17 (limecore#10): email/password accounts only. */}
-          <ChangeEmail userEmail={userEmail} />
+          <ChangeEmail userEmail={signedInAs} />
 
           <div className="nexus-card__row">
             <span className="settings-field__sublabel">{t('sync.autoPush')}</span>
@@ -151,15 +192,13 @@ export function NexusSyncCard() {
               onClick={() => setSyncEnabled(!syncEnabled)}
               style={{ flex: 'none', padding: '6px 14px' }}
             >
-              {syncEnabled ? 'On' : 'Off'}
+              {syncEnabled ? t('sync.on') : t('sync.off')}
             </button>
           </div>
 
           <div className="nexus-card__row">
             <span className="settings-field__sublabel">
-              {pendingCount > 0
-                ? `${pendingCount} workout${pendingCount > 1 ? 's' : ''} queued`
-                : 'Queue empty'}
+              {pendingCount > 0 ? t('sync.queued', { count: pendingCount }) : t('sync.queueEmpty')}
             </span>
             {pendingCount > 0 && (
               <Button size="sm" variant="secondary" onClick={handleRetry}>
@@ -176,28 +215,28 @@ export function NexusSyncCard() {
               "last push" line, and the stuck warning when items hit MAX_ATTEMPTS. */}
           {(lastPushAt || outboxStatus.lastSuccessAt) && (
             <p className="nexus-card__meta">
-              Last push: {new Date(outboxStatus.lastSuccessAt ?? lastPushAt!).toLocaleTimeString()}
+              {t('sync.lastPush', { time: formatTime(outboxStatus.lastSuccessAt ?? lastPushAt!) })}
             </p>
           )}
 
           {outboxStatus.stuck > 0 && (
             <p className="nexus-card__error">
-              {outboxStatus.stuck} item{outboxStatus.stuck > 1 ? 's' : ''} stuck after retries — check connection or sign back in.
+              {t('sync.stuck', { count: outboxStatus.stuck })}
             </p>
           )}
 
           {lastError && <p className="nexus-card__error">{lastError}</p>}
           {!lastError && outboxStatus.lastError && (
             <p className="nexus-card__error">
-              Last error: {outboxStatus.lastError}
+              {t('sync.lastError', { error: outboxStatus.lastError })}
             </p>
           )}
 
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => void signOut()}
-            disabled={loading}
+            onClick={() => void handleSignOut()}
+            disabled={loading || signOutPending}
             className="nexus-card__signout"
           >
             {t('sync.signOut')}
@@ -213,7 +252,7 @@ export function NexusSyncCard() {
                 size="md"
                 fullWidth
                 onClick={handleNexus}
-                disabled={loading}
+                disabled={loading || signOutPending}
                 className="nexus-card__nexus"
               >
                 <span className="nexus-card__nexus-glyph" aria-hidden="true">◈</span>
@@ -231,7 +270,7 @@ export function NexusSyncCard() {
             size="md"
             fullWidth
             onClick={handleGoogle}
-            disabled={loading}
+            disabled={loading || signOutPending}
             className="nexus-card__google"
           >
             {t('auth.google')}
@@ -268,7 +307,7 @@ export function NexusSyncCard() {
           )}
 
           <div className="nexus-card__actions">
-            <Button type="submit" variant="primary" size="sm" disabled={loading}>
+            <Button type="submit" variant="primary" size="sm" disabled={loading || signOutPending}>
               {loading ? '…' : mode === 'signin' ? t('auth.signIn') : t('auth.createAccount')}
             </Button>
             <button
@@ -285,7 +324,7 @@ export function NexusSyncCard() {
 
           {pendingCount > 0 && (
             <p className="nexus-card__meta">
-              {pendingCount} workout{pendingCount > 1 ? 's' : ''} queued — will sync after sign-in.
+              {t('sync.queuedSignedOut', { count: pendingCount })}
             </p>
           )}
         </form>

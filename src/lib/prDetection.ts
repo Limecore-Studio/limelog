@@ -10,6 +10,7 @@
 
 import type { SetLog, SessionLog, ExercisePR } from '@/types/logging';
 import { estimate1RM } from '@/utils/oneRepMax';
+import { localDateKey } from '@/utils/localDate';
 
 /** The best scoring set for an exercise within a list of sets, by estimated
  *  1RM. Only completed sets with a positive weight + reps count. Returns null
@@ -57,7 +58,8 @@ export function detectNewPRs(
   resolveName: (exerciseId: string) => string,
   makeId: () => string,
 ): ExercisePR[] {
-  const date = session.loggedAt.slice(0, 10);
+  // The user's own calendar day, not UTC's (v1.18.1, LimeLog#75).
+  const date = localDateKey(session.loggedAt);
   const createdAt = new Date().toISOString();
 
   // Group this session's sets by exercise.
@@ -73,15 +75,19 @@ export function detectNewPRs(
     const best = bestSet(sets);
     if (!best) continue;
     const prior = currentPR(existingPRs, exerciseId);
-    // Strictly greater — re-hitting the same 1RM isn't a new PR.
-    if (prior && best.oneRepMax <= prior.oneRepMaxKg) continue;
+    // Strictly greater — re-hitting the same 1RM isn't a new PR. Compared at the
+    // precision a PR is stored at (v1.18.1, LimeLog#72): the stored 109.09 from
+    // 100 kg × 4 is below the same set's unrounded 109.0909, so doing 100 × 4
+    // again used to claim a second PR.
+    const oneRepMaxKg = Math.round(best.oneRepMax * 100) / 100;
+    if (prior && oneRepMaxKg <= prior.oneRepMaxKg) continue;
     newPRs.push({
       id: makeId(),
       exerciseId,
       exerciseName: resolveName(exerciseId),
       weightKg: best.weightKg,
       reps: best.reps,
-      oneRepMaxKg: Math.round(best.oneRepMax * 100) / 100,
+      oneRepMaxKg,
       sessionId: session.id,
       date,
       createdAt,

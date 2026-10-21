@@ -1,0 +1,3 @@
+Corrections et fiabilité.
+
+Les poids en lb restent tels que saisis, les records et les phases fonctionnent correctement, et une séance inachevée après minuit peut être reprise. LimeLog démarre hors ligne sans revenir à la connexion, et le rappel hebdomadaire arrive à l'heure. La déconnexion demande confirmation, indique ce qui serait perdu et fonctionne hors ligne. Vos données, records et profil restent liés à votre compte quand quelqu'un d'autre se connecte.

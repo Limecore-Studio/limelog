@@ -1,0 +1,3 @@
+Korjauksia ja luotettavuutta.
+
+Paunoina syötetyt painot pysyvät ennallaan, ennätykset ja vaiheet toimivat oikein, ja keskiyön yli jäänyttä keskeneräistä treeniä voi jatkaa. LimeLog käynnistyy offline-tilassa palaamatta kirjautumiseen, ja viikkomuistutus tulee ajallaan. Uloskirjautuminen kysyy ensin, näyttää mitä menetettäisiin ja toimii offline-tilassa. Tietosi, ennätyksesi ja profiilisi pysyvät tililläsi, kun joku muu kirjautuu sisään. Jäljelle jääneet englanninkieliset tekstit on käännetty.

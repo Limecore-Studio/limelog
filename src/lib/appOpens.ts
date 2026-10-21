@@ -72,6 +72,22 @@ export async function recordAppOpen(appVersion: string): Promise<boolean> {
   return true;
 }
 
+/** v1.18.1 (LimeLog#82) — sign-out. The guard is "this ACCOUNT's open is
+ *  queued for today"; kept, it stopped the next account's first open that day
+ *  from being recorded. Clearing it costs at most a duplicate item if the same
+ *  person signs back in the same day, which the upsert collapses. */
+// v1.18.1 (LimeLog#88) — false when storage refused, so an account switch
+// can tell a clear that did not happen (accountWipe.ts).
+export function forgetLastAppOpen(): boolean {
+  try {
+    localStorage.removeItem(LAST_KEY);
+    return true;
+  } catch {
+    /* no storage: nothing was kept */
+    return false;
+  }
+}
+
 /**
  * Wire foreground detection. Returns an unsubscribe function.
  *
