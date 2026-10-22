@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toDisplayWeight, fromDisplayWeight, parseWeightInput } from './helpers';
+import { toDisplayWeight, fromDisplayWeight, parseWeightInput, weightFieldValue } from './helpers';
 import { convertLoad } from './plateMath';
 
 // v1.18.1 (LimeLog#71) — the workout's weight field works in the user's unit.
@@ -49,5 +49,31 @@ describe('the plate keypad and the field agree', () => {
 
   it('leaves a kg load untouched', () => {
     expect(fromDisplayWeight(102.5, 'kg')).toBe(102.5);
+  });
+});
+
+// v1.18.1 (LimeLog#78) — the program editor's target weight uses the same field.
+// It was entered and shown in kg for everyone, so an lb user's 225 target was
+// stored as 225 kg and then prefilled into every set as 496 lb.
+describe('a weight field shows the stored kilograms in the user\'s unit', () => {
+  it('shows kilograms as stored, not rounded', () => {
+    expect(weightFieldValue(101.25, 'kg')).toBe(101.25);
+  });
+
+  it('shows pounds to one decimal', () => {
+    expect(weightFieldValue(100, 'lb')).toBe(220.5);
+  });
+
+  it('is empty when there is no weight', () => {
+    expect(weightFieldValue(undefined, 'lb')).toBe('');
+    expect(weightFieldValue(null, 'kg')).toBe('');
+  });
+
+  it('gives an lb user back the target they typed, stored as kilograms', () => {
+    const kg = parseWeightInput('225', 'lb')!;
+    expect(kg).toBeCloseTo(102.058, 3);
+    expect(weightFieldValue(kg, 'lb')).toBe(225);
+    // The workout's placeholder and prefill read the same stored target.
+    expect(toDisplayWeight(kg, 'lb')).toBe(225);
   });
 });

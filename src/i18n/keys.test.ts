@@ -57,7 +57,7 @@ describe('i18n keys', () => {
       'sync.on', 'sync.off', 'sync.queued_other', 'sync.queueEmpty', 'sync.queuedSignedOut_other',
       'progress.unknownSession', 'progress.loadCaption', 'progress.ormCaption', 'body.photosEvicted_other',
       'notif.channelName', 'notif.channelDescription', 'notif.startAction',
-      'today.startedOn', 'today.resumeWorkout',
+      'today.startedOn', 'today.resumeWorkout', 'log.targetWeight',
     ];
     const dir = join(__dirname, 'locales');
     const missing: string[] = [];
