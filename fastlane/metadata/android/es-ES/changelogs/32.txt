@@ -1,0 +1,3 @@
+Pequeñas correcciones.
+
+El peso objetivo del editor de programas está en tu unidad, así que un objetivo de 225 lb sigue siendo 225 lb. Una cuenta nueva que no terminó la configuración ve el asistente al instante sin conexión, sin una larga espera.

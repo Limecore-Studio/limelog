@@ -1,0 +1,3 @@
+Petites corrections.
+
+Le poids cible de l'éditeur de programme est dans votre unité : une cible de 225 lb reste 225 lb. Un nouveau compte qui n'a pas terminé la configuration voit l'assistant tout de suite hors ligne, sans longue attente.

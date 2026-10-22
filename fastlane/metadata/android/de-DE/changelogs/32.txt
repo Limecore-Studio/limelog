@@ -1,0 +1,3 @@
+Kleine Korrekturen.
+
+Das Zielgewicht im Programmeditor ist in deiner Einheit, ein Ziel von 225 lb bleibt also 225 lb. Ein neues Konto, das die Einrichtung noch nicht abgeschlossen hat, sieht offline sofort den Einrichtungsassistenten, ohne lange zu warten.

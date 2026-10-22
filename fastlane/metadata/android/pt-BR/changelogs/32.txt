@@ -1,0 +1,3 @@
+Pequenas correções.
+
+O peso-alvo do editor de programas está na sua unidade, então uma meta de 225 lb continua 225 lb. Uma conta nova que não terminou a configuração vê o assistente na hora quando offline, sem longa espera.
