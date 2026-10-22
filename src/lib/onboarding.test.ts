@@ -32,7 +32,7 @@ vi.mock('./supabase', () => ({
   },
 }));
 
-import { hydrateOnboardedFromCloud, isOnboarded, releaseOnboardingOnSignOut, setOnboarded, setTrainingGoal } from './onboarding';
+import { canAnswerLocallyNow, hydrateOnboardedFromCloud, isOnboarded, releaseOnboardingOnSignOut, setOnboarded, setTrainingGoal } from './onboarding';
 
 function storage() {
   const m = new Map<string, string>();
@@ -123,5 +123,35 @@ describe('hydrateOnboardedFromCloud with this person\'s own flag', () => {
     h.fail = true;
     expect(await hydrateOnboardedFromCloud()).toBe('unknown');
     expect(isOnboarded()).toBe(true);
+  });
+});
+
+// v1.18.1 (LimeLog#69) — offline, a device with no local "done" shows the
+// wizard at once instead of after auth-js's refresh retries give up; a device
+// that says done keeps waiting for the account, so nothing is flashed at it.
+describe('canAnswerLocallyNow', () => {
+  const online = (v: boolean) => vi.stubGlobal('navigator', { onLine: v });
+
+  it('offline, never onboarded on this device: yes', () => {
+    online(false);
+    expect(canAnswerLocallyNow()).toBe(true);
+  });
+
+  it('offline, onboarded here (empty logs, or recovery not run yet): no', () => {
+    online(false);
+    setOnboarded();
+    expect(canAnswerLocallyNow()).toBe(false);
+  });
+
+  it('offline, done by an account that signed out: no', () => {
+    online(false);
+    setOnboarded();
+    releaseOnboardingOnSignOut();
+    expect(canAnswerLocallyNow()).toBe(false);
+  });
+
+  it('online, never onboarded here: no, the account is asked first', () => {
+    online(true);
+    expect(canAnswerLocallyNow()).toBe(false);
   });
 });
