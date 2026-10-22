@@ -1,0 +1,3 @@
+Pieniä korjauksia.
+
+Ohjelmaeditorin tavoitepaino on omassa yksikössäsi, joten 225 lb:n tavoite pysyy 225 lb:nä. Uusi tili, jonka käyttöönotto on kesken, näkee offline-tilassa ohjatun käyttöönoton heti ilman pitkää odotusta.

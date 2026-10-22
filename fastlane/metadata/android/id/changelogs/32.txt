@@ -1,0 +1,3 @@
+Perbaikan kecil.
+
+Berat target di editor program memakai satuan Anda, jadi target 225 lb tetap 225 lb. Akun baru yang belum menyelesaikan penyiapan langsung melihat wizard penyiapan saat offline, tanpa menunggu lama.

@@ -1,0 +1,3 @@
+Small fixes.
+
+The program editor's target weight is in your unit, so a 225 lb target stays 225 lb. A new account that hasn't finished setup sees the setup wizard at once when offline, without a long wait.
