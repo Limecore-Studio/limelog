@@ -603,7 +603,11 @@
     "group": {
       "cardio": "Ausdauer",
       "training": "Training"
-    }
+    },
+    "when": "Wann",
+    "whenDate": "Datum",
+    "whenTime": "Uhrzeit",
+    "whenFuture": "Dieser Zeitpunkt liegt in der Zukunft."
   },
   "referral": {
     "eyebrow": "EINE FRAGE",

@@ -667,7 +667,11 @@
     "group": {
       "cardio": "كارديو",
       "training": "تدريب"
-    }
+    },
+    "when": "متى",
+    "whenDate": "التاريخ",
+    "whenTime": "الوقت",
+    "whenFuture": "هذا الوقت لم يأتِ بعد."
   },
   "referral": {
     "eyebrow": "سؤال واحد",

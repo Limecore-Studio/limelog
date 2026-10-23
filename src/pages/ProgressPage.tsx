@@ -12,6 +12,7 @@ import { OneRMChart } from '@/components/OneRMChart';
 import { PRHistory } from '@/components/PRHistory';
 import { bestEstimateForExercise } from '@/utils/oneRepMax';
 import { strengthToBodyweight } from '@/lib/bodyMetricsAnalysis';
+import { sessionMoment } from '@/lib/sessionMoment';
 import { BarChart2, TrendingUp, Zap } from 'lucide-react';
 import './ProgressPage.css';
 
@@ -40,9 +41,11 @@ export function ProgressPage() {
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime())
     .slice(0, 10);
 
+  // v1.19 (LL#103): ordered and dated by when each session happened, so a
+  // back-dated activity sits on its own day rather than on the day it was saved.
   const finalizedLogs = [...sessionLogs]
     .filter((l) => l.finalizedAt !== undefined)
-    .sort((a, b) => new Date(b.finalizedAt!).getTime() - new Date(a.finalizedAt!).getTime());
+    .sort((a, b) => new Date(sessionMoment(b)).getTime() - new Date(sessionMoment(a)).getTime());
 
   function getSessionName(sessionTemplateId: string): string {
     for (const prog of programs) {
@@ -235,7 +238,7 @@ export function ProgressPage() {
                           ? t(`cardio.activity.${l.activityType}`, { defaultValue: l.activityType })
                           : getSessionName(l.sessionTemplateId ?? '')}
                       </span>
-                      <span className="history-entry__date">{formatDate(l.finalizedAt!)}</span>
+                      <span className="history-entry__date">{formatDate(sessionMoment(l))}</span>
                     </div>
                     <div className="history-entry__meta">
                       {isCardio ? (

@@ -592,7 +592,11 @@
     "group": {
       "cardio": "有氧",
       "training": "训练"
-    }
+    },
+    "when": "时间",
+    "whenDate": "日期",
+    "whenTime": "时刻",
+    "whenFuture": "这个时间还没到。"
   },
   "referral": {
     "eyebrow": "一个问题",

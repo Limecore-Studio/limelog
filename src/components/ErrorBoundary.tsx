@@ -1,7 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import i18n from '@/i18n';
 import { buildReport, errorReportsEnabled, sendReport, type ErrorReport, type SendResult } from '@/lib/errorReports';
-import { downloadExport } from '@/lib/dataRights';
 import { supabase, isNexusConfigured } from '@/lib/supabase';
 import './ErrorBoundary.css';
 
@@ -62,6 +61,12 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
         const u = data.session?.user;
         if (u) account = { id: u.id, email: u.email };
       }
+      // Loaded on the tap, not at launch (LimeLog#70): the export module and
+      // the photo index it reads are only ever needed from this button and
+      // from Profile, yet the boundary wraps the whole app, so a static import
+      // put both in the startup chunk. A chunk that fails to load lands in the
+      // catch below, like any other failed export.
+      const { downloadExport } = await import('@/lib/dataRights');
       await downloadExport(account);
       this.setState({ exported: true });
     } catch {
