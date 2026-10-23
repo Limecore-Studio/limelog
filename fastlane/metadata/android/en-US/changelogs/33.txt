@@ -1,0 +1,3 @@
+Body data and back-dating.
+
+Log smart-scale readings such as body fat, water, muscle and bone mass, keep a height log, and get your BMI calculated. Log an activity on the day it happened. Workout reminders are set four weeks ahead, so they keep coming even if you don't open the app.
