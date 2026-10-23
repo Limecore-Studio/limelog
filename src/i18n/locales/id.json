@@ -587,7 +587,11 @@
     "group": {
       "cardio": "Kardio",
       "training": "Latihan"
-    }
+    },
+    "when": "Kapan",
+    "whenDate": "Tanggal",
+    "whenTime": "Waktu",
+    "whenFuture": "Waktu itu belum tiba."
   },
   "referral": {
     "eyebrow": "SATU PERTANYAAN",

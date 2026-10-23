@@ -13,6 +13,7 @@
 
 import { supabase, isNexusConfigured } from './supabase';
 import type { SessionLog } from '@/types/logging';
+import { sessionMoment } from '@/lib/sessionMoment';
 import type { Exercise, SessionTemplate } from '@/types/program';
 
 interface NexusSetPayload {
@@ -75,7 +76,9 @@ export function mapSessionLogToNexus(
     // falling through to the generic 'workout'. The row then reads sensibly on
     // a client that knows nothing about `activity_type`.
     sessionType: session?.name ?? log.activityType ?? 'workout',
-    date: log.finalizedAt ?? log.loggedAt,
+    // v1.19 (LL#103): an activity's own moment, so a back-dated run lands on
+    // its day in workout_sessions and in NCC (see sessionMoment).
+    date: sessionMoment(log),
     notes: log.notes,
     sets,
     activityType: log.activityType,

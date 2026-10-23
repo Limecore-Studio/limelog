@@ -603,7 +603,11 @@
     "group": {
       "cardio": "Cardio",
       "training": "Training"
-    }
+    },
+    "when": "When",
+    "whenDate": "Date",
+    "whenTime": "Time",
+    "whenFuture": "That time hasn't happened yet."
   },
   "referral": {
     "eyebrow": "ONE QUESTION",

@@ -619,7 +619,11 @@
     "group": {
       "cardio": "Cardio",
       "training": "Entraînement"
-    }
+    },
+    "when": "Quand",
+    "whenDate": "Date",
+    "whenTime": "Heure",
+    "whenFuture": "Ce moment n'est pas encore arrivé."
   },
   "referral": {
     "eyebrow": "UNE QUESTION",

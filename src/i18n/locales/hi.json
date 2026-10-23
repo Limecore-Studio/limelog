@@ -603,7 +603,11 @@
     "group": {
       "cardio": "कार्डियो",
       "training": "ट्रेनिंग"
-    }
+    },
+    "when": "कब",
+    "whenDate": "तारीख",
+    "whenTime": "समय",
+    "whenFuture": "वह समय अभी आया नहीं है।"
   },
   "referral": {
     "eyebrow": "एक सवाल",
