@@ -23,7 +23,6 @@ import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
 import { useConfirm } from '@/components/confirmContext';
 import { useLogStore } from '@/store/logStore';
-import { listPhotos } from '@/lib/progressPhotos';
 import './FirstLaunchAuth.css';
 
 // AUTH-2 — confirmation-code bounds, ported from StudyDesk's AuthGate.
@@ -227,6 +226,9 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
       ];
       if (held.unsynced > 0) parts.push(t('sync.signOutUnsynced', { count: held.unsynced }));
       if (!syncEnabled && useLogStore.getState().sessionLogs.length > 0) parts.push(t('sync.signOutSyncOff'));
+      // Loaded here rather than at launch (LimeLog#70): this confirm is the
+      // sign-in screen's only use of the photo index.
+      const { listPhotos } = await import('@/lib/progressPhotos');
       const photos = listPhotos().length;
       if (photos > 0) parts.push(t('sync.signOutPhotos', { count: photos }));
       return confirm({ title: t('auth.guestHeldTitle'), message: parts.join(' '), confirmLabel: t('auth.guest') });
