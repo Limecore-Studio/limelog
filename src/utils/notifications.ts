@@ -11,6 +11,10 @@
  * v1.19 — LL#63: "weekly" is one exact alarm for the next occurrence, re-armed
  * by the app (App.tsx: every cold start, every resume, every program change),
  * not a repeating alarm. See scheduleWorkoutReminders for why.
+ *
+ * v1.19 — LL#68: armed WEEKS_AHEAD weeks ahead, one exact alarm per week per
+ * weekday, so the reminders keep coming for a month when the app is not
+ * opened in between. Each opening re-arms the whole window.
  */
 
 import { Capacitor } from '@capacitor/core';
@@ -22,9 +26,12 @@ import i18n from '@/i18n';
 import { weekdayNames } from '@/utils/helpers';
 
 const CHANNEL_ID = 'workout-reminders';
-/** Notification IDs 100–106 are reserved for days 0 (Sun) – 6 (Sat). */
+/** How many weeks of reminders are armed at once (LL#68). */
+const WEEKS_AHEAD = 4;
+/** Notification IDs 100–127: BASE_ID + week * 7 + day, day 0 (Sun) – 6 (Sat),
+ *  week 0 the next occurrence. Inside the 0–999 legacy sweep below. */
 const BASE_ID = 100;
-const SLOT_COUNT = 7;
+const SLOT_COUNT = 7 * WEEKS_AHEAD;
 
 
 /**
@@ -50,7 +57,7 @@ export const WORKOUT_ACTION_START = 'start';
  * vacuum the AlarmManager queue clean of historical entries. Cancel on
  * a non-existent ID is a no-op on Android, so the sweep is cheap.
  *
- * The current scheme uses IDs 100–106 only; the 0–999 sweep is a
+ * The current scheme uses IDs 100–127 only; the 0–999 sweep is a
  * defense-in-depth net for any LimeLog install that ever ran a pre-v1.3.1
  * build. Future versions can shrink this once we're confident no v1.0/v1.1
  * installs remain in the field.
@@ -284,7 +291,7 @@ async function scheduleNow(
     });
 
     const toSchedule = unique
-      .map((s: SessionTemplate) => {
+      .flatMap((s: SessionTemplate) => {
         // Next future occurrence of this day-of-week at 09:00
         const target = new Date(now);
         target.setHours(9, 0, 0, 0);
@@ -297,38 +304,44 @@ async function scheduleNow(
           target.setDate(target.getDate() + 7);
         }
 
-        return {
-          id: BASE_ID + s.dayOfWeek,
-          // Localised at schedule time. Both the weekday and the surrounding
-          // wording were English here regardless of app language.
-          title: i18n.t('notif.sessionTitle', { day: weekdayNames('long')[s.dayOfWeek] }),
-          body: buildSessionBody(s, exerciseLibrary),
-          // v1.19 — LL#63: one-shot. `at` + `repeats` is not "weekly" in
-          // @capacitor/local-notifications 8.0.2: that branch calls
-          // setRepeating(RTC, at, at - now), so the interval was however far
-          // off the reminder was when the app last scheduled it (open on
-          // Saturday for a Monday session and it repeated every ~2 days), and
-          // `every` and `allowWhileIdle` were ignored, on a non-wakeup alarm
-          // that Doze defers. A plain `at` takes the exact path instead —
-          // setExactAndAllowWhileIdle(RTC_WAKEUP) with `allowWhileIdle`,
-          // given the exact-alarm permissions in AndroidManifest.xml — and
-          // the app re-arms the next week each time it starts or resumes.
-          schedule: { at: target, allowWhileIdle: true },
-          channelId: CHANNEL_ID,
-          // Custom small icon derived from launcher (see
-          // limecore/derive_notification_icons.py). Status-bar icons MUST be
-          // white-on-transparent or Android renders a fallback glyph.
-          smallIcon: 'ic_stat_limelog',
-          // Brand lime accent — applied by the OS as the channel/notif color
-          // (the small icon's tint and heads-up accent stripe). Matches the
-          // CSS --color-lime token (#c8f135) used throughout the app.
-          iconColor: '#c8f135',
-          // Surfaces the "Start session" action button (registered in
-          // setupNotificationChannel). Action click is observed in App.tsx
-          // via the localNotificationActionPerformed listener.
-          actionTypeId: ACTION_TYPE_ID,
-          sound: 'default',
-        };
+        // v1.19 — LL#68: this occurrence and the next WEEKS_AHEAD - 1, each
+        // its own exact alarm (setDate keeps 09:00 local across DST).
+        return Array.from({ length: WEEKS_AHEAD }, (_, week) => {
+          const at = new Date(target);
+          at.setDate(at.getDate() + 7 * week);
+          return {
+            id: BASE_ID + week * 7 + s.dayOfWeek,
+            // Localised at schedule time. Both the weekday and the surrounding
+            // wording were English here regardless of app language.
+            title: i18n.t('notif.sessionTitle', { day: weekdayNames('long')[s.dayOfWeek] }),
+            body: buildSessionBody(s, exerciseLibrary),
+            // v1.19 — LL#63: one-shot. `at` + `repeats` is not "weekly" in
+            // @capacitor/local-notifications 8.0.2: that branch calls
+            // setRepeating(RTC, at, at - now), so the interval was however far
+            // off the reminder was when the app last scheduled it (open on
+            // Saturday for a Monday session and it repeated every ~2 days), and
+            // `every` and `allowWhileIdle` were ignored, on a non-wakeup alarm
+            // that Doze defers. A plain `at` takes the exact path instead —
+            // setExactAndAllowWhileIdle(RTC_WAKEUP) with `allowWhileIdle`,
+            // given the exact-alarm permissions in AndroidManifest.xml — and
+            // the app re-arms the WEEKS_AHEAD window each time it starts or resumes.
+            schedule: { at, allowWhileIdle: true },
+            channelId: CHANNEL_ID,
+            // Custom small icon derived from launcher (see
+            // limecore/derive_notification_icons.py). Status-bar icons MUST be
+            // white-on-transparent or Android renders a fallback glyph.
+            smallIcon: 'ic_stat_limelog',
+            // Brand lime accent — applied by the OS as the channel/notif color
+            // (the small icon's tint and heads-up accent stripe). Matches the
+            // CSS --color-lime token (#c8f135) used throughout the app.
+            iconColor: '#c8f135',
+            // Surfaces the "Start session" action button (registered in
+            // setupNotificationChannel). Action click is observed in App.tsx
+            // via the localNotificationActionPerformed listener.
+            actionTypeId: ACTION_TYPE_ID,
+            sound: 'default',
+          };
+        });
       })
       .filter((n) => n.schedule.at.getTime() > now.getTime());
 
