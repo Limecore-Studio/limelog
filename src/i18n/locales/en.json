@@ -278,7 +278,35 @@
     "weightChart": "Weight trend chart",
     "weightChartAvg": "Weight trend with 7-day moving average",
     "photosEvicted_one": "Saved. Oldest {{count}} photo removed to free space.",
-    "photosEvicted_other": "Saved. Oldest {{count}} photos removed to free space."
+    "photosEvicted_other": "Saved. Oldest {{count}} photos removed to free space.",
+    "scale": {
+      "chip": "Smart scale",
+      "group": "Smart scale",
+      "bodyFat": "Body fat",
+      "water": "Water",
+      "protein": "Protein",
+      "bmr": "Basal metabolism",
+      "visceral": "Visceral fat",
+      "bone": "Bone mass",
+      "muscle": "Muscle mass",
+      "bodyAge": "Body age",
+      "trends": "Scale trends",
+      "latest": "Latest: {{value}} ({{date}})",
+      "needTwo": "Log it on another day to see the trend.",
+      "outOfRange": "{{name}} must be between {{min}} and {{max}}."
+    },
+    "height": {
+      "title": "Height",
+      "current": "{{height}} (measured {{date}})",
+      "none": "No height yet. Add it to see your BMI.",
+      "update": "Update height",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "Height must be between {{min}} and {{max}}.",
+      "chart": "Height over time",
+      "bmi": "BMI {{bmi}}",
+      "bmiNote": "From your latest weight and the height measured on or before that day."
+    }
   },
   "program": {
     "title": "Programs",

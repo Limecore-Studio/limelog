@@ -45,6 +45,8 @@ import {
   PhotoError,
   type ProgressPhoto,
 } from '@/lib/progressPhotos';
+import { SCALE_METRICS, parseScaleInput, scaleToInput, scaleUnit, type ScaleKey } from '@/lib/bodyScale';
+import { HeightCard, ScaleTrendsCard } from '@/components/BodyScaleCards';
 import './BodyMetricsPanel.css';
 
 function todayLocalIso(): string {
@@ -61,6 +63,8 @@ const TRACK_OPTIONS = [
   { key: 'trackHips' as const, labelKey: 'body.hips' },
   { key: 'trackArms' as const, labelKey: 'body.arms' },
   { key: 'trackLegs' as const, labelKey: 'body.legs' },
+  // v1.19 (LL#104) — one chip for the whole smart-scale group.
+  { key: 'trackScale' as const, labelKey: 'body.scale.chip' },
 ];
 
 interface FormState {
@@ -71,8 +75,12 @@ interface FormState {
   hips: string;
   arms: string;
   legs: string;
+  /** v1.19 (LL#104) — smart-scale readings, as typed. */
+  scale: Record<ScaleKey, string>;
   notes: string;
 }
+
+const EMPTY_SCALE = Object.fromEntries(SCALE_METRICS.map((m) => [m.key, ''])) as Record<ScaleKey, string>;
 
 const EMPTY_FORM: FormState = {
   date: todayLocalIso(),
@@ -82,6 +90,7 @@ const EMPTY_FORM: FormState = {
   hips: '',
   arms: '',
   legs: '',
+  scale: EMPTY_SCALE,
   notes: '',
 };
 
@@ -96,6 +105,8 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
+  // v1.19 (LL#104) — which scale field is out of range, if any.
+  const [scaleErr, setScaleErr] = useState<ScaleKey | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [photosNonce, setPhotosNonce] = useState(0); // re-renders gallery
 
@@ -132,7 +143,19 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
   }
 
   function handleSave() {
+    // v1.19 (LL#104) — only what the scale showed is stored; an empty field
+    // is skipped, and an out-of-range one stops the save and says which.
+    const scale: Partial<Record<ScaleKey, number>> = {};
+    if (prefs.trackScale) {
+      for (const m of SCALE_METRICS) {
+        const v = parseScaleInput(m, form.scale[m.key], unit);
+        if (v === null) { setScaleErr(m.key); return; }
+        if (v !== undefined) scale[m.key] = v;
+      }
+    }
+    setScaleErr(null);
     const payload = {
+      ...scale,
       date: form.date,
       weightKg: parseWeightInputToKg(form.weight),
       chestCm: prefs.trackChest ? parseLengthInputToCm(form.chest) : undefined,
@@ -150,6 +173,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       payload.hipsCm != null ||
       payload.armsCm != null ||
       payload.legsCm != null ||
+      Object.keys(scale).length > 0 ||
       payload.notes != null;
     if (!filled) return;
     addOrUpdate(payload);
@@ -179,6 +203,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       legs: row.legsCm != null
         ? String(isImperial ? cmToIn(row.legsCm).toFixed(1) : row.legsCm)
         : '',
+      scale: Object.fromEntries(SCALE_METRICS.map((m) => [m.key, scaleToInput(m, row[m.key], unit)])) as Record<ScaleKey, string>,
       notes: row.notes ?? '',
     });
   }
@@ -354,6 +379,9 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
         </div>
       </Card>
 
+      {/* v1.19 (LL#104) — height, its log and BMI. */}
+      <HeightCard />
+
       {/* Log form */}
       <Card padding="md">
         <h3 className="body-metrics-section__title">{t('body.logEntry')}</h3>
@@ -426,6 +454,32 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
               />
             </label>
           )}
+          {prefs.trackScale && (
+            <>
+              <div className="body-metrics-form__group">{t('body.scale.group')}</div>
+              {SCALE_METRICS.map((m) => {
+                const u = scaleUnit(m, unit);
+                return (
+                  <label key={m.key} className="body-metrics-form__field">
+                    <span>{t(m.labelKey)}{u ? ` (${u})` : ''}</span>
+                    <input
+                      type="number"
+                      inputMode={m.step >= 1 ? 'numeric' : 'decimal'}
+                      step={m.step}
+                      placeholder={`${scaleToInput(m, m.min, unit)}–${scaleToInput(m, m.max, unit)}`}
+                      aria-invalid={scaleErr === m.key || undefined}
+                      value={form.scale[m.key]}
+                      onChange={(e) => { const v = e.target.value; setScaleErr(null); setForm((f) => ({ ...f, scale: { ...f.scale, [m.key]: v } })); }}
+                    />
+                  </label>
+                );
+              })}
+              {scaleErr && (() => {
+                const m = SCALE_METRICS.find((x) => x.key === scaleErr)!;
+                return <p className="body-metrics-error body-metrics-form__field--full" role="alert">{t('body.scale.outOfRange', { name: t(m.labelKey), min: scaleToInput(m, m.min, unit), max: scaleToInput(m, m.max, unit) })}</p>;
+              })()}
+            </>
+          )}
           <label className="body-metrics-form__field body-metrics-form__field--full">
             <span>{t('body.notes')}</span>
             <textarea
@@ -440,6 +494,9 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
           {t('body.saveEntry')}
         </Button>
       </Card>
+
+      {/* v1.19 (LL#104) — a chart per smart-scale metric that has readings. */}
+      <ScaleTrendsCard />
 
       {/* Trend chart — suppressed when the page renders its own summary card
           (BodyMetricsSummaryCard) so we don't show two weight charts. */}

@@ -278,7 +278,35 @@
     "weightChart": "Painon trendikaavio",
     "weightChartAvg": "Painon trendi 7 päivän liukuvalla keskiarvolla",
     "photosEvicted_one": "Tallennettu. Vanhin kuva poistettiin tilan vapauttamiseksi.",
-    "photosEvicted_other": "Tallennettu. {{count}} vanhinta kuvaa poistettiin tilan vapauttamiseksi."
+    "photosEvicted_other": "Tallennettu. {{count}} vanhinta kuvaa poistettiin tilan vapauttamiseksi.",
+    "scale": {
+      "chip": "Älyvaaka",
+      "group": "Älyvaaka",
+      "bodyFat": "Rasvaprosentti",
+      "water": "Vesi",
+      "protein": "Proteiini",
+      "bmr": "Perusaineenvaihdunta",
+      "visceral": "Viskeraalirasva",
+      "bone": "Luumassa",
+      "muscle": "Lihasmassa",
+      "bodyAge": "Kehon ikä",
+      "trends": "Vaa'an trendit",
+      "latest": "Viimeisin: {{value}} ({{date}})",
+      "needTwo": "Kirjaa se toisena päivänä nähdäksesi trendin.",
+      "outOfRange": "{{name}} on oltava välillä {{min}}–{{max}}."
+    },
+    "height": {
+      "title": "Pituus",
+      "current": "{{height}} (mitattu {{date}})",
+      "none": "Pituutta ei vielä ole. Lisää se nähdäksesi painoindeksisi.",
+      "update": "Päivitä pituus",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "Pituuden on oltava välillä {{min}}–{{max}}.",
+      "chart": "Pituus ajan myötä",
+      "bmi": "BMI {{bmi}}",
+      "bmiNote": "Viimeisimmästä painostasi ja sinä päivänä tai aiemmin mitatusta pituudesta."
+    }
   },
   "program": {
     "title": "Ohjelmat",

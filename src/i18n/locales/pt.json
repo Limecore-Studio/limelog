@@ -303,7 +303,35 @@
     "weightChartAvg": "Tendência do peso com média móvel de 7 dias",
     "photosEvicted_one": "Salva. A foto mais antiga foi removida para liberar espaço.",
     "photosEvicted_many": "Salva. As {{count}} fotos mais antigas foram removidas para liberar espaço.",
-    "photosEvicted_other": "Salva. As {{count}} fotos mais antigas foram removidas para liberar espaço."
+    "photosEvicted_other": "Salva. As {{count}} fotos mais antigas foram removidas para liberar espaço.",
+    "scale": {
+      "chip": "Balança inteligente",
+      "group": "Balança inteligente",
+      "bodyFat": "Gordura corporal",
+      "water": "Água",
+      "protein": "Proteína",
+      "bmr": "Metabolismo basal",
+      "visceral": "Gordura visceral",
+      "bone": "Massa óssea",
+      "muscle": "Massa muscular",
+      "bodyAge": "Idade corporal",
+      "trends": "Tendências da balança",
+      "latest": "Último: {{value}} ({{date}})",
+      "needTwo": "Registre em outro dia para ver a tendência.",
+      "outOfRange": "{{name}} deve estar entre {{min}} e {{max}}."
+    },
+    "height": {
+      "title": "Altura",
+      "current": "{{height}} (medida em {{date}})",
+      "none": "Ainda sem altura. Adicione para ver seu IMC.",
+      "update": "Atualizar altura",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "A altura deve estar entre {{min}} e {{max}}.",
+      "chart": "Altura ao longo do tempo",
+      "bmi": "IMC {{bmi}}",
+      "bmiNote": "A partir do seu último peso e da altura medida nesse dia ou antes."
+    }
   },
   "profile": {
     "title": "Perfil",

@@ -278,7 +278,35 @@
     "weightChart": "Diagramm des Gewichtsverlaufs",
     "weightChartAvg": "Gewichtsverlauf mit gleitendem 7-Tage-Durchschnitt",
     "photosEvicted_one": "Gespeichert. Das älteste Foto wurde entfernt, um Platz zu schaffen.",
-    "photosEvicted_other": "Gespeichert. Die {{count}} ältesten Fotos wurden entfernt, um Platz zu schaffen."
+    "photosEvicted_other": "Gespeichert. Die {{count}} ältesten Fotos wurden entfernt, um Platz zu schaffen.",
+    "scale": {
+      "chip": "Smarte Waage",
+      "group": "Smarte Waage",
+      "bodyFat": "Körperfett",
+      "water": "Wasser",
+      "protein": "Protein",
+      "bmr": "Grundumsatz",
+      "visceral": "Viszeralfett",
+      "bone": "Knochenmasse",
+      "muscle": "Muskelmasse",
+      "bodyAge": "Körperalter",
+      "trends": "Waagen-Verlauf",
+      "latest": "Zuletzt: {{value}} ({{date}})",
+      "needTwo": "Trag es an einem weiteren Tag ein, um den Verlauf zu sehen.",
+      "outOfRange": "{{name}} muss zwischen {{min}} und {{max}} liegen."
+    },
+    "height": {
+      "title": "Größe",
+      "current": "{{height}} (gemessen {{date}})",
+      "none": "Noch keine Größe. Trag sie ein, um deinen BMI zu sehen.",
+      "update": "Größe aktualisieren",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "Die Größe muss zwischen {{min}} und {{max}} liegen.",
+      "chart": "Größe im Verlauf",
+      "bmi": "BMI {{bmi}}",
+      "bmiNote": "Aus deinem letzten Gewicht und der Größe, die an diesem Tag oder davor gemessen wurde."
+    }
   },
   "program": {
     "title": "Programme",

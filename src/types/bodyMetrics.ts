@@ -26,6 +26,16 @@ export interface BodyMetric {
   hipsCm?: number;
   armsCm?: number;
   legsCm?: number;
+  // v1.19 (LL#104) — smart-scale readings and height. See lib/bodyScale.ts.
+  heightCm?: number;
+  bodyFatPct?: number;
+  waterPct?: number;
+  proteinPct?: number;
+  bmrKcal?: number;
+  visceralFat?: number;
+  boneMassKg?: number;
+  muscleMassKg?: number;
+  bodyAge?: number;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -41,6 +51,8 @@ export interface BodyMetricsPrefs {
   trackHips: boolean;
   trackArms: boolean;
   trackLegs: boolean;
+  /** v1.19 (LL#104) — show the smart-scale fields in the log form. */
+  trackScale: boolean;
 }
 
 export const DEFAULT_PREFS: BodyMetricsPrefs = {
@@ -50,6 +62,7 @@ export const DEFAULT_PREFS: BodyMetricsPrefs = {
   trackHips: false,
   trackArms: false,
   trackLegs: false,
+  trackScale: false,
 };
 
 // ── Unit conversion ────────────────────────────────────────────────────────
