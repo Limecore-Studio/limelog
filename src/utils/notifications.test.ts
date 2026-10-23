@@ -61,6 +61,24 @@ describe('scheduleWorkoutReminders', () => {
     expect(n.schedule).not.toHaveProperty('every');
   });
 
+  it('arms four weeks ahead, one exact alarm per week, so it keeps coming without the app (LL#68)', async () => {
+    const { scheduleWorkoutReminders } = await load();
+    const day = (NOW.getDay() + 2) % 7;
+    await scheduleWorkoutReminders([session(day)]);
+    const ns = (LN.schedule.mock.calls[0] as unknown as [{ notifications: { id: number; schedule: { at: Date } }[] }])[0].notifications;
+    expect(ns.map((n) => n.id)).toEqual([100 + day, 107 + day, 114 + day, 121 + day]);
+    expect(ns.map((n) => n.schedule.at)).toEqual([12, 19, 26, 33].map((d) => new Date(2026, 9, d, 9, 0, 0, 0)));
+  });
+
+  it('every slot it can use is cancelled first, so a removed day leaves no later week behind', async () => {
+    const { scheduleWorkoutReminders } = await load();
+    await scheduleWorkoutReminders([session(1)], [], { prompt: false });
+    LN.getPending.mockRejectedValueOnce(new Error('no prefs'));
+    await scheduleWorkoutReminders([session(1)], [], { prompt: false });
+    const ids = (LN.cancel.mock.calls[LN.cancel.mock.calls.length - 1] as unknown as [{ notifications: { id: number }[] }])[0].notifications.map((n) => n.id);
+    expect(ids).toEqual(Array.from({ length: 28 }, (_, i) => 100 + i));
+  });
+
   it("arms next week's alarm when today's 9:00 has passed", async () => {
     const { scheduleWorkoutReminders } = await load();
     await scheduleWorkoutReminders([session(NOW.getDay())]);
