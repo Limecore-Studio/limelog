@@ -283,7 +283,35 @@
     "weightChartAvg": "Tendencia del peso con media móvil de 7 días",
     "photosEvicted_one": "Guardada. Se eliminó la foto más antigua para liberar espacio.",
     "photosEvicted_many": "Guardada. Se eliminaron las {{count}} fotos más antiguas para liberar espacio.",
-    "photosEvicted_other": "Guardada. Se eliminaron las {{count}} fotos más antiguas para liberar espacio."
+    "photosEvicted_other": "Guardada. Se eliminaron las {{count}} fotos más antiguas para liberar espacio.",
+    "scale": {
+      "chip": "Báscula inteligente",
+      "group": "Báscula inteligente",
+      "bodyFat": "Grasa corporal",
+      "water": "Agua",
+      "protein": "Proteína",
+      "bmr": "Metabolismo basal",
+      "visceral": "Grasa visceral",
+      "bone": "Masa ósea",
+      "muscle": "Masa muscular",
+      "bodyAge": "Edad corporal",
+      "trends": "Tendencias de la báscula",
+      "latest": "Último: {{value}} ({{date}})",
+      "needTwo": "Regístralo otro día para ver la tendencia.",
+      "outOfRange": "{{name}} debe estar entre {{min}} y {{max}}."
+    },
+    "height": {
+      "title": "Altura",
+      "current": "{{height}} (medida el {{date}})",
+      "none": "Aún no hay altura. Añádela para ver tu IMC.",
+      "update": "Actualizar altura",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "La altura debe estar entre {{min}} y {{max}}.",
+      "chart": "Altura en el tiempo",
+      "bmi": "IMC {{bmi}}",
+      "bmiNote": "Con tu último peso y la altura medida ese día o antes."
+    }
   },
   "program": {
     "title": "Programas",

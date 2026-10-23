@@ -283,7 +283,35 @@
     "weightChartAvg": "Tendance du poids avec moyenne mobile sur 7 jours",
     "photosEvicted_one": "Enregistrée. La photo la plus ancienne a été supprimée pour libérer de l’espace.",
     "photosEvicted_many": "Enregistrée. Les {{count}} photos les plus anciennes ont été supprimées pour libérer de l’espace.",
-    "photosEvicted_other": "Enregistrée. Les {{count}} photos les plus anciennes ont été supprimées pour libérer de l’espace."
+    "photosEvicted_other": "Enregistrée. Les {{count}} photos les plus anciennes ont été supprimées pour libérer de l’espace.",
+    "scale": {
+      "chip": "Balance connectée",
+      "group": "Balance connectée",
+      "bodyFat": "Masse grasse",
+      "water": "Eau",
+      "protein": "Protéines",
+      "bmr": "Métabolisme de base",
+      "visceral": "Graisse viscérale",
+      "bone": "Masse osseuse",
+      "muscle": "Masse musculaire",
+      "bodyAge": "Âge corporel",
+      "trends": "Tendances de la balance",
+      "latest": "Dernier : {{value}} ({{date}})",
+      "needTwo": "Note-le un autre jour pour voir la tendance.",
+      "outOfRange": "{{name}} doit être entre {{min}} et {{max}}."
+    },
+    "height": {
+      "title": "Taille",
+      "current": "{{height}} (mesurée le {{date}})",
+      "none": "Pas encore de taille. Ajoute-la pour voir ton IMC.",
+      "update": "Mettre à jour la taille",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "La taille doit être entre {{min}} et {{max}}.",
+      "chart": "Taille dans le temps",
+      "bmi": "IMC {{bmi}}",
+      "bmiNote": "À partir de ton dernier poids et de la taille mesurée ce jour-là ou avant."
+    }
   },
   "program": {
     "title": "Programmes",
