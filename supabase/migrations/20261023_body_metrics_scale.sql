@@ -1,6 +1,10 @@
 -- v1.19 (LL#104) — smart-scale metrics and a height log on body_metrics.
 --
--- NOT YET APPLIED. Needs the owner's OK (P1: production, real users).
+-- APPLIED 2026-10-23 to project hkktorzhaqnfqsnlstda with the owner's OK, as
+-- `v119_body_metrics_scale` (history 20261023050950). Verified live: 9 columns
+-- and 9 range checks present, all 26 existing rows NULL in them, a rolled-back
+-- probe accepted valid values and refused body fat 80 and height 39.9;
+-- security advisors unchanged (PRE-3 only).
 --
 -- ── What this is for ──────────────────────────────────────────────────────────
 --
