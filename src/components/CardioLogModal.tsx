@@ -19,6 +19,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLogStore } from '@/store/logStore';
+import { isFutureMoment, localParts, momentFromLocal } from '@/lib/sessionMoment';
 import { useUserStore } from '@/store/userStore';
 import {
   ACTIVITY_GROUPS,
@@ -54,13 +55,20 @@ export function CardioLogModal({ onClose }: Props) {
   const [minutes, setMinutes] = useState('');
   const [distance, setDistance] = useState('');
   const [notes, setNotes] = useState('');
+  // v1.19 (LL#103) — when it happened, defaulting to now. Yesterday's run can
+  // be logged on yesterday; a future one cannot be logged at all.
+  const [opened] = useState(() => localParts(new Date()));
+  const [date, setDate] = useState(opened.date);
+  const [time, setTime] = useState(opened.time);
+  const when = momentFromLocal(date, time);
+  const inFuture = when !== null && isFutureMoment(when);
 
   const showsDistance = activityTakesDistance(activity);
   // Imperial users think in miles, metric users in kilometres — the same
   // preference that already drives kg vs lb. See formatDistance.
   const distanceUnit = unit === 'lb' ? 'mi' : 'km';
   const mins = parseFloat(minutes);
-  const canSave = !isNaN(mins) && mins > 0;
+  const canSave = !isNaN(mins) && mins > 0 && when !== null && !inFuture;
 
   function handleSave() {
     if (!canSave) return;
@@ -75,6 +83,7 @@ export function CardioLogModal({ onClose }: Props) {
           ? Math.round(dist * (unit === 'lb' ? 1609.344 : 1000))
           : undefined,
       notes: notes.trim() || undefined,
+      when: when ?? undefined,
     });
     onClose();
   }
@@ -156,6 +165,24 @@ export function CardioLogModal({ onClose }: Props) {
               />
             </label>
           )}
+
+          <span className="cardio-modal__label">{t('cardio.when')}</span>
+          <div className="cardio-modal__when">
+            <input
+              type="date"
+              value={date}
+              max={opened.date}
+              onChange={(e) => setDate(e.target.value)}
+              aria-label={t('cardio.whenDate')}
+            />
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              aria-label={t('cardio.whenTime')}
+            />
+          </div>
+          {inFuture && <span className="cardio-modal__error" role="alert">{t('cardio.whenFuture')}</span>}
 
           <label className="cardio-modal__label">
             {t('cardio.notes')}

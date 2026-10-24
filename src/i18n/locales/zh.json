@@ -274,7 +274,35 @@
     "unitSystem": "单位制",
     "weightChart": "体重趋势图",
     "weightChartAvg": "带 7 天移动平均的体重趋势",
-    "photosEvicted_other": "已保存。为释放空间，已删除最早的 {{count}} 张照片。"
+    "photosEvicted_other": "已保存。为释放空间，已删除最早的 {{count}} 张照片。",
+    "scale": {
+      "chip": "智能秤",
+      "group": "智能秤",
+      "bodyFat": "体脂率",
+      "water": "水分",
+      "protein": "蛋白质",
+      "bmr": "基础代谢",
+      "visceral": "内脏脂肪",
+      "bone": "骨量",
+      "muscle": "肌肉量",
+      "bodyAge": "身体年龄",
+      "trends": "体重秤趋势",
+      "latest": "最近：{{value}}（{{date}}）",
+      "needTwo": "在另一天再记录一次即可看到趋势。",
+      "outOfRange": "{{name}}必须在 {{min}} 到 {{max}} 之间。"
+    },
+    "height": {
+      "title": "身高",
+      "current": "{{height}}（{{date}} 测量）",
+      "none": "还没有身高。添加后即可查看 BMI。",
+      "update": "更新身高",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "身高必须在 {{min}} 到 {{max}} 之间。",
+      "chart": "身高变化",
+      "bmi": "BMI {{bmi}}",
+      "bmiNote": "根据你最近的体重和当天或之前测量的身高计算。"
+    }
   },
   "program": {
     "title": "训练计划",
@@ -592,7 +620,11 @@
     "group": {
       "cardio": "有氧",
       "training": "训练"
-    }
+    },
+    "when": "时间",
+    "whenDate": "日期",
+    "whenTime": "时刻",
+    "whenFuture": "这个时间还没到。"
   },
   "referral": {
     "eyebrow": "一个问题",

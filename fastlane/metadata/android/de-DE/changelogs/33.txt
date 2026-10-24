@@ -1,0 +1,3 @@
+Körperdaten und Nachtragen.
+
+Erfasse Werte der Smart-Waage wie Körperfett, Wasser, Muskel- und Knochenmasse, führe ein Größen-Log und lass deinen BMI berechnen. Aktivitäten lassen sich am Tag eintragen, an dem sie stattfanden. Trainingserinnerungen werden vier Wochen im Voraus gestellt und kommen auch, wenn du die App nicht öffnest.

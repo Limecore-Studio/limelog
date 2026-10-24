@@ -293,7 +293,35 @@
     "unitSystem": "Sistem satuan",
     "weightChart": "Grafik tren berat badan",
     "weightChartAvg": "Tren berat badan dengan rata-rata bergerak 7 hari",
-    "photosEvicted_other": "Tersimpan. {{count}} foto terlama dihapus untuk mengosongkan ruang."
+    "photosEvicted_other": "Tersimpan. {{count}} foto terlama dihapus untuk mengosongkan ruang.",
+    "scale": {
+      "chip": "Timbangan pintar",
+      "group": "Timbangan pintar",
+      "bodyFat": "Lemak tubuh",
+      "water": "Air",
+      "protein": "Protein",
+      "bmr": "Metabolisme basal",
+      "visceral": "Lemak viseral",
+      "bone": "Massa tulang",
+      "muscle": "Massa otot",
+      "bodyAge": "Usia tubuh",
+      "trends": "Tren timbangan",
+      "latest": "Terakhir: {{value}} ({{date}})",
+      "needTwo": "Catat di hari lain untuk melihat trennya.",
+      "outOfRange": "{{name}} harus antara {{min}} dan {{max}}."
+    },
+    "height": {
+      "title": "Tinggi",
+      "current": "{{height}} (diukur {{date}})",
+      "none": "Belum ada tinggi. Tambahkan untuk melihat BMI-mu.",
+      "update": "Perbarui tinggi",
+      "ft": "ft",
+      "in": "in",
+      "outOfRange": "Tinggi harus antara {{min}} dan {{max}}.",
+      "chart": "Tinggi dari waktu ke waktu",
+      "bmi": "BMI {{bmi}}",
+      "bmiNote": "Dari berat terakhirmu dan tinggi yang diukur pada hari itu atau sebelumnya."
+    }
   },
   "profile": {
     "title": "Profil",
@@ -587,7 +615,11 @@
     "group": {
       "cardio": "Kardio",
       "training": "Latihan"
-    }
+    },
+    "when": "Kapan",
+    "whenDate": "Tanggal",
+    "whenTime": "Waktu",
+    "whenFuture": "Waktu itu belum tiba."
   },
   "referral": {
     "eyebrow": "SATU PERTANYAAN",

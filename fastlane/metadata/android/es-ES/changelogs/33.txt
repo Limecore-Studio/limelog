@@ -1,0 +1,3 @@
+Datos corporales y registros con fecha.
+
+Registra lecturas de báscula inteligente como grasa corporal, agua, masa muscular y ósea, lleva un historial de altura y obtén tu IMC calculado. Registra una actividad en el día en que la hiciste. Los recordatorios de entrenamiento se programan con cuatro semanas de antelación, así que siguen llegando aunque no abras la app.

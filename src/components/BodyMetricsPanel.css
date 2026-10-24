@@ -311,3 +311,46 @@
   min-width: 32px;
   min-height: 32px;
 }
+
+/* ── v1.19 (LL#104) — height, smart-scale fields and trends ─────────── */
+
+.body-height__now {
+  font-size: 13px;
+  color: var(--text-secondary, var(--text-primary));
+  margin: 4px 0 10px;
+}
+.body-height__form {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+.body-height__form input {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--bg-surface, rgba(255,255,255,0.04));
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  font-size: 14px;
+  min-height: 44px;
+  font-variant-numeric: tabular-nums;
+}
+.body-metrics-form__group {
+  grid-column: 1 / -1;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-tertiary, var(--text-muted));
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+}
+.body-metrics-error {
+  font-size: 12px;
+  color: var(--danger);
+  margin: 8px 0 0;
+}
+.body-scale-chart__dot {
+  fill: var(--accent, var(--lime));
+}

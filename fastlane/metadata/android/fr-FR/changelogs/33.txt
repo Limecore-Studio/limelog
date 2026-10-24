@@ -1,0 +1,3 @@
+Données corporelles et saisie a posteriori.
+
+Enregistrez les mesures d'une balance connectée (masse grasse, eau, masse musculaire et osseuse), tenez un historique de taille et obtenez votre IMC calculé. Une activité peut être enregistrée au jour où elle a eu lieu. Les rappels d'entraînement sont programmés quatre semaines à l'avance et arrivent même si vous n'ouvrez pas l'app.

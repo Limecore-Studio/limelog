@@ -173,3 +173,20 @@
 .cardio-modal__label input {
   font-variant-numeric: tabular-nums;
 }
+
+/* v1.19 (LL#103) — when the activity happened: date and time side by side. */
+.cardio-modal__when {
+  display: flex;
+  gap: 8px;
+}
+
+.cardio-modal__when input {
+  flex: 1 1 0;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.cardio-modal__error {
+  font-size: 12px;
+  color: var(--danger, #c0392b);
+}

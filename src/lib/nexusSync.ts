@@ -13,6 +13,7 @@
 
 import { supabase, isNexusConfigured } from './supabase';
 import type { SessionLog } from '@/types/logging';
+import { sessionMoment } from '@/lib/sessionMoment';
 import type { Exercise, SessionTemplate } from '@/types/program';
 
 interface NexusSetPayload {
@@ -75,7 +76,9 @@ export function mapSessionLogToNexus(
     // falling through to the generic 'workout'. The row then reads sensibly on
     // a client that knows nothing about `activity_type`.
     sessionType: session?.name ?? log.activityType ?? 'workout',
-    date: log.finalizedAt ?? log.loggedAt,
+    // v1.19 (LL#103): an activity's own moment, so a back-dated run lands on
+    // its day in workout_sessions and in NCC (see sessionMoment).
+    date: sessionMoment(log),
     notes: log.notes,
     sets,
     activityType: log.activityType,
@@ -228,8 +231,21 @@ export interface NexusBodyMetricPayload {
   hipsCm?: number;
   armsCm?: number;
   legsCm?: number;
+  // v1.19 (LL#104) — smart-scale readings and height. See lib/bodyScale.ts.
+  heightCm?: number;
+  bodyFatPct?: number;
+  waterPct?: number;
+  proteinPct?: number;
+  bmrKcal?: number;
+  visceralFat?: number;
+  boneMassKg?: number;
+  muscleMassKg?: number;
+  bodyAge?: number;
   notes?: string;
 }
+
+// v1.19 (LL#104) — the columns added by 20261023_body_metrics_scale.sql.
+const SCALE_COLUMNS = ['height_cm', 'body_fat_pct', 'water_pct', 'protein_pct', 'bmr_kcal', 'visceral_fat', 'bone_mass_kg', 'muscle_mass_kg', 'body_age'];
 
 export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload, forUserId: string): Promise<void> {
   if (!isNexusConfigured) throw new Error('Nexus not configured');
@@ -255,14 +271,36 @@ export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload, forUserId
   set('hips_cm', p.hipsCm);
   set('arms_cm', p.armsCm);
   set('legs_cm', p.legsCm);
+  set('height_cm', p.heightCm);
+  set('body_fat_pct', p.bodyFatPct);
+  set('water_pct', p.waterPct);
+  set('protein_pct', p.proteinPct);
+  set('bmr_kcal', p.bmrKcal);
+  set('visceral_fat', p.visceralFat);
+  set('bone_mass_kg', p.boneMassKg);
+  set('muscle_mass_kg', p.muscleMassKg);
+  set('body_age', p.bodyAge);
   set('notes', p.notes);
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from('body_metrics')
     .update(fields)
     .eq('user_id', user.id)
     .eq('date', p.date)
     .select('id');
+  // v1.19 (LL#104) — before the migration is applied, PostgREST refuses the
+  // new columns (PGRST204, or 42703 from Postgres). Retry without them so the
+  // day's weight still lands instead of the item retrying for ever; the scale
+  // readings stay on the device until the columns exist.
+  if (error && (error.code === 'PGRST204' || error.code === '42703')) {
+    for (const c of SCALE_COLUMNS) delete fields[c];
+    ({ data, error } = await supabase
+      .from('body_metrics')
+      .update(fields)
+      .eq('user_id', user.id)
+      .eq('date', p.date)
+      .select('id'));
+  }
   if (error) throw error;
   if (data && data.length > 0) return;
   const { error: insertError } = await supabase
