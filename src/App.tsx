@@ -17,6 +17,8 @@ import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedClou
 import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
 import { phaseSessions, resolvePhase } from '@/lib/todaySessions';
 import { createRecoveryGate } from '@/lib/recoveryGate';
+import { createLiveSync } from '@/lib/liveSync';
+import { onPushed } from '@/lib/outbox';
 import { readOwner } from '@/lib/accountOwner';
 import {
   setupNotificationChannel,
@@ -59,6 +61,20 @@ const recoveryGate = createRecoveryGate({
   apply: (logs) =>
     readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
   ready: (userId) => readOwner() === userId,
+});
+
+// v1.20 (LimeLog#110) — live sync: hints to NCC and the user's other devices
+// after each push, and a workout pull when another device finishes one. Runs
+// for the same account the recovery gate trusts (see lib/liveSync.ts); the
+// engine loads on demand.
+const liveSync = createLiveSync({
+  read: () => useNexusStore.getState(),
+  ready: (userId) => readOwner() === userId,
+  pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
+  apply: (logs) =>
+    readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
+  load: () => import('@/lib/liveEngine'),
+  onPushed,
 });
 
 /**
@@ -223,7 +239,11 @@ export default function App() {
   useEffect(() => {
     if (!nexusInitialized) return;
     recoveryGate.evaluate();
-    return useNexusStore.subscribe(() => recoveryGate.evaluate());
+    liveSync.evaluate();
+    return useNexusStore.subscribe(() => {
+      recoveryGate.evaluate();
+      liveSync.evaluate();
+    });
   }, [nexusInitialized]);
 
   // v1.18.1 (LimeLog#94) — not held for the take-over (DataHold below): the
