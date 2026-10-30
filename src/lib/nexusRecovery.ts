@@ -144,7 +144,13 @@ export async function pullWorkoutsFromCloud(exercises: Exercise[], forUserId?: s
   if (!isNexusConfigured) return [];
   const { data: { user }, error: authErr } = await supabase.auth.getUser();
   if (authErr) throw authErr;
-  if (!user) return [];
+  // v1.20 (LimeLog#110): an empty result now removes this device's copies of
+  // workouts discarded elsewhere (logStore.recoverSessions), so it must mean
+  // "this account has none", never "could not see an account".
+  if (!user) {
+    if (forUserId !== undefined) throw new Error('signed out before the pull started');
+    return [];
+  }
   // v1.18.1 (LimeLog#85) — the pull is deferred and can run late; by then
   // someone else may be signed in. Their workouts are not this pull's to
   // fetch: the gate drops the result anyway, and this stops the request.
