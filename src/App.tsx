@@ -14,7 +14,6 @@ import { useNexusStore } from '@/store/nexusStore';
 import { useLogStore } from '@/store/logStore';
 import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud, canAnswerLocallyNow } from '@/lib/onboarding';
-import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
 import { phaseSessions, resolvePhase } from '@/lib/todaySessions';
 import { createRecoveryGate } from '@/lib/recoveryGate';
 import { createLiveSync } from '@/lib/liveSync';
@@ -48,6 +47,11 @@ const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m)
 const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
 
+// v1.20 — the workout pull loads on demand: it runs after sign-in, never on the
+// way to the first screen, and the startup bundle needed the room (LimeLog#110).
+const pullWorkouts = (userId: string) =>
+  import('@/lib/nexusRecovery').then((m) => m.pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId));
+
 // v1.18.1 (LimeLog#85) — the recovery pull, once per sign-in rather than once
 // per launch (see lib/recoveryGate.ts). Module scope, not a ref, so the dev
 // StrictMode remount does not pull twice.
@@ -57,7 +61,7 @@ const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m)
 // then the pull waits, unspent, until a retry clears it.
 const recoveryGate = createRecoveryGate({
   read: () => useNexusStore.getState(),
-  pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
+  pull: pullWorkouts,
   apply: (logs) =>
     readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
   ready: (userId) => readOwner() === userId,
@@ -70,7 +74,7 @@ const recoveryGate = createRecoveryGate({
 const liveSync = createLiveSync({
   read: () => useNexusStore.getState(),
   ready: (userId) => readOwner() === userId,
-  pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
+  pull: pullWorkouts,
   apply: (logs) =>
     readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
   load: () => import('@/lib/liveEngine'),
