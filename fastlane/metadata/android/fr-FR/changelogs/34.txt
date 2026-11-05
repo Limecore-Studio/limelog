@@ -1,0 +1,3 @@
+Séries en direct.
+
+Chaque série est envoyée dès qu'elle est saisie : NCC et vos autres appareils suivent en quelques secondes, et la connexion se rétablit seule après l'arrière-plan. L'inscription explique la règle du mot de passe et ce qui manque, et on vous demande une fois si vous envoyez les rapports d'erreur.

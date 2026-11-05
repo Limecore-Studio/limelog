@@ -1,0 +1,3 @@
+Series en vivo.
+
+Cada serie se envía al registrarla, así que NCC y tus otros dispositivos la ven en segundos, y la conexión se recupera sola tras estar en segundo plano. El registro explica la regla de contraseña y qué falta, y se te pregunta una vez si enviar informes de errores.
