@@ -21,6 +21,8 @@ import { withCaptcha } from '@/lib/captcha';
 import { inheritFromNexus } from '@/lib/suiteSso';
 import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
+import { meetsPasswordRule, PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
+import { PasswordChecklist } from '@/components/PasswordChecklist';
 import { useConfirm } from '@/components/confirmContext';
 import { useLogStore } from '@/store/logStore';
 import './FirstLaunchAuth.css';
@@ -58,6 +60,7 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [showEmail, setShowEmail] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pwFlag, setPwFlag] = useState(false); // limecore#73: a submit failed on the rule
   const [nexusAvailable, setNexusAvailable] = useState(false);
   const [busy, setBusy] = useState(false);
   // AUTH-2 — code-entry step, ported from StudyDesk's AuthGate.
@@ -138,6 +141,13 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    // v1.20 (limecore#73) — name the rule here rather than send a password the
+    // server will refuse. The checklist marks what is still missing.
+    if (mode === 'signup' && !meetsPasswordRule(password)) {
+      setPwFlag(true);
+      setError(t('auth.pwNotYet'));
+      return;
+    }
     setBusy(true);
     try {
       if (mode === 'signin') {
@@ -401,10 +411,14 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
                   autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  minLength={6}
+                  minLength={mode === 'signup' ? PASSWORD_MIN_LENGTH : undefined}
+                  aria-describedby={mode === 'signup' ? 'fla-pw-rules' : undefined}
                   required
                 />
               </label>
+              {mode === 'signup' && (
+                <PasswordChecklist id="fla-pw-rules" password={password} flagMissing={pwFlag} />
+              )}
 
               <Button
                 type="submit"
