@@ -280,24 +280,8 @@
   letter-spacing: 0.01em;
 }
 
-/* Splash shown while guest-mode flag + nexusStore session are resolving on
-   cold start. Same dark surface as the auth screen so there's no visual
-   pop when the splash is replaced with the auth or the main app. */
-.fla-splash {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  background: var(--bg-base);
-  color: var(--text-tertiary);
-}
-
-.fla-splash-text {
-  font-family: 'Barlow Condensed', system-ui, sans-serif;
-  font-size: 12px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-}
+/* .fla-splash moved to index.css (limecore#73): it shows at startup, while
+   this file now loads with the on-demand sign-in screen. */
 
 /* GDPR Art. 8 age statement + policy link. Quieter than the guest note above
    it — it is a legal disclosure, not a call to action. */
