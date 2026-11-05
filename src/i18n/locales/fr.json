@@ -671,5 +671,11 @@
     "versions": "Mise à jour de {{current}} vers {{latest}}",
     "open": "Obtenir sur F-Droid",
     "later": "Plus tard"
+  },
+  "reportPrompt": {
+    "title": "Envoyer des rapports d’erreur ?",
+    "body": "En cas de problème, LimeLog peut nous envoyer les détails techniques : la version de l’app, l’erreur et l’écran où elle s’est produite. Jamais ce que vous saisissez. Vous pouvez changer cela dans les Réglages.",
+    "yes": "Oui, envoyer",
+    "notNow": "Pas maintenant"
   }
 }
