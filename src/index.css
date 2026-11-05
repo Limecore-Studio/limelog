@@ -192,3 +192,24 @@ select option {
   display: inline-block;
   transform: scaleX(-1);
 }
+
+/* limecore#73 — from FirstLaunchAuth.css, which now loads on demand with
+   the sign-in screen; the splash is shown before that chunk exists. */
+/* Splash shown while guest-mode flag + nexusStore session are resolving on
+   cold start. Same dark surface as the auth screen so there's no visual
+   pop when the splash is replaced with the auth or the main app. */
+.fla-splash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg-base);
+  color: var(--text-tertiary);
+}
+
+.fla-splash-text {
+  font-family: 'Barlow Condensed', system-ui, sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}

@@ -8,15 +8,15 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { Layout } from '@/components/Layout';
 import { TodayPage } from '@/pages/TodayPage';
-import { FirstLaunchAuth } from '@/components/FirstLaunchAuth';
 import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { useLogStore } from '@/store/logStore';
 import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud, canAnswerLocallyNow } from '@/lib/onboarding';
-import { pullWorkoutsFromCloud } from '@/lib/nexusRecovery';
 import { phaseSessions, resolvePhase } from '@/lib/todaySessions';
 import { createRecoveryGate } from '@/lib/recoveryGate';
+import { createLiveSync } from '@/lib/liveSync';
+import { onPushed } from '@/lib/outbox';
 import { readOwner } from '@/lib/accountOwner';
 import {
   setupNotificationChannel,
@@ -37,6 +37,10 @@ const BodyMetricsPage = lazy(() => import('@/pages/BodyMetricsPage').then((m) =>
 const ProfilePage = lazy(() => import('@/pages/ProfilePage').then((m) => ({ default: m.ProfilePage })));
 const LibraryPage = lazy(() => import('@/pages/LibraryPage').then((m) => ({ default: m.LibraryPage })));
 const WorkoutPage = lazy(() => import('@/pages/WorkoutPage').then((m) => ({ default: m.WorkoutPage })));
+// limecore#73 — on demand, like StudyDesk's AuthGate (StudyDesk#156): most
+// launches are signed in and never show it, and the startup budget had 0.1 KiB
+// left for the password rule it now carries.
+const FirstLaunchAuth = lazy(() => import('@/components/FirstLaunchAuth').then((m) => ({ default: m.FirstLaunchAuth })));
 const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m) => ({ default: m.OnboardingFlow })));
 // v1.18.1 (LimeLog#70) — the two root overlays render nothing at launch (the
 // PR card waits for a finished workout, the referral card for a 1.2 s beat
@@ -45,6 +49,11 @@ const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m)
 // moment it has to appear.
 const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
+
+// v1.20 — the workout pull loads on demand: it runs after sign-in, never on the
+// way to the first screen, and the startup bundle needed the room (LimeLog#110).
+const pullWorkouts = (userId: string) =>
+  import('@/lib/nexusRecovery').then((m) => m.pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId));
 
 // v1.18.1 (LimeLog#85) — the recovery pull, once per sign-in rather than once
 // per launch (see lib/recoveryGate.ts). Module scope, not a ref, so the dev
@@ -55,10 +64,24 @@ const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m)
 // then the pull waits, unspent, until a retry clears it.
 const recoveryGate = createRecoveryGate({
   read: () => useNexusStore.getState(),
-  pull: (userId) => pullWorkoutsFromCloud(useProgramStore.getState().exercises, userId),
+  pull: pullWorkouts,
   apply: (logs) =>
     readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
   ready: (userId) => readOwner() === userId,
+});
+
+// v1.20 (LimeLog#110) — live sync: hints to NCC and the user's other devices
+// after each push, and a workout pull when another device finishes one. Runs
+// for the same account the recovery gate trusts (see lib/liveSync.ts); the
+// engine loads on demand.
+const liveSync = createLiveSync({
+  read: () => useNexusStore.getState(),
+  ready: (userId) => readOwner() === userId,
+  pull: pullWorkouts,
+  apply: (logs) =>
+    readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
+  load: () => import('@/lib/liveEngine'),
+  onPushed,
 });
 
 /**
@@ -223,7 +246,11 @@ export default function App() {
   useEffect(() => {
     if (!nexusInitialized) return;
     recoveryGate.evaluate();
-    return useNexusStore.subscribe(() => recoveryGate.evaluate());
+    liveSync.evaluate();
+    return useNexusStore.subscribe(() => {
+      recoveryGate.evaluate();
+      liveSync.evaluate();
+    });
   }, [nexusInitialized]);
 
   // v1.18.1 (LimeLog#94) — not held for the take-over (DataHold below): the
@@ -293,30 +320,32 @@ export default function App() {
     !isResolving &&
     showsSignIn({ userId, sessionUnverified, guestMode: Boolean(guestMode), configured: isNexusConfigured, readiness: dataReady });
 
-  if (isResolving) {
-    return (
-      <div className="fla-splash">
-        <div className="fla-splash-text">{t('common.loading')}</div>
-      </div>
-    );
-  }
+  const splash = (
+    <div className="fla-splash">
+      <div className="fla-splash-text">{t('common.loading')}</div>
+    </div>
+  );
+
+  if (isResolving) return splash;
 
   if (shouldShowAuth) {
     return (
-      <FirstLaunchAuth
-        onContinue={() => {
-          // FirstLaunchAuth's actions (set guest flag or trigger sign-in)
-          // dispatch the limelog:guest-mode-changed event OR fire the
-          // nexusStore auth listener. Either path flips the gate on the
-          // next render. The explicit onContinue is a belt-and-suspenders
-          // re-read of the guest flag in case Capacitor's Preferences write
-          // landed after the event but before our listener was wired.
-          void (async () => {
-            const guest = await isGuestMode();
-            setGuestModeState(guest);
-          })();
-        }}
-      />
+      <Suspense fallback={splash}>
+        <FirstLaunchAuth
+          onContinue={() => {
+            // FirstLaunchAuth's actions (set guest flag or trigger sign-in)
+            // dispatch the limelog:guest-mode-changed event OR fire the
+            // nexusStore auth listener. Either path flips the gate on the
+            // next render. The explicit onContinue is a belt-and-suspenders
+            // re-read of the guest flag in case Capacitor's Preferences write
+            // landed after the event but before our listener was wired.
+            void (async () => {
+              const guest = await isGuestMode();
+              setGuestModeState(guest);
+            })();
+          }}
+        />
+      </Suspense>
     );
   }
 

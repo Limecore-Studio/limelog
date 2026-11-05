@@ -54,7 +54,7 @@ const MAX_ATTEMPTS = 5;
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
-type OutboxKind =
+export type OutboxKind =
   | 'upsert_workout_session'
   | 'delete_workout_session'
   // v1.2 — Body Metrics. Same upsert/delete pair pattern.
@@ -224,6 +224,27 @@ export function cancel<K extends OutboxKind>(kind: K, match: (payload: KindPaylo
 
 let draining = false;
 
+/** v1.20 (LimeLog#110) — outbox kind → the tables its push writes, for the
+ *  live-sync hint (liveHints.ts). Feedback and app opens are
+ *  absent: no device shows them, so there is nothing to announce. */
+const KIND_TABLES: Partial<Record<OutboxKind, readonly string[]>> = {
+  upsert_workout_session: ['workout_sessions', 'workout_sets'],
+  delete_workout_session: ['workout_sessions'],
+  upsert_body_metric: ['body_metrics'],
+  delete_body_metric: ['body_metrics'],
+  upsert_exercise_pr: ['exercise_prs'],
+  delete_exercise_pr: ['exercise_prs'],
+};
+
+// v1.20 (LimeLog#110): told which tables a drain pushed, so live sync can hint
+// the user's other devices (and NCC). Only successful pushes count, and only
+// while the queue still belongs to the account that sent them.
+const pushedListeners = new Set<(tables: string[]) => void>();
+export function onPushed(listener: (tables: string[]) => void): () => void {
+  pushedListeners.add(listener);
+  return () => pushedListeners.delete(listener);
+}
+
 /** Process pending items oldest-first. Coalesces concurrent calls via the
  *  `draining` flag. Stops on the first persistent failure to avoid burning
  *  through the queue with the same network error.
@@ -241,6 +262,8 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
   // exits below are inside the try so `finally` always releases it.
   draining = true;
   let sent = 0;
+  const pushed = new Set<string>();
+  let pushedFor: string | null = null;
   try {
     // Skip if offline — items stay queued. `online` event will re-trigger.
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
@@ -264,6 +287,7 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
     // clear the newer account's data. No owner yet means not taken up yet:
     // send nothing and wait for the auth path to take it up.
     if (readOwner() !== user.id) return { sent: 0, remaining: loadItems().length };
+    pushedFor = user.id;
 
     for (;;) {
       // And before each item: an explicit sign-out (record cleared) or another
@@ -301,6 +325,7 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
         saveItems(loadItems().filter((i) => i.id !== item.id));
         saveMeta({ ...loadMeta(), lastSuccessAt: new Date().toISOString(), lastError: null });
         sent++;
+        for (const t of KIND_TABLES[item.kind] ?? []) pushed.add(t);
       } else {
         const e = failure;
         const attempts = (item.attempts || 0) + 1;
@@ -321,6 +346,16 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
     }
   } finally {
     draining = false;
+  }
+  if (pushed.size > 0 && pushedFor !== null && readOwner() === pushedFor) {
+    const tables = [...pushed];
+    for (const l of pushedListeners) {
+      try {
+        l(tables);
+      } catch (e) {
+        console.error('[outbox] pushed listener failed:', e);
+      }
+    }
   }
   return { sent, remaining: loadItems().length };
 }

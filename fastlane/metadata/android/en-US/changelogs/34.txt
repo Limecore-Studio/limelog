@@ -1,0 +1,3 @@
+Live sets.
+
+Each set is sent as you log it, so NCC and your other devices follow along within seconds, and the live connection recovers by itself after the app was in the background. Sign-up explains the password rule and says what's missing, and you're asked once whether to send error reports.

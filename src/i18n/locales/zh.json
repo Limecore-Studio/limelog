@@ -644,5 +644,11 @@
     "versions": "从 {{current}} 更新到 {{latest}}",
     "open": "前往 F-Droid 获取",
     "later": "稍后"
+  },
+  "reportPrompt": {
+    "title": "发送错误报告吗？",
+    "body": "出现问题时，LimeLog 可以把技术细节发给我们：应用版本、错误本身以及出错时所在的页面。绝不包含你输入的内容。你可以在设置中更改。",
+    "yes": "好，发送",
+    "notNow": "暂不"
   }
 }

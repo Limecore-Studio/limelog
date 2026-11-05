@@ -11,6 +11,9 @@ import { useLogStore } from '@/store/logStore';
 import { listPhotos } from '@/lib/progressPhotos';
 import { formatTime } from '@/utils/helpers';
 import './NexusSyncCard.css';
+import { translateAuthError } from '@/lib/authErrors';
+import { meetsPasswordRule, PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
+import { PasswordChecklist } from '@/components/PasswordChecklist';
 
 // Inline plugin handle for the "is NCC session available?" probe. We can't
 // call inheritFromNexus to probe because that would actually set the
@@ -48,6 +51,7 @@ export function NexusSyncCard() {
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [localError, setLocalError] = useState<string | null>(null);
+  const [pwFlag, setPwFlag] = useState(false); // limecore#73: a submit failed on the rule
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [nexusAvailable, setNexusAvailable] = useState(false);
   const confirm = useConfirm();
@@ -108,6 +112,12 @@ export function NexusSyncCard() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLocalError(null);
+    // v1.20 (limecore#73) — the rule, named before the server refuses it.
+    if (mode === 'signup' && !meetsPasswordRule(password)) {
+      setPwFlag(true);
+      setLocalError(t('auth.pwNotYet'));
+      return;
+    }
     try {
       if (mode === 'signin') {
         await signIn(email.trim(), password);
@@ -116,7 +126,9 @@ export function NexusSyncCard() {
       }
       setPassword('');
     } catch (err) {
-      setLocalError(err instanceof Error ? err.message : String(err));
+      // limecore#73 — translated, and a refused password says why (this used
+      // to show GoTrue's English text as-is).
+      setLocalError(translateAuthError(err as Error, t) ?? String(err));
     }
   }
 
@@ -298,9 +310,13 @@ export function NexusSyncCard() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={mode === 'signup' ? PASSWORD_MIN_LENGTH : undefined}
+              aria-describedby={mode === 'signup' ? 'nexus-pw-rules' : undefined}
             />
           </label>
+          {mode === 'signup' && (
+            <PasswordChecklist id="nexus-pw-rules" password={password} flagMissing={pwFlag} />
+          )}
 
           {(localError ?? lastError) && (
             <p className="nexus-card__error">{localError ?? lastError}</p>

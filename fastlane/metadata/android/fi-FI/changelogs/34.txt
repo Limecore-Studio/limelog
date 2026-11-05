@@ -1,0 +1,3 @@
+Sarjat reaaliajassa.
+
+Jokainen sarja lähetetään heti kirjattaessa, joten NCC ja muut laitteesi pysyvät mukana sekunneissa, ja yhteys palautuu itsestään taustalta palattaessa. Rekisteröinti kertoo salasanasäännön ja mitä puuttuu, ja sinulta kysytään kerran, lähetetäänkö virheraportteja.

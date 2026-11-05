@@ -1,0 +1,3 @@
+Set secara langsung.
+
+Setiap set dikirim saat dicatat, jadi NCC dan perangkat lain mengikuti dalam hitungan detik, dan koneksi pulih sendiri setelah aplikasi di latar belakang. Pendaftaran menjelaskan aturan kata sandi dan apa yang kurang, dan kamu ditanya sekali apakah ingin mengirim laporan error.

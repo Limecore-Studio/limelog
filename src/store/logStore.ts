@@ -105,6 +105,26 @@ function retractSessionPRs(logId: string): void {
   nexus.refreshPendingCount();
 }
 
+// v1.20 (LimeLog#110 item 1) — a workout in progress is pushed as its sets are
+// logged. The machinery is in lib/livePush.ts, loaded on the first logged set
+// to keep it out of the startup bundle; until then there is nothing to cancel.
+let livePush: typeof import('@/lib/livePush') | null = null;
+
+function scheduleLivePush(logId: string): void {
+  if (livePush) { livePush.schedule(logId); return; }
+  void import('@/lib/livePush').then((m) => { livePush = m; m.schedule(logId); });
+}
+
+function cancelLivePush(logId: string): void {
+  livePush?.cancel(logId);
+}
+
+/** v1.20 — whether two versions of a cloud-made workout differ. Both come from
+ *  the same mapping (nexusRecovery.ts), so their keys are in the same order. */
+function sameLog(a: SessionLog, b: SessionLog): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
 export const useLogStore = create<LogStore>((set, get) => ({
   sessionLogs: storage.getSessionLogs(),
   jumpLogs: storage.getJumpLogs(),
@@ -188,6 +208,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
   },
 
   finalizeSession: (logId) => {
+    cancelLivePush(logId);
     const finalizedAt = new Date().toISOString();
     const sessionLogs = get().sessionLogs.map((l) =>
       l.id === logId ? { ...l, finalizedAt } : l
@@ -233,6 +254,8 @@ export const useLogStore = create<LogStore>((set, get) => ({
     // (online + signed in) or much later (offline / sign-in pending). The
     // UI's "last push" stamp tracks user intent more usefully than the
     // exact server-ack time.
+    // v1.20 — the finished workout supersedes any in-progress push still queued.
+    outboxCancel('upsert_workout_session', (p) => p.sessionId === logId);
     outboxEnqueue('upsert_workout_session', payload);
     // Push each new PR (push-only, append-only). Derived purely from the sets
     // just pushed — no new user input crosses the boundary.
@@ -254,8 +277,10 @@ export const useLogStore = create<LogStore>((set, get) => ({
   },
 
   unfinalizeSession: (logId) => {
+    // v1.20 — reopened here, it is this device's workout from now on: later
+    // pulls must not overwrite it (see recoverSessions).
     const sessionLogs = get().sessionLogs.map((l) =>
-      l.id === logId ? { ...l, finalizedAt: undefined } : l
+      l.id === logId ? { ...l, finalizedAt: undefined, origin: undefined } : l
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
@@ -263,6 +288,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
   },
 
   discardSession: (logId) => {
+    cancelLivePush(logId);
     const sessionLogs = get().sessionLogs.filter((l) => l.id !== logId);
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
@@ -282,24 +308,48 @@ export const useLogStore = create<LogStore>((set, get) => ({
     // is always sent; for a workout that was never pushed it matches no row.
     const nexus = useNexusStore.getState();
     if (nexus.configured && nexus.syncEnabled) {
+      // v1.20 — an in-progress push still queued would only be deleted again.
+      outboxCancel('upsert_workout_session', (p) => p.sessionId === logId);
       outboxEnqueue('delete_workout_session', { id: logId });
       nexus.refreshPendingCount();
     }
   },
 
+  // v1.20 (LimeLog#110 item 1) — `incoming` is every live workout upstream.
+  // Missing ones are added, as before, and marked as the cloud's. Those, and
+  // only those, are then kept current: another device now pushes a workout
+  // while it is still in progress, so the copy taken at its first set must
+  // follow its later sets and its Finish, and must go when it is discarded
+  // there. A workout made on this device is never touched (the push-only
+  // model: this device is its authority), nor is one reopened here with Undo.
+  //
+  // Removal trusts `incoming` to be complete: the pull pages through every row
+  // and throws rather than return nothing when it cannot see the account
+  // (nexusRecovery.ts), and both callers drop a result from a changed account.
   recoverSessions: (incoming) => {
-    const existingIds = new Set(get().sessionLogs.map((l) => l.id));
     const tombstoned = new Set(storage.getSessionTombstones());
-    const toAdd = incoming.filter((l) => !existingIds.has(l.id) && !tombstoned.has(l.id));
-    if (toAdd.length === 0) return 0;
-    // Prepend recovered sessions, then sort the whole set newest-first so the
-    // history/list views stay ordered (recovered rows slot in by date).
-    const sessionLogs = [...toAdd, ...get().sessionLogs].sort(
+    const byId = new Map(incoming.map((l) => [l.id, { ...l, origin: 'cloud' as const }]));
+    let changed = 0;
+    const kept: SessionLog[] = [];
+    for (const l of get().sessionLogs) {
+      const theirs = byId.get(l.id);
+      byId.delete(l.id);
+      if (l.origin !== 'cloud' || !l.finalizedAt) { kept.push(l); continue; }
+      if (!theirs) { changed++; continue; }
+      if (sameLog(l, theirs)) kept.push(l);
+      else { kept.push(theirs); changed++; }
+    }
+    const toAdd = [...byId.values()].filter((l) => !tombstoned.has(l.id));
+    changed += toAdd.length;
+    if (changed === 0) return 0;
+    // Recovered sessions slot in by date: newest first, as the history and
+    // list views expect.
+    const sessionLogs = [...toAdd, ...kept].sort(
       (a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime(),
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
-    return toAdd.length;
+    return changed;
   },
 
   logSet: (logId, s) => {
@@ -309,6 +359,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    scheduleLivePush(logId);
   },
 
   updateSet: (logId, setId, updates) => {
@@ -319,6 +370,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    scheduleLivePush(logId);
   },
 
   deleteSet: (logId, setId) => {
@@ -327,6 +379,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    scheduleLivePush(logId);
   },
 
   swapExercise: (logId, sessionExerciseId, programmedExerciseId, toExerciseId) => {

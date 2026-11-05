@@ -110,6 +110,13 @@ export interface SessionLog {
   distanceMeters?: number;
   loggedAt: string;
   finalizedAt?: string;
+  /**
+   * v1.20 (LimeLog#110 item 1) — 'cloud' on a workout this device got from a
+   * pull rather than logged itself. Local only. Such a copy follows later pulls
+   * (another device may still be adding sets to it); a workout made here, or
+   * reopened here with Undo, has no origin and is never overwritten by one.
+   */
+  origin?: 'cloud';
   perceivedFatigue: number | null;
   notes?: string;
   sets: SetLog[];

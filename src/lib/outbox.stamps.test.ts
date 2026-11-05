@@ -99,3 +99,33 @@ describe('workout sessions are stamped when saved', () => {
     expect(sent.sessions.map((r) => r.updated_at)).toEqual(['2026-09-25T12:00:00.000Z']);
   });
 });
+
+// v1.20 (LimeLog#110) — live sync hints NCC and the user's other devices with
+// the tables a drain pushed: a finished workout without waiting for their next
+// sync. Only successful pushes, and only for the account that sent them.
+describe('onPushed', () => {
+  it('reports the tables a pushed workout wrote', async () => {
+    const seen: string[][] = [];
+    const off = outbox.onPushed((t) => seen.push(t));
+    online(false);
+    outbox.enqueue('upsert_workout_session', workout());
+    online(true);
+    await outbox.drain();
+    off();
+    expect(seen).toEqual([['workout_sessions', 'workout_sets']]);
+  });
+
+  it('reports nothing when the account changed during the drain', async () => {
+    const seen: string[][] = [];
+    const off = outbox.onPushed((t) => seen.push(t));
+    online(false);
+    outbox.enqueue('upsert_workout_session', workout());
+    online(true);
+    const run = outbox.drain();
+    localStorage.setItem('limelog.dataOwner', 'user-2');
+    await run;
+    off();
+    expect(seen).toEqual([]);
+  });
+
+});

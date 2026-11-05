@@ -1,0 +1,3 @@
+Séries ao vivo.
+
+Cada série é enviada ao ser registrada, então o NCC e seus outros aparelhos acompanham em segundos, e a conexão se recupera sozinha depois do segundo plano. O cadastro explica a regra da senha e o que falta, e você é perguntado uma vez se quer enviar relatórios de erro.
