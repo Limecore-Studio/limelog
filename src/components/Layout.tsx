@@ -12,6 +12,8 @@ import { OptionalChunk } from '@/components/OptionalChunk';
 // check that runs 4 s after mount finds a newer build, so it never needed to
 // be in the first paint.
 const FdroidUpdateNote = lazy(() => import('@/components/FdroidUpdateNote').then((m) => ({ default: m.FdroidUpdateNote })));
+// v1.20 (limecore#71): almost every launch never shows it.
+const ReportPromptCard = lazy(() => import('@/components/ReportPromptCard').then((m) => ({ default: m.ReportPromptCard })));
 
 // v1.7 — labels resolved via i18n at render time (labelKey → t()).
 const NAV_ITEMS = [
@@ -96,6 +98,7 @@ export function Layout() {
   const name = useUserStore((s) => s.profile.name);
   const userName = useNexusStore((s) => s.userName);
   const userEmail = useNexusStore((s) => s.userEmail);
+  const signedIn = useNexusStore((s) => !!s.userId);
   const initials = avatarInitials(name, userName, userEmail);
   return (
     <div className="app-shell">
@@ -118,6 +121,13 @@ export function Layout() {
         <OptionalChunk>
           <FdroidUpdateNote />
         </OptionalChunk>
+        {/* v1.20 (limecore#71) — offers error reports once, on the second
+            signed-in launch; never to a guest. It decides for itself. */}
+        {signedIn && (
+          <OptionalChunk>
+            <ReportPromptCard />
+          </OptionalChunk>
+        )}
         {/* v1.17 (limecore#13) — pages are lazy chunks; the boundary sits
             inside the layout so the bottom nav stays put while one loads. */}
         <Suspense fallback={null}>

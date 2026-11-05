@@ -655,5 +655,11 @@
     "versions": "Update from {{current}} to {{latest}}",
     "open": "Get it on F-Droid",
     "later": "Later"
+  },
+  "reportPrompt": {
+    "title": "Send error reports?",
+    "body": "If something breaks, LimeLog can send us the technical details: the app version, the error and the screen it happened on. Never what you type. You can change this in Settings.",
+    "yes": "Yes, send reports",
+    "notNow": "Not now"
   }
 }
