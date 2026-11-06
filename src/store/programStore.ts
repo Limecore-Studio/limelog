@@ -2,14 +2,23 @@ import { create } from 'zustand';
 import { storage } from '@/utils/storage';
 import { generateId } from '@/utils/helpers';
 import type { Exercise, Program, Phase, SessionTemplate, SessionExercise, WorkoutTemplate } from '@/types/program';
-import { BUILTIN_EXERCISES } from '@/data/builtinExercises';
 import { resolvePhase } from '@/lib/todaySessions';
 
+// v1.21 (LimeLog#116): the built-in library seeds an empty install once, so it
+// loads on demand instead of in every launch's startup bundle (14 KiB). The
+// seed lands a moment after the store is created; anything that filled the
+// library meanwhile wins and the seed is skipped.
 function seedExercisesIfEmpty(stored: Exercise[]): Exercise[] {
-  if (stored.length > 0) return stored;
+  if (stored.length === 0) void seedBuiltinExercises();
+  return stored;
+}
+
+export async function seedBuiltinExercises(): Promise<void> {
+  const { BUILTIN_EXERCISES } = await import('@/data/builtinExercises');
+  if (storage.getExercises().length > 0 || useProgramStore.getState().exercises.length > 0) return;
   const seeded = BUILTIN_EXERCISES.map((e) => ({ ...e, id: generateId() }));
   storage.setExercises(seeded);
-  return seeded;
+  useProgramStore.setState({ exercises: seeded });
 }
 
 interface ProgramStore {
