@@ -42,7 +42,8 @@ const SLOT_COUNT = 7 * WEEKS_AHEAD;
  * (vs a plain notification tap).
  */
 const ACTION_TYPE_ID = 'workout-reminder';
-export const WORKOUT_ACTION_START = 'start';
+import { WORKOUT_ACTION_START } from './notificationActions';
+export { WORKOUT_ACTION_START };
 
 /**
  * v1.3.1 BUG-12 — wide ID range for the legacy phantom-alarm sweep. The
