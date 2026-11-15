@@ -22,6 +22,16 @@ A personal workout tracker for periodized strength programs — phases, sessions
 
 ---
 
+## Download
+
+[<img src="https://f-droid.org/badge/get-it-on.png"
+     alt="Get it on F-Droid"
+     height="80">](https://f-droid.org/packages/com.limecore.workouttracker/)
+
+Or download the latest APK from the [Releases Section](https://github.com/Limecore-Studio/limelog/releases/latest).
+
+---
+
 ## Setup
 
 ```bash
