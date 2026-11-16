@@ -134,4 +134,24 @@ describe('scheduleWorkoutReminders', () => {
     await scheduleWorkoutReminders([session(1)], [], { prompt: false });
     expect(LN.schedule).toHaveBeenCalledTimes(1);
   });
+
+  it('asks at most once per launch, so a denial is not followed by a second dialog (limelog#129)', async () => {
+    LN.requestPermissions.mockResolvedValueOnce({ display: 'denied' });
+    LN.checkPermissions.mockResolvedValueOnce({ display: 'denied' }).mockResolvedValueOnce({ display: 'denied' });
+    const { scheduleWorkoutReminders } = await load();
+    await scheduleWorkoutReminders([session(1)]); // mount
+    await scheduleWorkoutReminders([session(1)]); // re-run after the exercise seed
+    await scheduleWorkoutReminders([session(2)]); // a program edit later in the launch
+    expect(LN.requestPermissions).toHaveBeenCalledTimes(1);
+    expect(LN.checkPermissions).toHaveBeenCalledTimes(2);
+    expect(LN.schedule).not.toHaveBeenCalled();
+  });
+
+  it('a later call in the same launch still schedules once the user allowed it', async () => {
+    const { scheduleWorkoutReminders } = await load();
+    await scheduleWorkoutReminders([session(1)]);
+    await scheduleWorkoutReminders([session(2)]);
+    expect(LN.requestPermissions).toHaveBeenCalledTimes(1);
+    expect(LN.schedule).toHaveBeenCalledTimes(2);
+  });
 });
