@@ -74,8 +74,10 @@ export function ProfilePage() {
         const { data } = await supabase.auth.getUser();
         if (data.user) account = { id: data.user.id, email: data.user.email };
       }
+      // v1.21.1 (limecore#103): "Saved" only once the file is written; a
+      // cancelled picker (null) says nothing.
       const name = await downloadExport(account);
-      setDataMsg(t('settings.exportDone', { name }));
+      if (name) setDataMsg(t('settings.exportDone', { name }));
     } catch (e) {
       setDataMsg(t('settings.exportFailed', { msg: (e as Error).message }));
     }

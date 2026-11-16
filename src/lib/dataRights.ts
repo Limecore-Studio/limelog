@@ -9,6 +9,7 @@
 // server-side account to delete.
 
 import type { Session } from '@supabase/supabase-js';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { storage } from '@/utils/storage';
 import { supabase, isNexusConfigured, readStoredSession, clearStoredSession } from './supabase';
 import { listPhotos } from './progressPhotos';
@@ -72,7 +73,7 @@ export async function serverOnlyData(userId: string): Promise<Record<string, unk
  * machine-readable" — JSON qualifies, and unlike CSV it carries the nested set
  * structure without inventing a flattening the user then has to undo.
  */
-async function buildExport(
+export async function buildExport(
   user: { id: string; email?: string } | null,
 ): Promise<ExportPayload> {
   const programs = storage.getPrograms();
@@ -132,13 +133,37 @@ async function buildExport(
   };
 }
 
-/** Trigger a download of the export as a .json file. Returns the filename. */
+/** The signed-in account for an export, or null for a guest. Lives here, not
+ *  in the crash screen, so the startup chunk does not carry it (v1.21.1). */
+export async function sessionAccount(): Promise<{ id: string; email?: string } | null> {
+  if (!isNexusConfigured) return null;
+  const u = (await supabase.auth.getSession()).data.session?.user;
+  return u ? { id: u.id, email: u.email } : null;
+}
+
+// v1.21.1 (limecore#103) — the native "create document" picker
+// (SaveFilePlugin.java). Registered here, on demand, with the only caller.
+const SaveFile = registerPlugin<{
+  save(o: { filename: string; mimeType: string; data: string }): Promise<{ saved: boolean; cancelled?: boolean }>;
+}>('SaveFile');
+
+/** Save the export as a .json file. Returns the filename once it is written,
+ *  or null when the user cancelled the picker; throws when it could not be
+ *  written. Callers say "Saved" only for a filename.
+ *
+ *  v1.21.1 (limecore#103): on Android the blob anchor below wrote nothing (a
+ *  WebView needs a DownloadListener for it, and none is registered) while the
+ *  app said "Saved". There the system picker writes the file instead. */
 export async function downloadExport(
   user: { id: string; email?: string } | null,
-): Promise<string> {
+): Promise<string | null> {
   const payload = await buildExport(user);
   const json = JSON.stringify(payload, null, 2);
   const name = `limelog-export-${new Date().toISOString().slice(0, 10)}.json`;
+  if (Capacitor.isNativePlatform()) {
+    const { saved } = await SaveFile.save({ filename: name, mimeType: 'application/json', data: json });
+    return saved ? name : null;
+  }
   const url = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url;
