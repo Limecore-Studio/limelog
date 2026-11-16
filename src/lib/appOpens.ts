@@ -21,10 +21,15 @@
 // **Never queued without a Nexus account.** The outbox deliberately never drops
 // a failed item, and `drain()` stops at the first failure — so an open queued
 // with no account would fail forever and wedge every workout push behind it.
+//
+// **v1.21.1 (limecore#87): only with consent.** Nothing is queued unless this
+// account said yes (consent.ts); off by default, asked once. Loaded on
+// demand (nexusStore), so the gate costs startup nothing.
 
 import { Capacitor } from '@capacitor/core';
 import { enqueue } from './outbox';
 import { supabase, isNexusConfigured } from './supabase';
+import { hasConsent } from './consent';
 
 const LAST_KEY = 'limelog.lastAppOpen';
 
@@ -59,6 +64,7 @@ export async function recordAppOpen(appVersion: string): Promise<boolean> {
   // behind it.
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) return false;
+  if (!hasConsent('appOpens', session.user.id)) return false;
 
   const today = localDay();
   try {

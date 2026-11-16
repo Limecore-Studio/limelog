@@ -1,0 +1,42 @@
+/* v1.21.1 (limecore#87) — consent card. Built on the referral card
+   (.ref-card, .ref-eyebrow, .ref-title, .ref-option in ReferralPrompt.css);
+   existing tokens only. The choice pair mirrors Settings' Off/On toggle, so
+   the answer looks the same where it is later changed. */
+.consent-card { max-height: calc(100dvh - var(--nav-height) - 48px); overflow-y: auto; }
+.consent-item { padding: 10px 0; border-top: 1px solid var(--border-subtle); }
+.consent-item:first-of-type { border-top: 0; padding-top: 0; }
+.consent-item__label {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.consent-item__note {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+.consent-item__choice { display: flex; gap: 6px; margin-top: 8px; }
+.consent-choice {
+  flex: 1;
+  padding: 8px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.12s var(--ease-snap), border-color 0.12s var(--ease-snap), color 0.12s var(--ease-snap);
+}
+.consent-choice--active {
+  background: var(--accent-dim);
+  border-color: var(--accent-border);
+  color: var(--accent);
+}
+.consent-done { width: 100%; text-align: center; margin-top: 6px; font-weight: 600; }
+.consent-later { font-size: 11px; color: var(--text-tertiary); margin-top: 8px; text-align: center; }

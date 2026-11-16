@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import { setErrorReportsEnabled, useErrorReportsEnabled } from '@/lib/errorReports';
 import { setLanguage, SUPPORTED_LANGS, LANGUAGE_NAMES, type Lang } from '@/i18n';
@@ -17,9 +17,42 @@ import { supabase, isNexusConfigured } from '@/lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { setUpdateCheckEnabled, useFdroidUpdate } from '@/lib/fdroidUpdate';
 import pkg from '../../package.json';
+import { hasConsent, setConsent, subscribeConsent } from '@/lib/consent';
+import { useNexusStore } from '@/store/nexusStore';
+import '@/i18n/consentStrings'; // consent.* (loaded on demand)
 import './ProfilePage.css';
 
 type Tab = 'injuries' | 'exercises' | 'settings';
+
+/** v1.21.1 (limecore#87) — the app-open record, opt-in: the same Off/On pair,
+ *  off until this account says yes (here or in ConsentPrompt). Accounts only:
+ *  a guest has nothing to record. */
+function AppOpensField() {
+  const { t } = useTranslation();
+  const signedIn = useNexusStore((s) => !!s.userId);
+  const on = useSyncExternalStore(subscribeConsent, () => hasConsent('appOpens'));
+  if (!signedIn) return null;
+  return (
+    <>
+      <div className="settings-field settings-field--mt">
+        <span className="settings-field__sublabel">{t('consent.appOpens')}</span>
+        <div className="settings-toggle">
+          {([false, true] as const).map((v) => (
+            <button
+              key={String(v)}
+              className={`settings-toggle__btn${on === v ? ' settings-toggle__btn--active' : ''}`}
+              onClick={() => setConsent({ appOpens: v })}
+              aria-pressed={on === v}
+            >
+              {v ? t('settings.aiOn') : t('settings.aiOff')}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="settings-field__sublabel settings-ai-note">{t('consent.appOpensNote')}</div>
+    </>
+  );
+}
 
 /** v1.16 (limecore#16) — "Send error reports", the same Off/On pair as the
  *  AI switch. Off by default; the note under it is the consent text. */
@@ -245,6 +278,7 @@ export function ProfilePage() {
             {/* v1.16 (limecore#16) — off by default, accounts only; the note is
                 the consent text the privacy policy (NCC#50) relies on. */}
             <ErrorReportsField />
+            <AppOpensField />
             <a
               className="settings-field__sublabel settings-privacy-link"
               href="https://limecore.dev/privacy"
@@ -391,7 +425,8 @@ export function ProfilePage() {
 }
 
 /** v1.16 (#26) — the switch the privacy policy promises (NCC#50): Off stops
- *  the once-a-day request to f-droid.org entirely, not merely the note. The
+ *  the once-a-day request to f-droid.org entirely, not merely the note.
+ *  v1.21.1 (limecore#87): off until the person says yes (consent.ts). The
  *  same Off/On pair as the AI switch above. Android only, because it is the
  *  only build F-Droid ships. */
 function FdroidUpdateToggle() {
