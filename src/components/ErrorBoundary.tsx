@@ -1,7 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import i18n from '@/i18n';
 import { buildReport, errorReportsEnabled, sendReport, type ErrorReport, type SendResult } from '@/lib/errorReports';
-import { supabase, isNexusConfigured } from '@/lib/supabase';
 import './ErrorBoundary.css';
 
 // v1.16 (limecore#16) — no render error is a blank screen any more.
@@ -28,6 +27,8 @@ interface State {
   report: ErrorReport | null;
   status: SendResult | 'sending' | null;
   exported: boolean;
+  /** v1.21.1 (limecore#103): why the last export failed, shown under the button. */
+  exportError?: string;
 }
 
 export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
@@ -55,28 +56,24 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
 
   private exportData = async () => {
     try {
-      let account: { id: string; email?: string } | null = null;
-      if (isNexusConfigured) {
-        const { data } = await supabase.auth.getSession();
-        const u = data.session?.user;
-        if (u) account = { id: u.id, email: u.email };
-      }
       // Loaded on the tap, not at launch (LimeLog#70): the export module and
       // the photo index it reads are only ever needed from this button and
       // from Profile, yet the boundary wraps the whole app, so a static import
       // put both in the startup chunk. A chunk that fails to load lands in the
-      // catch below, like any other failed export.
-      const { downloadExport } = await import('@/lib/dataRights');
-      await downloadExport(account);
-      this.setState({ exported: true });
-    } catch {
-      /* the export has its own failure surface in Settings */
+      // catch below, like any other failed export. (v1.21.1: the session
+      // lookup moved there too, sessionAccount.)
+      const { downloadExport, sessionAccount } = await import('@/lib/dataRights');
+      // v1.21.1 (limecore#103): the same path as Profile; shown as exported
+      // only once the file is written (null is a cancelled picker).
+      if (await downloadExport(await sessionAccount())) this.setState({ exported: true, exportError: undefined });
+    } catch (e) {
+      this.setState({ exportError: (e as Error).message });
     }
   };
 
   render() {
     if (!this.state.error) return this.props.children;
-    const { report, status, exported } = this.state;
+    const { report, status, exported, exportError } = this.state;
     const sent = status === 'sent' || status === 'duplicate';
 
     return (
@@ -117,6 +114,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
             <button type="button" className="btn btn--secondary btn--md btn--full" onClick={this.exportData}>
               {exported ? tr('crash.exported', 'Export downloaded') : tr('crash.export', 'Export my data')}
             </button>
+            {exportError && <div className="crash__status">{i18n.t('settings.exportFailed', { msg: exportError })}</div>}
           </div>
           {!sent && status !== 'guest' && (
             <p className="crash__note">
