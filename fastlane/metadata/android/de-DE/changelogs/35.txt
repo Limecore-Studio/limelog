@@ -1,0 +1,3 @@
+Ein leichterer Start.
+
+Die App startet schneller: Übungsbibliothek und Benachrichtigungen werden erst geladen, wenn sie gebraucht werden. Bei einer Neuinstallation wird die Berechtigung für Benachrichtigungen jetzt nur einmal abgefragt.

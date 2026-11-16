@@ -1,0 +1,3 @@
+Un démarrage plus léger.
+
+L'app démarre plus vite : la bibliothèque d'exercices et les notifications se chargent au premier besoin. Sur une nouvelle installation, l'autorisation des notifications n'est plus demandée qu'une fois.

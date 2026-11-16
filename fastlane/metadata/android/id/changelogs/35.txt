@@ -1,0 +1,3 @@
+Awal yang lebih ringan.
+
+Aplikasi terbuka lebih cepat: pustaka latihan dan notifikasi dimuat saat pertama kali dibutuhkan. Pada instalasi baru, izin notifikasi kini hanya diminta sekali.

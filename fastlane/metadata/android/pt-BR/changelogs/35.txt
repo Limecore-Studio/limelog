@@ -1,0 +1,3 @@
+Um início mais leve.
+
+O app abre mais rápido: a biblioteca de exercícios e as notificações carregam quando são necessárias pela primeira vez. Numa instalação nova, a permissão de notificações agora é pedida só uma vez.
