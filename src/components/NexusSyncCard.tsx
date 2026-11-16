@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useNexusStore } from '@/store/nexusStore';
-import { inheritFromNexus } from '@/lib/suiteSso';
+import { inheritFromNexus, openNexus } from '@/lib/suiteSso';
 import { Button, Card, Badge } from '@/components/ui';
 import { Cloud, CloudOff } from 'lucide-react';
 import { ChangeEmail } from '@/components/ChangeEmail';
@@ -54,6 +54,8 @@ export function NexusSyncCard() {
   const [pwFlag, setPwFlag] = useState(false); // limecore#73: a submit failed on the rule
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [nexusAvailable, setNexusAvailable] = useState(false);
+  // limecore#101: NCC's published session has expired; it needs one launch.
+  const [nexusStale, setNexusStale] = useState(false);
   const confirm = useConfirm();
 
   // v1.18.1 (LimeLog#66): sign-out wipes this device's workouts, body
@@ -100,7 +102,8 @@ export function NexusSyncCard() {
     setLocalError(null);
     try {
       const result = await inheritFromNexus();
-      if (!result.ok) {
+      setNexusStale(result.reason === 'nexus-stale');
+      if (!result.ok && result.reason !== 'nexus-stale') {
         setLocalError(result.reason || t('auth.errNexus'));
       }
       // On success, nexusStore.init's auth listener takes over.
@@ -270,9 +273,18 @@ export function NexusSyncCard() {
                 <span className="nexus-card__nexus-glyph" aria-hidden="true">◈</span>
                 {t('auth.nexus')}
               </Button>
-              <p className="nexus-card__nexus-note">
-                {t('auth.nexusNote')}
-              </p>
+              {nexusStale ? (
+                <>
+                  <p className="nexus-card__nexus-note" role="status">{t('auth.nexusStale')}</p>
+                  <Button type="button" variant="secondary" size="sm" fullWidth onClick={() => void openNexus()}>
+                    {t('auth.nexusOpen')}
+                  </Button>
+                </>
+              ) : (
+                <p className="nexus-card__nexus-note">
+                  {t('auth.nexusNote')}
+                </p>
+              )}
             </>
           )}
 

@@ -46,7 +46,7 @@ import { fileURLToPath } from 'node:url';
 // v1.21 (LimeLog#116): the built-in exercise seed, the notifications module,
 // captcha and the policy note left the startup chunk, 652.7 -> 634.7 KiB. Set
 // at the measured size so the headroom is not spent by default.
-const BUDGET_KIB = 635; // 2026-11-06 (LimeLog#116): 634.7 measured; was 653 (2026-11-05, limecore#73): 652.7 measured with the sign-in screen on demand; was 660 (2026-10-30, LimeLog#110: 659.4 with the workout pull on demand), 662, 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
+const BUDGET_KIB = 634; // 2026-11-16 (limecore#101): 632.9 measured with the Nexus inherit on demand, set at 634 not 633 because the other v1.21.1 PRs (delete account, export file, opt-in consent) add about 0.2-0.4 KiB of startup between them; the release PR sets it to the measured total; was 635 (2026-11-06, LimeLog#116): 634.7 measured; was 653 (2026-11-05, limecore#73): 652.7 measured with the sign-in screen on demand; was 660 (2026-10-30, LimeLog#110: 659.4 with the workout pull on demand), 662, 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');

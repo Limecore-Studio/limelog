@@ -7,6 +7,8 @@
 // passwordStrings.json (all ten languages) and are merged into i18next when
 // one of those screens loads. Import this module for its side effect from any
 // file that uses an `auth.pw*` key; keys.test.ts counts these keys as present.
+// v1.21.1 (limecore#101): `auth.nexusStale` / `auth.nexusOpen` live here too,
+// for the same two screens (both import it through PasswordChecklist).
 //
 // A language's own file must be loaded before its strings are merged:
 // i18n/index.ts skips loading any language that already has a bundle, so

@@ -1,13 +1,16 @@
 // v1.4 — cross-app SSO consumer (LimeLog side).
 //
 // Queries NCC's signature-protected SessionContentProvider for an active
-// Supabase session and hands the bundle to supabase.auth.setSession so
-// the user inherits NCC's sign-in without a separate Google round-trip.
+// Supabase session and exchanges it, through the `suite-session` function,
+// for a session of LimeLog's own, so the user inherits NCC's sign-in without
+// a separate Google round-trip.
 //
-// Failure modes (all surface via { available: false, reason }):
+// Failure modes (all surface via { ok: false, reason }):
 //   - NCC not installed
 //   - LimeLog signed with a different cert than NCC
 //   - NCC has no active session (user signed out, or never signed in)
+//   - NCC's published session has expired ('nexus-stale')
+//   - NCC is signed in to another account than the caller allows ('other-account')
 //
 // Caller flow: show "Continue with Nexus" button → call inheritFromNexus()
 // → on { ok: true } the supabase client is now authenticated and the
@@ -25,6 +28,9 @@ interface SuiteSsoPluginAndroid {
     bundleJson?: string;
     publishedAt?: number;
   }>;
+  /** v1.21.1 (limecore#101) — bring NCC to the front so it publishes a fresh
+   *  session. { opened: false } when NCC is not there. */
+  openNexus(): Promise<{ opened: boolean }>;
 }
 
 // Plugin name MUST match @CapacitorPlugin(name = "SuiteSso") on the Java
@@ -32,12 +38,44 @@ interface SuiteSsoPluginAndroid {
 // plugins registered via MainActivity.registerPlugin(...).
 const SuiteSso = registerPlugin<SuiteSsoPluginAndroid>('SuiteSso');
 
-interface InheritResult {
+export interface InheritResult {
   ok: boolean;
+  /** Text to show, or one of two codes the callers handle themselves:
+   *  - 'nexus-stale': NCC's published session has expired (NCC has not run
+   *    lately). Nothing was sent; opening NCC once publishes a fresh one.
+   *  - 'other-account': NCC is signed in to an account other than
+   *    `onlyUserId`, so nothing was adopted (limecore#111). */
   reason?: string;
   email?: string;
 }
 
+/** A bundle whose access token expires within this margin counts as stale:
+ *  `suite-session` would answer 401 by the time the request arrived. */
+const STALE_MARGIN_MS = 60_000;
+
+/** The `sub` claim of a JWT, or null when it cannot be read. Only compared
+ *  with this device's recorded owner; nothing else is trusted on it (the
+ *  function verifies the token itself). */
+export function tokenUserId(accessToken: string): string | null {
+  try {
+    const seg = accessToken.split('.')[1];
+    const b64 = seg.replace(/-/g, '+').replace(/_/g, '/');
+    const json = JSON.parse(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)));
+    return typeof json.sub === 'string' ? json.sub : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Opens NCC so it can publish a fresh session. False when it could not. */
+export async function openNexus(): Promise<boolean> {
+  if (!Capacitor.isNativePlatform()) return false;
+  try {
+    return (await SuiteSso.openNexus()).opened === true;
+  } catch {
+    return false;
+  }
+}
 
 // -- v1.10: inherit the IDENTITY, not the refresh token -------------------
 // This used to call supabase.auth.setSession() with NCC's tokens, which put
@@ -54,17 +92,16 @@ interface InheritResult {
 // session with its own independent rotation chain. The apps can no longer
 // revoke one another.
 //
-// The setSession path is kept as a fallback for one reason: if the function is
-// unreachable (offline, not yet deployed, an older backend) the old behaviour
-// is still better than refusing to sign in. It is strictly the degraded path -
-// it restores the collision risk - so it says so in the log.
+// v1.21.1 (limecore#101) - the setSession fallback is gone. It handed NCC's
+// refresh token to this app whenever the function failed, and the function
+// failed whenever NCC had not run in the last hour (its published access token
+// had expired), so the "degraded" path was the usual one and the revocation
+// above kept happening. No path here uses NCC's refresh token any more: an
+// expired bundle is not sent at all ('nexus-stale'), and any failure of the
+// function or of the one-time credential is a plain failure.
 //
-// v1.19 - LL#64: except offline. A request that never reached the function
-// says nothing about the backend, only that there is no network, and
-// setSession() with an expired access token would then run auth-js's refresh
-// retry chain over that same dead network (~25 s, or never returning on a
-// network that hangs instead of failing). Fail fast and leave the manual
-// "Continue with Nexus" for when there is signal.
+// v1.19 - LL#64: offline fails fast. A request that never reached the
+// function says nothing about the backend, only that there is no network.
 const offline = (e: unknown) => e instanceof FunctionsFetchError || e instanceof TypeError;
 const OFFLINE: InheritResult = { ok: false, reason: 'Nexus sign-in needs a network connection.' };
 // v1.19 (LimeLog#67 review): the time limit below also ends in a fetch
@@ -79,12 +116,9 @@ const timedOut = (e: unknown) => {
 const TIMED_OUT: InheritResult = { ok: false, reason: 'Nexus sign-in timed out. Check the connection and try again.' };
 const failFast = (e: unknown): InheritResult =>
   timedOut(e) && typeof navigator !== 'undefined' && navigator.onLine !== false ? TIMED_OUT : OFFLINE;
+const FAILED: InheritResult = { ok: false, reason: 'Nexus sign-in failed. Sign in another way.' };
 
-async function adoptSession(bundle: {
-  access_token: string;
-  refresh_token: string;
-  email?: string;
-}): Promise<InheritResult> {
+async function adoptSession(bundle: { access_token: string; email?: string }): Promise<InheritResult> {
   try {
     const { data, error } = await supabase.functions.invoke('suite-session', {
       body: { app: 'limelog' },
@@ -97,7 +131,7 @@ async function adoptSession(bundle: {
     });
     if (offline(error)) return failFast(error);
     if (error) {
-      console.warn('[sso] suite-session unavailable, using shared-token fallback:', error.message);
+      console.warn('[sso] suite-session refused:', error.message);
     } else if (data?.token_hash) {
       // v1.11 — try each credential type rather than betting on one.
       //
@@ -108,15 +142,9 @@ async function adoptSession(bundle: {
       // wrong fails as `403 "One-time token not found"`, which the server logs
       // show happening.
       //
-      // That failure is not cosmetic: it drops us to the shared-token fallback
-      // below, which is exactly the refresh-token collision this whole SSO
-      // rewrite exists to prevent. The server-side record shows the result —
-      // healthy rotation for hours, then the entire token family revoked and a
-      // fresh session seconds later, i.e. all three apps signed out.
-      //
       // Trying the three plausible types costs one round trip on the unlucky
       // path and nothing on the lucky one, and it stops a version difference
-      // in Auth from silently re-enabling a daily logout.
+      // in Auth from failing every Nexus sign-in.
       const TYPES = ['magiclink', 'email', 'recovery'] as const;
       let otpErr: { message?: string } | null = null;
       for (const type of TYPES) {
@@ -130,28 +158,24 @@ async function adoptSession(bundle: {
         // stop rather than burning the remaining attempts on a dead credential.
         if (!/not found|invalid|expired/i.test(error.message || '')) break;
       }
-      console.warn('[sso] one-time credential rejected, using fallback:', otpErr?.message);
+      console.warn('[sso] one-time credential rejected:', otpErr?.message);
     }
   } catch (e) {
     if (offline(e)) return failFast(e);
-    console.warn('[sso] suite-session threw, using shared-token fallback:', (e as Error).message);
+    console.warn('[sso] suite-session threw:', (e as Error).message);
   }
-
-  // Degraded path - shares NCC's refresh token, so the revocation collision
-  // this release exists to fix is possible again until the function is back.
-  const { error } = await supabase.auth.setSession({
-    access_token: bundle.access_token,
-    refresh_token: bundle.refresh_token,
-  });
-  if (error) {
-    return { ok: false, reason: 'Supabase rejected the inherited session: ' + error.message };
-  }
-  return { ok: true, email: bundle.email };
+  return FAILED;
 }
 
-/** Pull NCC's active session and apply it to LimeLog's Supabase client.
- *  No-op on web (sibling apps don't exist there). */
-export async function inheritFromNexus(): Promise<InheritResult> {
+/** Sign in as the account NCC is signed in to, through `suite-session`.
+ *  No-op on web (sibling apps don't exist there).
+ *
+ *  `onlyUserId` (limecore#111, as StudyDesk's suiteSso.js): refuse a bundle
+ *  for any other account (`reason: 'other-account'`). The automatic sign-in at
+ *  startup passes this device's data owner, so a different account signed in
+ *  to NCC is never adopted silently and the account-switch wipe never runs
+ *  without the user choosing it; the sign-in screen can still pick it. */
+export async function inheritFromNexus({ onlyUserId }: { onlyUserId?: string | null } = {}): Promise<InheritResult> {
   if (!Capacitor.isNativePlatform()) {
     return { ok: false, reason: 'Cross-app sign-in is only available on Android.' };
   }
@@ -164,20 +188,25 @@ export async function inheritFromNexus(): Promise<InheritResult> {
   if (!queryResult.available) {
     return { ok: false, reason: queryResult.reason ?? 'No Nexus session available.' };
   }
-  let bundle: { access_token?: string; refresh_token?: string; email?: string };
+  let bundle: { access_token?: string; expires_at?: number; email?: string };
   try {
     bundle = JSON.parse(queryResult.bundleJson ?? '{}');
   } catch {
     return { ok: false, reason: 'Nexus returned a malformed session bundle.' };
   }
-  if (!bundle.access_token || !bundle.refresh_token) {
+  if (!bundle.access_token) {
     return { ok: false, reason: 'Nexus session missing required tokens.' };
   }
-  // Either path fires onAuthStateChange, so LimeLog's existing
+  if (onlyUserId && tokenUserId(bundle.access_token) !== onlyUserId) {
+    return { ok: false, reason: 'other-account' };
+  }
+  // expires_at is in seconds (NCC's ssoPublisher passes Supabase's value on).
+  // Missing or past: the function could only answer 401, so do not ask it.
+  const expiresAt = Number(bundle.expires_at) * 1000;
+  if (!(expiresAt > Date.now() + STALE_MARGIN_MS)) {
+    return { ok: false, reason: 'nexus-stale' };
+  }
+  // A redeemed credential fires onAuthStateChange, so LimeLog's existing
   // nexusStore.init wiring takes over automatically.
-  return adoptSession({
-    access_token: bundle.access_token,
-    refresh_token: bundle.refresh_token,
-    email: bundle.email,
-  });
+  return adoptSession({ access_token: bundle.access_token, email: bundle.email });
 }

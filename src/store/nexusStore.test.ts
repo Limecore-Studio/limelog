@@ -14,7 +14,9 @@ const h = vi.hoisted(() => ({
   guest: false,
   stored: null as null | { user: Session['user']; expiresAt: number; expired: boolean },
   getSession: (() => new Promise(() => {})) as GetSession,
-  inherit: () => new Promise<{ ok: boolean; reason?: string }>(() => {}),
+  inherit: ((_opts?: { onlyUserId?: string | null }) => new Promise<{ ok: boolean; reason?: string }>(() => {})) as (
+    opts?: { onlyUserId?: string | null },
+  ) => Promise<{ ok: boolean; reason?: string }>,
   listener: null as Listener | null,
   calls: [] as string[],
   syncEntitlement: vi.fn(async () => {}),
@@ -52,7 +54,7 @@ vi.mock('@/lib/supabase', () => ({
 vi.mock('@/lib/captcha', () => ({ withCaptcha: vi.fn() }));
 vi.mock('@/lib/oauth', () => ({ signInWithGoogle: vi.fn(), initOAuthDeepLinkListener: vi.fn() }));
 vi.mock('@/lib/guestMode', () => ({ isGuestMode: () => h.guest, setGuestMode: h.setGuestMode }));
-vi.mock('@/lib/suiteSso', () => ({ inheritFromNexus: () => h.inherit() }));
+vi.mock('@/lib/suiteSso', () => ({ inheritFromNexus: (opts?: { onlyUserId?: string | null }) => h.inherit(opts) }));
 vi.mock('@/lib/originMarker', () => ({ scheduleOriginStamp: vi.fn() }));
 // The real module, but for the two that would push to the outbox: sign-out
 // clears its day guard through it (LimeLog#82), and that is under test.
@@ -245,6 +247,20 @@ describe('init() with nothing in storage', () => {
     await vi.advanceTimersByTimeAsync(3000);
     await init;
     expect(store.getState()).toMatchObject({ userEmail: USER.email, loading: false });
+  });
+
+  // v1.21.1 (limecore#111) — the startup inherit asks only for the account
+  // that owns this device's data, so a different NCC account is never taken
+  // up (and its account-switch wipe never runs) without the user choosing it.
+  it('asks only for the recorded owner, when there is one', async () => {
+    localStorage.setItem('limelog.dataOwner', 'owner-0');
+    const inherit = vi.fn(h.inherit);
+    h.inherit = inherit;
+    const store = await freshStore();
+    const init = store.getState().init();
+    await vi.advanceTimersByTimeAsync(3000);
+    await init;
+    expect(inherit).toHaveBeenCalledWith({ onlyUserId: 'owner-0' });
   });
 
   it('skips the inherit in guest mode, as before', async () => {
