@@ -18,12 +18,10 @@ import { createRecoveryGate } from '@/lib/recoveryGate';
 import { createLiveSync } from '@/lib/liveSync';
 import { onPushed } from '@/lib/outbox';
 import { readOwner } from '@/lib/accountOwner';
-import {
-  setupNotificationChannel,
-  labelNotifications,
-  scheduleWorkoutReminders,
-  WORKOUT_ACTION_START,
-} from '@/utils/notifications';
+import { WORKOUT_ACTION_START } from '@/utils/notificationActions';
+// v1.21 (LimeLog#116): channel setup, labels and reminder scheduling all run
+// from effects after the first frame, so the module loads on first use.
+const notifications = () => import('@/utils/notifications');
 import { OptionalChunk } from '@/components/OptionalChunk';
 import { useDataReady, showsSignIn } from '@/lib/dataReady';
 import { DataHold } from '@/components/DataHold';
@@ -188,7 +186,7 @@ export default function App() {
   // The channel setup is not awaited here; scheduleWorkoutReminders awaits it
   // (v1.19 — LL#63).
   useEffect(() => {
-    void setupNotificationChannel();
+    void notifications().then((m) => m.setupNotificationChannel());
     void (async () => {
       const guest = await isGuestMode();
       setGuestModeState(guest);
@@ -285,13 +283,13 @@ export default function App() {
     void (async () => {
       if (labelledIn.current !== i18n.language) {
         labelledIn.current = i18n.language;
-        await labelNotifications().catch(() => { /* best-effort, as at launch */ });
+        await (await notifications()).labelNotifications().catch(() => { /* best-effort, as at launch */ });
       }
-      await scheduleWorkoutReminders(sessions, exerciseLibrary);
+      await (await notifications()).scheduleWorkoutReminders(sessions, exerciseLibrary);
     })();
     if (!Capacitor.isNativePlatform()) return;
     const handle = CapacitorApp.addListener('resume', () => {
-      void scheduleWorkoutReminders(sessions, exerciseLibrary, { prompt: false });
+      void notifications().then((m) => m.scheduleWorkoutReminders(sessions, exerciseLibrary, { prompt: false }));
     });
     return () => {
       void handle.then((h) => h.remove());

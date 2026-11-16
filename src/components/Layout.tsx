@@ -1,6 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { Outlet, NavLink } from 'react-router-dom';
-import { PolicyUpdatedNote } from '@/components/PolicyUpdatedNote';
 import { useTranslation } from 'react-i18next';
 import { Calendar, BarChart2, Layers, BookOpen, Scale } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
@@ -12,6 +11,8 @@ import { OptionalChunk } from '@/components/OptionalChunk';
 // check that runs 4 s after mount finds a newer build, so it never needed to
 // be in the first paint.
 const FdroidUpdateNote = lazy(() => import('@/components/FdroidUpdateNote').then((m) => ({ default: m.FdroidUpdateNote })));
+// v1.21 (LimeLog#116): once, for people from before the policy update.
+const PolicyUpdatedNote = lazy(() => import('@/components/PolicyUpdatedNote').then((m) => ({ default: m.PolicyUpdatedNote })));
 // v1.20 (limecore#71): almost every launch never shows it.
 const ReportPromptCard = lazy(() => import('@/components/ReportPromptCard').then((m) => ({ default: m.ReportPromptCard })));
 
@@ -104,7 +105,9 @@ export function Layout() {
     <div className="app-shell">
       {/* v1.16 (limecore#16) — once, for people who used LimeLog under the old
           policy. In Layout, so it never appears on the fullscreen workout. */}
-      <PolicyUpdatedNote />
+      <OptionalChunk>
+        <PolicyUpdatedNote />
+      </OptionalChunk>
       <header className="app-topbar">
         <NavLink
           to="/profile"

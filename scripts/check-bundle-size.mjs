@@ -43,7 +43,10 @@ import { fileURLToPath } from 'node:url';
 // sign-out / takeover stack (#81-#96) merged together, startup JS measured
 // 661.6 KiB, 0.6 over the 661 estimate. 662 covers the measured total and
 // nothing else. LimeLog#70 (lazy-load pass) stays open to bring it back down.
-const BUDGET_KIB = 653; // 2026-11-05 (limecore#73): 652.7 measured with the sign-in screen on demand; was 660 (2026-10-30, LimeLog#110: 659.4 with the workout pull on demand), 662, 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
+// v1.21 (LimeLog#116): the built-in exercise seed, the notifications module,
+// captcha and the policy note left the startup chunk, 652.7 -> 634.7 KiB. Set
+// at the measured size so the headroom is not spent by default.
+const BUDGET_KIB = 635; // 2026-11-06 (LimeLog#116): 634.7 measured; was 653 (2026-11-05, limecore#73): 652.7 measured with the sign-in screen on demand; was 660 (2026-10-30, LimeLog#110: 659.4 with the workout pull on demand), 662, 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');

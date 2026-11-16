@@ -1,0 +1,3 @@
+Kevyempi käynnistys.
+
+Sovellus käynnistyy nopeammin: liikekirjasto ja ilmoitukset ladataan vasta, kun niitä tarvitaan. Uudessa asennuksessa ilmoituslupaa kysytään nyt vain kerran.

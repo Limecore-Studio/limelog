@@ -1,0 +1,3 @@
+A lighter start.
+
+The app starts faster: the exercise library and notifications load when they are first needed. On a fresh install, the notification permission is now asked only once.
