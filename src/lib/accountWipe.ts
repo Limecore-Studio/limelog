@@ -10,7 +10,16 @@ import { clear as outboxClear } from '@/lib/outbox';
 import { clearEntitlement } from '@/lib/entitlement';
 import { releaseOnboardingOnSignOut } from '@/lib/onboarding';
 import { forgetReferralAskedLocally } from '@/lib/referralSource';
-import { forgetLastAppOpen } from '@/lib/appOpens';
+// v1.21.1 (limecore#87): appOpens.ts loads on demand now, so its day guard
+// (LAST_KEY there) is cleared here directly.
+const forgetLastAppOpen = (): boolean => {
+  try {
+    localStorage.removeItem('limelog.lastAppOpen');
+    return true;
+  } catch {
+    return false;
+  }
+};
 import { useLogStore } from '@/store/logStore';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics';

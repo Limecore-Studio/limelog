@@ -19,7 +19,8 @@ import {
   noteError as outboxNoteError,
   type OutboxStatus,
 } from '@/lib/outbox';
-import { watchAppOpens, recordAppOpen } from '@/lib/appOpens';
+// v1.21.1 (limecore#87): on demand; it records nothing without consent.
+const appOpens = () => import('@/lib/appOpens');
 import { useThemeStore } from '@/store/themeStore';
 import pkgJson from '../../package.json';
 import i18n from '@/i18n';
@@ -265,7 +266,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           // Deferred: recordAppOpen asks auth-js for the session, and auth-js
           // holds its lock while this listener runs (see referralSource.ts).
           // A repeat is a no-op: the day guard stops it.
-          setTimeout(() => void recordAppOpen(pkgJson.version), 0);
+          setTimeout(() => void appOpens().then((m) => m.recordAppOpen(pkgJson.version)), 0);
         }
         // Signing out ends the entitlement with it. `syncEntitlement(null)`
         // clears the cache and hands the store `false`, which drops a paid
@@ -429,7 +430,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           // find no user and be skipped. The visibilitychange listener installed
           // here covers the commoner case — the app resumed from the background
           // days later without the process having died.
-          watchAppOpens(pkgJson.version);
+          void appOpens().then((m) => m.watchAppOpens(pkgJson.version));
 
           // v1.12 Item 5 — supporter entitlement, sited here for the same reason
           // as the line above: on a cold start there is usually no session until

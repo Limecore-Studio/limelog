@@ -10,10 +10,15 @@
 //     package F-Droid does not know all mean "no notice", never an error.
 //   - Never on the startup path: the caller fires it after first paint.
 //   - Dismissing hides that version only; the next one is announced again.
-//   - A Settings switch (default on) that stops the request entirely, as the
-//     privacy policy promises (NCC#50). Off means no network call, not merely no
-//     notice. The request carries nothing about the user: it is a plain GET for
-//     a public package record.
+//   - A Settings switch that stops the request entirely, as the privacy policy
+//     promises (NCC#50). Off means no network call, not merely no notice. The
+//     request carries nothing about the user: it is a plain GET for a public
+//     package record.
+//   - v1.21.1 (limecore#87): off until the person says yes. It was on by
+//     default; now it asks once (ConsentPrompt) and the answer is kept per
+//     account or guest (consent.ts). The old device switch
+//     (`limelog-fdroid-check`) is no longer read: an install that never
+//     switched it off would otherwise carry the old "on" forward unasked.
 //
 // LimeLog ships no desktop build and the web build is always current, so
 // this is Android only. The request goes through CapacitorHttp
@@ -22,15 +27,14 @@
 import { useSyncExternalStore } from 'react';
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { hasConsent, setConsent, subscribeConsent } from './consent';
 
 const PACKAGE = 'com.limecore.workouttracker';
 export const FDROID_PAGE = `https://f-droid.org/packages/${PACKAGE}/`;
 const API = `https://f-droid.org/api/v1/packages/${PACKAGE}`;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Device-local, deliberately: whether this phone talks to f-droid.org is a
-// property of the phone, not of the account, so it is not synced.
-const KEY_ENABLED = 'limelog-fdroid-check'; // 'off' disables; anything else is on
+// The on/off answer is in consent.ts (`updateCheck`), per owner, not here.
 const KEY_LAST = 'limelog-fdroid-last'; // { at, code, name } of the last answer
 const KEY_DISMISSED = 'limelog-fdroid-dismissed'; // versionCode the user dismissed
 
@@ -74,7 +78,7 @@ function write(key: string, value: string | null): void {
 }
 
 // ── A tiny store, so the note and the Settings switch agree ───────────────
-let state: State = { enabled: read(KEY_ENABLED) !== 'off', available: null };
+let state: State = { enabled: hasConsent('updateCheck'), available: null };
 const listeners = new Set<() => void>();
 function set(next: Partial<State>): void {
   state = { ...state, ...next };
@@ -84,12 +88,18 @@ function subscribe(l: () => void): () => void {
   listeners.add(l);
   return () => listeners.delete(l);
 }
+// The owner changes at sign-in and the answer with it; keep `enabled` current.
+subscribeConsent(() => {
+  const enabled = hasConsent('updateCheck');
+  if (enabled !== state.enabled) set({ enabled, available: enabled ? state.available : null });
+});
+
 export function useFdroidUpdate(): State {
   return useSyncExternalStore(subscribe, () => state, () => state);
 }
 
 export function setUpdateCheckEnabled(on: boolean): void {
-  write(KEY_ENABLED, on ? null : 'off');
+  setConsent({ updateCheck: on });
   // Off also forgets what was known, so turning it back on starts clean
   // rather than resurfacing a stale answer from before.
   if (!on) write(KEY_LAST, null);
@@ -139,7 +149,8 @@ export async function checkFdroidUpdate({
   platform = Capacitor.getPlatform(),
 }: { now?: number; http?: HttpLike; app?: AppLike; platform?: string } = {}): Promise<UpdateAvailable | null> {
   try {
-    if (platform !== 'android' || !state.enabled) return null;
+    // Read now, not at load: the owner may have changed since.
+    if (platform !== 'android' || !hasConsent('updateCheck')) return null;
     const latest = await latestOnFdroid(now, http);
     if (!latest) return null;
     const info = await app.getInfo();
@@ -151,7 +162,7 @@ export async function checkFdroidUpdate({
       latest: { code: latest.code, name: latest.name },
     };
     // The switch may have been turned off while the request was in flight.
-    if (!state.enabled) return null;
+    if (!hasConsent('updateCheck')) return null;
     set({ available });
     return available;
   } catch {
@@ -161,5 +172,5 @@ export async function checkFdroidUpdate({
 
 /** Test-only: forget module state between cases. */
 export function resetFdroidUpdateForTests(): void {
-  state = { enabled: read(KEY_ENABLED) !== 'off', available: null };
+  state = { enabled: hasConsent('updateCheck'), available: null };
 }

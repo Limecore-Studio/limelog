@@ -3,9 +3,11 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import enBase from './locales/en.json';
 import pw from './passwordStrings.json';
+import consent from './consentStrings.json';
 
 // limecore#73 — the auth.pw* strings load on demand (i18n/passwordStrings.ts).
-const en = { ...enBase, auth: { ...enBase.auth, ...pw.en } };
+// v1.21.1 (limecore#87) — and the consent.* strings (i18n/consentStrings.ts).
+const en = { ...enBase, auth: { ...enBase.auth, ...pw.en }, consent: consent.en };
 
 // v1.17 (limecore#12) — every literal key passed to `t()` must exist in
 // en.json. A missing key has no fallback: i18next prints the key itself, in
@@ -70,5 +72,14 @@ describe('i18n keys', () => {
       for (const key of KEYS) if (typeof lookup(key, strings) !== 'string') missing.push(`${file}: ${key}`);
     }
     expect(missing).toEqual([]);
+  });
+
+  // v1.21.1 (limecore#87): the on-demand consent strings exist in all ten
+  // languages, with the same keys as English.
+  it('the consent strings exist in every language', () => {
+    const langs = Object.keys(consent);
+    expect(langs.sort()).toEqual(readdirSync(join(__dirname, 'locales')).map((f) => f.replace('.json', '')).sort());
+    const want = Object.keys(consent.en).sort();
+    for (const l of langs) expect(Object.keys((consent as Record<string, object>)[l]).sort(), l).toEqual(want);
   });
 });

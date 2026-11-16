@@ -13,6 +13,7 @@ function storage() {
   };
 }
 vi.stubGlobal('localStorage', storage());
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 
 const { checkFdroidUpdate, setUpdateCheckEnabled, dismissUpdate, resetFdroidUpdateForTests } = await import('./fdroidUpdate');
 
@@ -42,7 +43,44 @@ const run = (http: ReturnType<typeof fdroid>, over: Record<string, unknown> = {}
 
 beforeEach(() => {
   localStorage.clear();
+  // v1.21.1 (limecore#87): opt-in. These cases are about a check the person
+  // agreed to; the default-off cases are below.
+  localStorage.setItem('limelog.consent.guest', JSON.stringify({ updateCheck: true }));
   resetFdroidUpdateForTests();
+});
+
+describe('opt-in (limecore#87)', () => {
+  it('makes no request until the person said yes', async () => {
+    localStorage.clear();
+    resetFdroidUpdateForTests();
+    const http = fdroid(answer(38, '1.15.1'));
+    expect(await run(http)).toBeNull();
+    expect(http.calls).toEqual([]);
+  });
+
+  it('an existing install with the old switch untouched counts as not asked', async () => {
+    localStorage.clear();
+    localStorage.setItem('limelog-fdroid-check', 'on');
+    resetFdroidUpdateForTests();
+    const http = fdroid(answer(38, '1.15.1'));
+    expect(await run(http)).toBeNull();
+    expect(http.calls).toEqual([]);
+  });
+
+  it('a no makes no request', async () => {
+    localStorage.setItem('limelog.consent.guest', JSON.stringify({ updateCheck: false }));
+    const http = fdroid(answer(38, '1.15.1'));
+    expect(await run(http)).toBeNull();
+    expect(http.calls).toEqual([]);
+  });
+
+  it('the answer belongs to the owner: another account is asked for itself', async () => {
+    localStorage.setItem('limelog.dataOwner', 'user-2');
+    const http = fdroid(answer(38, '1.15.1'));
+    expect(await run(http)).toBeNull();
+    expect(http.calls).toEqual([]);
+    localStorage.removeItem('limelog.dataOwner');
+  });
 });
 
 describe('checkFdroidUpdate', () => {
