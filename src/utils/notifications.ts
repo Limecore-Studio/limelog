@@ -242,6 +242,15 @@ async function cancelPendingSlots(): Promise<void> {
 let scheduling: Promise<void> = Promise.resolve();
 
 /**
+ * v1.21 (limelog#129): the permission dialog is raised at most once per
+ * launch. The mount effect in App.tsx re-runs when the exercise library
+ * changes, and on a fresh install the on-demand seed changes it right after
+ * the first run, so a user who denied was asked a second time at once. Later
+ * calls in the same launch only check the permission.
+ */
+let askedThisLaunch = false;
+
+/**
  * `prompt: false` re-arms only when notifications are already allowed, and
  * never asks — for the resume path, which must not re-raise the permission
  * dialog every time the app comes to the foreground.
@@ -266,7 +275,9 @@ async function scheduleNow(
 
   try {
     await setupNotificationChannel();
-    const { display } = await (prompt
+    const ask = prompt && !askedThisLaunch;
+    if (ask) askedThisLaunch = true;
+    const { display } = await (ask
       ? LocalNotifications.requestPermissions()
       : LocalNotifications.checkPermissions());
     if (display !== 'granted') return;
