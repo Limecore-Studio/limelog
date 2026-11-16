@@ -17,6 +17,9 @@ vi.mock('@capacitor/preferences', () => ({
 }));
 vi.mock('./supabase', () => ({
   isNexusConfigured: true,
+  // v1.21.1 (limecore#102): deleteAccount reads and clears the stored session.
+  readStoredSession: async () => null,
+  clearStoredSession: async () => {},
   supabase: {
     auth: {
       getSession: async () => ({ data: { session: h.session } }),
