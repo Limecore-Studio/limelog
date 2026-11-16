@@ -13,6 +13,9 @@ import { ThemeCard } from '@/components/ThemeCard';
 import { ShieldAlert } from 'lucide-react';
 import { useConfirm } from '@/components/confirmContext';
 import { downloadExport, deleteAccount, wipeAllLocalData } from '@/lib/dataRights';
+// v1.21.1 (limecore#102): auth.deleteNeedsSignIn / auth.deleteGuestErased live
+// in the on-demand strings, not the startup en.json.
+import '@/i18n/passwordStrings';
 import { supabase, isNexusConfigured } from '@/lib/supabase';
 import { Capacitor } from '@capacitor/core';
 import { setUpdateCheckEnabled, useFdroidUpdate } from '@/lib/fdroidUpdate';
@@ -88,11 +91,27 @@ export function ProfilePage() {
     setDataMsg(null);
     setDeleting(true);
     try {
-      await deleteAccount({
+      const { deleted } = await deleteAccount({
         clearLocal: async () => {
           wipeAllLocalData();
         },
       });
+      // v1.21.1 (limecore#102): say what actually happened.
+      if (deleted === 'none') {
+        // An account, but no usable session: nothing was touched.
+        setDataMsg(t('auth.deleteNeedsSignIn'));
+        setDeleting(false);
+        return;
+      }
+      if (deleted === 'local') {
+        // A guest: the device was erased, and there was no account.
+        await confirm({
+          message: t('auth.deleteGuestErased'),
+          confirmLabel: t('common.continue'),
+          cancelLabel: t('common.close'),
+          destructive: false,
+        });
+      }
       window.location.reload();
     } catch (e) {
       setDataMsg(t('settings.deleteAccountFailed', { msg: (e as Error).message }));

@@ -8,11 +8,12 @@
 // and it is still their data. Deletion only means anything when there is a
 // server-side account to delete.
 
+import type { Session } from '@supabase/supabase-js';
 import { storage } from '@/utils/storage';
-import { supabase, isNexusConfigured } from './supabase';
+import { supabase, isNexusConfigured, readStoredSession, clearStoredSession } from './supabase';
 import { listPhotos } from './progressPhotos';
 import { selectAll } from './selectAll';
-import { clearOwner, ownerMirrorSettled } from './accountOwner';
+import { clearOwner, ownerMirrorSettled, readOwner } from './accountOwner';
 import { forgetParked } from './parkedData';
 
 const EXPORT_SCHEMA_VERSION = 1;
@@ -217,15 +218,29 @@ export function wipeAllLocalData(): void {
  * Deliberately the same function StudyDesk and NCC call: one account spans all
  * three apps, so deleting from any of them must erase everything.
  *
- * Local data is cleared regardless of what the server says — including progress
+ * After the account is deleted the local data goes too, including progress
  * photos, which never reached the server and would otherwise be the one thing
  * left behind after a user asked to be erased.
+ *
+ * v1.21.1 (limecore#102) — never pretends. Account or guest is decided from
+ * the device (the recorded data owner, or a session in auth storage), not from
+ * getSession() alone: an expired session that cannot be refreshed (offline, or
+ * the refresh token refused) answers exactly like a guest, and this used to
+ * wipe the phone, keep the server account and every row in all three apps,
+ * and say it was done. Results:
+ *   - 'account': the function deleted it; the device is cleared and the stored
+ *     session removed (on Android it lives in Preferences and outlived the wipe);
+ *   - 'local': a real guest; the device was the whole of it, cleared;
+ *   - 'none': an account exists but there is no usable session. Nothing was
+ *     deleted, here or on the server; the caller says so.
  */
+export type DeleteResult = { deleted: 'local' | 'account' | 'none' };
+
 export async function deleteAccount({
   clearLocal,
 }: {
   clearLocal: () => Promise<void>;
-}): Promise<{ deleted: 'local' | 'account' }> {
+}): Promise<DeleteResult> {
   // v1.18.1 (LimeLog#88) — the local data has no owner after an erase. The
   // prefix wipe removes the record too (`limelog.`); this does not depend on
   // the caller's clearLocal doing so.
@@ -245,10 +260,21 @@ export async function deleteAccount({
     return { deleted: 'local' };
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    // Guest: there is no server-side account. Clearing the device is the whole
-    // of the erasure.
+  let session: Session | null = null;
+  let sessionError = false;
+  try {
+    const r = await supabase.auth.getSession();
+    session = r.data.session;
+    sessionError = !!r.error;
+  } catch {
+    sessionError = true;
+  }
+  if (!session || sessionError) {
+    const hasAccount = sessionError || !!readOwner() || !!(await readStoredSession());
+    // An account with no usable session: refuse, and touch nothing.
+    if (hasAccount) return { deleted: 'none' };
+    // A real guest: there is no server-side account. Clearing the device is
+    // the whole of the erasure.
     await clearAll();
     return { deleted: 'local' };
   }
@@ -258,11 +284,14 @@ export async function deleteAccount({
   });
   if (error) throw new Error(error.message || 'Account deletion failed');
 
+  // Local scope: the user is gone on the server, so there is nothing to ask it,
+  // and a global sign-out that fails there leaves the session in storage.
   try {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut({ scope: 'local' });
   } catch {
-    // The user row is already gone, so the sign-out call may fail. Not fatal.
+    /* removed below either way */
   }
+  await clearStoredSession();
   await clearAll(session.user.id);
   return { deleted: 'account' };
 }
