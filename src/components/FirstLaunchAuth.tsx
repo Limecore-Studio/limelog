@@ -18,7 +18,7 @@ import { Button, Card } from '@/components/ui';
 import { useNexusStore } from '@/store/nexusStore';
 import { supabase } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
-import { inheritFromNexus } from '@/lib/suiteSso';
+import { inheritFromNexus, openNexus } from '@/lib/suiteSso';
 import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
 import { meetsPasswordRule, PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
@@ -62,6 +62,8 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
   const [error, setError] = useState<string | null>(null);
   const [pwFlag, setPwFlag] = useState(false); // limecore#73: a submit failed on the rule
   const [nexusAvailable, setNexusAvailable] = useState(false);
+  // limecore#101: NCC's published session has expired; it needs one launch.
+  const [nexusStale, setNexusStale] = useState(false);
   const [busy, setBusy] = useState(false);
   // AUTH-2 — code-entry step, ported from StudyDesk's AuthGate.
   const [awaitingCode, setAwaitingCode] = useState(false);
@@ -101,8 +103,9 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
     setBusy(true);
     try {
       const result = await inheritFromNexus();
+      setNexusStale(result.reason === 'nexus-stale');
       if (!result.ok) {
-        setError(result.reason ?? t('auth.errNexus'));
+        if (result.reason !== 'nexus-stale') setError(result.reason ?? t('auth.errNexus'));
         setBusy(false);
         return;
       }
@@ -366,7 +369,16 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
                     <span className="fla-nexus-glyph" aria-hidden="true">◈</span>
                     {t('auth.nexus')}
                   </Button>
-                  <p className="fla-nexus-note">{t('auth.nexusNote')}</p>
+                  {nexusStale ? (
+                    <>
+                      <p className="fla-info" role="status">{t('auth.nexusStale')}</p>
+                      <Button type="button" variant="secondary" size="sm" fullWidth onClick={() => void openNexus()}>
+                        {t('auth.nexusOpen')}
+                      </Button>
+                    </>
+                  ) : (
+                    <p className="fla-nexus-note">{t('auth.nexusNote')}</p>
+                  )}
                 </>
               )}
 

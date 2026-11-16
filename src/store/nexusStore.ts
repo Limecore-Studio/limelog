@@ -5,7 +5,9 @@ import { supabase, isNexusConfigured, readStoredSession, clearStoredSession, sto
 const captcha = () => import('@/lib/captcha');
 import { signInWithGoogle as oauthSignInWithGoogle, initOAuthDeepLinkListener } from '@/lib/oauth';
 import { setGuestMode, isGuestMode } from '@/lib/guestMode';
-import { inheritFromNexus } from '@/lib/suiteSso';
+// v1.21.1 (limecore#101): on demand. Startup only reaches it when there is no
+// session to resume; the screens that offer it load on demand too.
+const suiteSso = () => import('@/lib/suiteSso');
 import { scheduleOriginStamp } from '@/lib/originMarker';
 // v1.2 — outbox replaces nexusSync's drainPendingQueue/getPendingCount as the
 // persistence + retry layer. The actual push handler (pushWorkoutToNexus) is
@@ -371,8 +373,15 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
               // seconds the app opens on the sign-in screen and the inherit
               // carries on; if it lands, its SIGNED_IN reaches the listener
               // above and flips the gate.
+              //
+              // v1.21.1 (limecore#111) — only this device's own account. A
+              // different account signed in to NCC would be taken up by the
+              // account-switch wipe, deleting the previous account's unsynced
+              // workouts and local-only photos without a word. The sign-in
+              // screen still offers it, as the user's choice. A stale NCC
+              // session ('nexus-stale') ends here too, on the sign-in screen.
               const result = await Promise.race([
-                inheritFromNexus(),
+                suiteSso().then((m) => m.inheritFromNexus({ onlyUserId: readOwner() })),
                 new Promise<null>((res) => setTimeout(() => res(null), 3000)),
               ]);
               if (!result) console.warn('[nexus] auto-inherit still running after 3 s; not holding the launch for it');

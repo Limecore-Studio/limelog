@@ -117,6 +117,8 @@
          no custom permission needed. -->
     <queries>
         <provider android:authorities="com.limecore.nexus.session" />
+        <!-- v1.21.1 (limecore#101) — SuiteSso.openNexus() launches NCC. -->
+        <package android:name="com.limecore.nexus" />
         <!-- v1.3 BUG-20 — Health Connect app visibility (Android 11+). -->
         <package android:name="com.google.android.apps.healthdata" />
         <intent>
