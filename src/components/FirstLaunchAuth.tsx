@@ -18,7 +18,8 @@ import { Button, Card } from '@/components/ui';
 import { useNexusStore } from '@/store/nexusStore';
 import { supabase } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
-import { inheritFromNexus, openNexus } from '@/lib/suiteSso';
+import { openNexus } from '@/lib/suiteSso';
+import { askNexusSwitch } from '@/components/nexusSwitchAsk';
 import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
 import { meetsPasswordRule, PASSWORD_MIN_LENGTH } from '@/lib/passwordPolicy';
@@ -52,7 +53,7 @@ interface FirstLaunchAuthProps {
 
 export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
   const { t } = useTranslation();
-  const { signIn, signUp, signInWithGoogle, continueAsGuest, syncEnabled, configured, loading: storeLoading } =
+  const { signIn, signUp, signInWithGoogle, continueAsGuest, continueWithNexus, syncEnabled, configured, loading: storeLoading } =
     useNexusStore();
   const confirm = useConfirm();
   const [email, setEmail] = useState('');
@@ -102,10 +103,13 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
     setError(null);
     setBusy(true);
     try {
-      const result = await inheritFromNexus();
+      // v1.21.1 (LimeLog#138) — a different NCC account is asked about first.
+      const result = await continueWithNexus((held) => askNexusSwitch(held, { t, confirm, syncEnabled }));
       setNexusStale(result.reason === 'nexus-stale');
       if (!result.ok) {
-        if (result.reason !== 'nexus-stale') setError(result.reason ?? t('auth.errNexus'));
+        if (result.reason !== 'nexus-stale' && result.reason !== 'cancelled') {
+          setError(result.reason ?? t('auth.errNexus'));
+        }
         setBusy(false);
         return;
       }

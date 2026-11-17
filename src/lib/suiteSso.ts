@@ -46,6 +46,7 @@ export interface InheritResult {
    *  - 'other-account': NCC is signed in to an account other than
    *    `onlyUserId`, so nothing was adopted (limecore#111). */
   reason?: string;
+  /** The account signed in, or for 'other-account' the account NCC has. */
   email?: string;
 }
 
@@ -198,7 +199,8 @@ export async function inheritFromNexus({ onlyUserId }: { onlyUserId?: string | n
     return { ok: false, reason: 'Nexus session missing required tokens.' };
   }
   if (onlyUserId && tokenUserId(bundle.access_token) !== onlyUserId) {
-    return { ok: false, reason: 'other-account' };
+    // v1.21.1 (LimeLog#138) — with NCC's address, so the switch can be named.
+    return { ok: false, reason: 'other-account', email: bundle.email || undefined };
   }
   // expires_at is in seconds (NCC's ssoPublisher passes Supabase's value on).
   // Missing or past: the function could only answer 401, so do not ask it.
