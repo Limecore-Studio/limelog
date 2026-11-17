@@ -100,7 +100,7 @@ describe('inheritFromNexus', () => {
 
   it('refuses a bundle for an account other than the recorded owner (limecore#111)', async () => {
     h.bundle = bundle({ access_token: jwt('someone-else') });
-    expect(await inheritFromNexus({ onlyUserId: 'user-1' })).toEqual({ ok: false, reason: 'other-account' });
+    expect(await inheritFromNexus({ onlyUserId: 'user-1' })).toEqual({ ok: false, reason: 'other-account', email: 'a@b.c' });
     expect(h.invoke).not.toHaveBeenCalled();
     expect(h.setSession).not.toHaveBeenCalled();
   });

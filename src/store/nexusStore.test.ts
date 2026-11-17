@@ -400,3 +400,59 @@ describe('signOut() and the per-person flags', () => {
     expect(h.recordAppOpen).toHaveBeenCalledTimes(1);
   });
 });
+
+// v1.21.1 (LimeLog#138) — "Continue with Nexus" asks before taking up an NCC
+// account other than the one this device's data belongs to.
+describe('continueWithNexus()', () => {
+  type Opts = { onlyUserId?: string | null } | undefined;
+  function nexusHas(account: string, email = 'other@example.com') {
+    return vi.fn(async (opts: Opts) =>
+      opts?.onlyUserId && opts.onlyUserId !== account
+        ? { ok: false, reason: 'other-account', email }
+        : { ok: true, email },
+    );
+  }
+
+  it('asks first when NCC has another account, and does nothing on no', async () => {
+    localStorage.setItem('limelog.dataOwner', 'owner-0');
+    localStorage.setItem('limelog.dataOwnerEmail', 'owner@example.com');
+    const inherit = nexusHas('user-2');
+    h.inherit = inherit;
+    const store = await freshStore();
+    const ask = vi.fn(async () => false);
+    expect(await store.getState().continueWithNexus(ask)).toEqual({ ok: false, reason: 'cancelled' });
+    expect(ask).toHaveBeenCalledWith({ email: 'owner@example.com', unsynced: 0, nexusEmail: 'other@example.com' });
+    expect(inherit).toHaveBeenCalledTimes(1);
+    expect(inherit).toHaveBeenCalledWith({ onlyUserId: 'owner-0' });
+    expect(localStorage.getItem('limelog.dataOwner')).toBe('owner-0');
+  });
+
+  it('takes the other account up on yes', async () => {
+    localStorage.setItem('limelog.dataOwner', 'owner-0');
+    const inherit = nexusHas('user-2');
+    h.inherit = inherit;
+    const store = await freshStore();
+    expect((await store.getState().continueWithNexus(async () => true)).ok).toBe(true);
+    expect(inherit).toHaveBeenCalledTimes(2);
+    expect(inherit.mock.calls[1][0]?.onlyUserId).toBeUndefined();
+  });
+
+  it('does not ask when NCC has the same account', async () => {
+    localStorage.setItem('limelog.dataOwner', 'owner-0');
+    h.inherit = nexusHas('owner-0');
+    const store = await freshStore();
+    const ask = vi.fn(async () => true);
+    expect((await store.getState().continueWithNexus(ask)).ok).toBe(true);
+    expect(ask).not.toHaveBeenCalled();
+  });
+
+  it('does not ask when no account owns the data', async () => {
+    const inherit = nexusHas('user-2');
+    h.inherit = inherit;
+    const store = await freshStore();
+    const ask = vi.fn(async () => true);
+    expect((await store.getState().continueWithNexus(ask)).ok).toBe(true);
+    expect(ask).not.toHaveBeenCalled();
+    expect(inherit).toHaveBeenCalledWith({ onlyUserId: null });
+  });
+});

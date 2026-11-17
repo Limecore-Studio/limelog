@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useNexusStore } from '@/store/nexusStore';
-import { inheritFromNexus, openNexus } from '@/lib/suiteSso';
+import { openNexus } from '@/lib/suiteSso';
+import { askNexusSwitch } from '@/components/nexusSwitchAsk';
 import { Button, Card, Badge } from '@/components/ui';
 import { Cloud, CloudOff } from 'lucide-react';
 import { ChangeEmail } from '@/components/ChangeEmail';
@@ -42,6 +43,7 @@ export function NexusSyncCard() {
     signOutPending,
     setSyncEnabled,
     retryPending,
+    continueWithNexus,
   } = useNexusStore();
 
   // v1.18.1 (LimeLog#94) — signed in means a session (the account id), as
@@ -101,9 +103,10 @@ export function NexusSyncCard() {
   async function handleNexus() {
     setLocalError(null);
     try {
-      const result = await inheritFromNexus();
+      // v1.21.1 (LimeLog#138) — a different NCC account is asked about first.
+      const result = await continueWithNexus((held) => askNexusSwitch(held, { t, confirm, syncEnabled }));
       setNexusStale(result.reason === 'nexus-stale');
-      if (!result.ok && result.reason !== 'nexus-stale') {
+      if (!result.ok && result.reason !== 'nexus-stale' && result.reason !== 'cancelled') {
         setLocalError(result.reason || t('auth.errNexus'));
       }
       // On success, nexusStore.init's auth listener takes over.

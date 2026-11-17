@@ -8,6 +8,7 @@ import { setGuestMode, isGuestMode } from '@/lib/guestMode';
 // v1.21.1 (limecore#101): on demand. Startup only reaches it when there is no
 // session to resume; the screens that offer it load on demand too.
 const suiteSso = () => import('@/lib/suiteSso');
+import type { InheritResult } from '@/lib/suiteSso';
 import { scheduleOriginStamp } from '@/lib/originMarker';
 // v1.2 — outbox replaces nexusSync's drainPendingQueue/getPendingCount as the
 // persistence + retry layer. The actual push handler (pushWorkoutToNexus) is
@@ -112,6 +113,14 @@ interface NexusStore {
    *  nothing changes. Resolves with whether guest mode was entered; rejects,
    *  with a message to show, when the clear failed (LimeLog#94). */
   continueAsGuest: (ask: (held: HeldAccountData) => Promise<boolean>) => Promise<boolean>;
+  /** v1.21.1 (LimeLog#138) — "Continue with Nexus". When the local data
+   *  belongs to an account (its session ended without a sign-out) and NCC is
+   *  signed in to a different one, `ask` is shown first, with NCC's address:
+   *  taking that account up clears this one's data as a sign-out does. On no
+   *  nothing changes and it resolves `{ ok: false, reason: 'cancelled' }`. */
+  continueWithNexus: (
+    ask: (held: HeldAccountData & { nexusEmail: string | null }) => Promise<boolean>,
+  ) => Promise<InheritResult>;
   setSyncEnabled: (v: boolean) => void;
   retryPending: () => Promise<{ sent: number; remaining: number }>;
   refreshPendingCount: () => void;
@@ -668,6 +677,26 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     }
     await setGuestMode(true);
     return true;
+  },
+
+  continueWithNexus: async (ask) => {
+    // v1.21.1 (LimeLog#138) — the button used to take up whatever account
+    // NCC had. For a different one, that clears this account's local data
+    // (unsent workouts, local-only photos) through takeUp; the startup path
+    // already refuses it (limecore#111), so this is the one place left where
+    // it can happen, and it now asks first, as continueAsGuest does.
+    const { inheritFromNexus } = await suiteSso();
+    await ownerRecordKnown();
+    const owner = get().userId ? null : readOwner();
+    const first = await inheritFromNexus({ onlyUserId: owner });
+    if (first.reason !== 'other-account') return first;
+    const go = await ask({
+      email: readOwnerEmail(),
+      unsynced: outboxStatus().pending,
+      nexusEmail: first.email ?? null,
+    });
+    if (!go) return { ok: false, reason: 'cancelled' };
+    return inheritFromNexus();
   },
 
   setSyncEnabled: (v) => {
