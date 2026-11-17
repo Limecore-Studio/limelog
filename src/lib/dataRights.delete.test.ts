@@ -24,7 +24,7 @@ vi.mock('./supabase', () => ({
   },
 }));
 
-import { deleteAccount } from './dataRights';
+import { deleteAccount, SESSION_TIMEOUT_MS } from './dataRights';
 
 function storage() {
   const m = new Map<string, string>();
@@ -96,6 +96,42 @@ describe('deleteAccount', () => {
     expect(h.clearStored).toHaveBeenCalled();
     expect(clearLocal).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem('limelog.dataOwner')).toBeNull();
+  });
+
+  // limecore#124 — offline with an expired session, getSession() never returns.
+  it('a getSession that never resolves is refused within the bound, with no call and no wipe', async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem('limelog.dataOwner', 'user-1');
+      h.getSession.mockReturnValue(new Promise(() => {}));
+      let result: unknown = 'pending';
+      const run = deleteAccount({ clearLocal }).then((r) => (result = r));
+      await vi.advanceTimersByTimeAsync(SESSION_TIMEOUT_MS - 1);
+      expect(result).toBe('pending');
+      await vi.advanceTimersByTimeAsync(1);
+      await run;
+      expect(result).toEqual({ deleted: 'none' });
+      expect(h.invoke).not.toHaveBeenCalled();
+      expect(clearLocal).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('offline with an account: refused at once, without asking for the session', async () => {
+    vi.stubGlobal('navigator', { onLine: false });
+    localStorage.setItem('limelog.dataOwner', 'user-1');
+    expect(await deleteAccount({ clearLocal })).toEqual({ deleted: 'none' });
+    expect(h.getSession).not.toHaveBeenCalled();
+    expect(h.invoke).not.toHaveBeenCalled();
+    expect(clearLocal).not.toHaveBeenCalled();
+  });
+
+  it('offline as a guest: the device is still erased', async () => {
+    vi.stubGlobal('navigator', { onLine: false });
+    expect(await deleteAccount({ clearLocal })).toEqual({ deleted: 'local' });
+    expect(h.getSession).not.toHaveBeenCalled();
+    expect(clearLocal).toHaveBeenCalledTimes(1);
   });
 
   it('a failed function call throws and wipes nothing', async () => {

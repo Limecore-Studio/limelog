@@ -261,6 +261,9 @@ export function wipeAllLocalData(): void {
  */
 export type DeleteResult = { deleted: 'local' | 'account' | 'none' };
 
+/** limecore#124: how long the delete waits for the session before refusing. */
+export const SESSION_TIMEOUT_MS = 8000;
+
 export async function deleteAccount({
   clearLocal,
 }: {
@@ -285,14 +288,36 @@ export async function deleteAccount({
     return { deleted: 'local' };
   }
 
+  // v1.21.1 (limecore#124) — the session check is bounded. Offline with an
+  // expired access token, getSession() keeps retrying the refresh and never
+  // returns, so the button sat on "Deleting…" with the delete still pending in
+  // memory: had the network come back minutes later, the account would have
+  // gone with nothing on screen saying so. Now: offline, ask nothing (a guest
+  // can still be erased, that needs no network); online, wait at most
+  // SESSION_TIMEOUT_MS and treat a timeout as a failed session, so the refusal
+  // below shows and nothing is wiped. A getSession() that answers later finds
+  // this call already over.
   let session: Session | null = null;
   let sessionError = false;
-  try {
-    const r = await supabase.auth.getSession();
-    session = r.data.session;
-    sessionError = !!r.error;
-  } catch {
-    sessionError = true;
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  if (offline) {
+    sessionError = !!readOwner() || !!(await readStoredSession());
+  } else {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      const r = await Promise.race([
+        supabase.auth.getSession(),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('timed out')), SESSION_TIMEOUT_MS);
+        }),
+      ]);
+      session = r.data.session;
+      sessionError = !!r.error;
+    } catch {
+      sessionError = true;
+    } finally {
+      clearTimeout(timer);
+    }
   }
   if (!session || sessionError) {
     const hasAccount = sessionError || !!readOwner() || !!(await readStoredSession());
