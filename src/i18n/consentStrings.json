@@ -1,0 +1,122 @@
+{
+  "en": {
+    "eyebrow": "Your choice",
+    "title": "Two optional extras",
+    "updateCheck": "Check F-Droid for updates",
+    "updateCheckNote": "Once a day, asks f-droid.org for the newest version. Nothing about you is sent.",
+    "appOpens": "Record the days you open LimeLog",
+    "appOpensNote": "One row per day in your account (date, version, platform), kept 13 months. Helps us see if the app keeps people training.",
+    "yes": "Yes",
+    "no": "No",
+    "done": "Done",
+    "later": "You can change these in Profile → Settings."
+  },
+  "fi": {
+    "eyebrow": "Sinun valintasi",
+    "title": "Kaksi valinnaista lisää",
+    "updateCheck": "Tarkista päivitykset F-Droidista",
+    "updateCheckNote": "Kerran päivässä kysyy f-droid.orgilta uusinta versiota. Sinusta ei lähetetä mitään.",
+    "appOpens": "Tallenna päivät, joina avaat LimeLogin",
+    "appOpensNote": "Yksi rivi päivässä tilillesi (päivä, versio, alusta), säilytetään 13 kuukautta. Auttaa näkemään, pitääkö sovellus ihmiset treenaamassa.",
+    "yes": "Kyllä",
+    "no": "Ei",
+    "done": "Valmis",
+    "later": "Voit muuttaa näitä kohdassa Profiili → Asetukset."
+  },
+  "fr": {
+    "eyebrow": "Votre choix",
+    "title": "Deux options facultatives",
+    "updateCheck": "Vérifier les mises à jour sur F-Droid",
+    "updateCheckNote": "Une fois par jour, demande à f-droid.org la dernière version. Rien sur vous n’est envoyé.",
+    "appOpens": "Enregistrer les jours où vous ouvrez LimeLog",
+    "appOpensNote": "Une ligne par jour dans votre compte (date, version, plateforme), conservée 13 mois. Nous aide à voir si l’app aide à continuer l’entraînement.",
+    "yes": "Oui",
+    "no": "Non",
+    "done": "Terminé",
+    "later": "Vous pouvez modifier cela dans Profil → Réglages."
+  },
+  "de": {
+    "eyebrow": "Deine Wahl",
+    "title": "Zwei optionale Extras",
+    "updateCheck": "Auf F-Droid nach Updates suchen",
+    "updateCheckNote": "Fragt einmal täglich f-droid.org nach der neuesten Version. Es wird nichts über dich gesendet.",
+    "appOpens": "Tage speichern, an denen du LimeLog öffnest",
+    "appOpensNote": "Eine Zeile pro Tag in deinem Konto (Datum, Version, Plattform), 13 Monate gespeichert. Hilft uns zu sehen, ob die App beim Training hält.",
+    "yes": "Ja",
+    "no": "Nein",
+    "done": "Fertig",
+    "later": "Du kannst das unter Profil → Einstellungen ändern."
+  },
+  "es": {
+    "eyebrow": "Tú eliges",
+    "title": "Dos extras opcionales",
+    "updateCheck": "Buscar actualizaciones en F-Droid",
+    "updateCheckNote": "Una vez al día, pregunta a f-droid.org por la versión más reciente. No se envía nada sobre ti.",
+    "appOpens": "Registrar los días que abres LimeLog",
+    "appOpensNote": "Una fila por día en tu cuenta (fecha, versión, plataforma), guardada 13 meses. Nos ayuda a ver si la app mantiene a la gente entrenando.",
+    "yes": "Sí",
+    "no": "No",
+    "done": "Listo",
+    "later": "Puedes cambiarlo en Perfil → Ajustes."
+  },
+  "zh": {
+    "eyebrow": "由你决定",
+    "title": "两个可选功能",
+    "updateCheck": "在 F-Droid 检查更新",
+    "updateCheckNote": "每天一次向 f-droid.org 查询最新版本。不会发送任何关于你的信息。",
+    "appOpens": "记录你打开 LimeLog 的日期",
+    "appOpensNote": "每天在你的账户中记录一行（日期、版本、平台），保留 13 个月。帮助我们了解应用是否让人坚持训练。",
+    "yes": "是",
+    "no": "否",
+    "done": "完成",
+    "later": "你可以在 个人资料 → 设置 中更改。"
+  },
+  "hi": {
+    "eyebrow": "आपकी पसंद",
+    "title": "दो वैकल्पिक सुविधाएँ",
+    "updateCheck": "F-Droid पर अपडेट जाँचें",
+    "updateCheckNote": "दिन में एक बार f-droid.org से नवीनतम संस्करण पूछता है। आपके बारे में कुछ नहीं भेजा जाता।",
+    "appOpens": "वे दिन दर्ज करें जब आप LimeLog खोलते हैं",
+    "appOpensNote": "आपके खाते में प्रति दिन एक पंक्ति (तारीख, संस्करण, प्लेटफ़ॉर्म), 13 महीने रखी जाती है। इससे हमें पता चलता है कि ऐप लोगों को ट्रेनिंग में बनाए रखता है या नहीं।",
+    "yes": "हाँ",
+    "no": "नहीं",
+    "done": "हो गया",
+    "later": "आप इन्हें प्रोफ़ाइल → सेटिंग्स में बदल सकते हैं।"
+  },
+  "pt": {
+    "eyebrow": "Você escolhe",
+    "title": "Dois extras opcionais",
+    "updateCheck": "Verificar atualizações no F-Droid",
+    "updateCheckNote": "Uma vez por dia, pergunta ao f-droid.org pela versão mais recente. Nada sobre você é enviado.",
+    "appOpens": "Registrar os dias em que você abre o LimeLog",
+    "appOpensNote": "Uma linha por dia na sua conta (data, versão, plataforma), mantida por 13 meses. Ajuda a ver se o app mantém as pessoas treinando.",
+    "yes": "Sim",
+    "no": "Não",
+    "done": "Concluído",
+    "later": "Você pode mudar isso em Perfil → Configurações."
+  },
+  "id": {
+    "eyebrow": "Pilihan Anda",
+    "title": "Dua tambahan opsional",
+    "updateCheck": "Periksa pembaruan di F-Droid",
+    "updateCheckNote": "Sekali sehari, menanyakan versi terbaru ke f-droid.org. Tidak ada data tentang Anda yang dikirim.",
+    "appOpens": "Catat hari Anda membuka LimeLog",
+    "appOpensNote": "Satu baris per hari di akun Anda (tanggal, versi, platform), disimpan 13 bulan. Membantu kami melihat apakah aplikasi membuat orang tetap berlatih.",
+    "yes": "Ya",
+    "no": "Tidak",
+    "done": "Selesai",
+    "later": "Anda dapat mengubahnya di Profil → Pengaturan."
+  },
+  "ar": {
+    "eyebrow": "اختيارك",
+    "title": "ميزتان اختياريتان",
+    "updateCheck": "التحقق من التحديثات على F-Droid",
+    "updateCheckNote": "مرة يوميًا، يسأل f-droid.org عن أحدث إصدار. لا يُرسل أي شيء عنك.",
+    "appOpens": "تسجيل الأيام التي تفتح فيها LimeLog",
+    "appOpensNote": "صف واحد يوميًا في حسابك (التاريخ، الإصدار، المنصة)، يُحفظ 13 شهرًا. يساعدنا على معرفة ما إذا كان التطبيق يُبقي الناس على التمرين.",
+    "yes": "نعم",
+    "no": "لا",
+    "done": "تم",
+    "later": "يمكنك تغيير ذلك في الملف الشخصي ← الإعدادات."
+  }
+}

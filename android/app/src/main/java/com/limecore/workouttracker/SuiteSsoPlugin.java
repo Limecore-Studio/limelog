@@ -33,6 +33,7 @@ package com.limecore.workouttracker;
 
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ProviderInfo;
@@ -73,6 +74,35 @@ public class SuiteSsoPlugin extends Plugin {
         if (info == null || !NEXUS_PACKAGE.equals(info.packageName)) return false;
         if ((ctx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) return true;
         return pm.checkSignatures(ctx.getPackageName(), info.packageName) == PackageManager.SIGNATURE_MATCH;
+    }
+
+    /**
+     * v1.21.1 (limecore#101) — open NCC, so it publishes a fresh session.
+     *
+     * NCC republishes its session only while it runs, and the JS side no
+     * longer sends a published session that has expired. "Open Nexus once,
+     * then come back" is the way back to a one-tap sign-in. Only the genuine
+     * NCC is opened (same check as the session read). Resolves
+     * { opened: boolean }; never rejects.
+     */
+    @PluginMethod
+    public void openNexus(PluginCall call) {
+        JSObject result = new JSObject();
+        boolean opened = false;
+        try {
+            if (isGenuineNexus()) {
+                Intent launch = getContext().getPackageManager().getLaunchIntentForPackage(NEXUS_PACKAGE);
+                if (launch != null) {
+                    launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getContext().startActivity(launch);
+                    opened = true;
+                }
+            }
+        } catch (Exception ignored) {
+            opened = false;
+        }
+        result.put("opened", opened);
+        call.resolve(result);
     }
 
     /**

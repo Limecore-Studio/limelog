@@ -47,6 +47,8 @@ const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m)
 // moment it has to appear.
 const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
+// v1.21.1 (limecore#87): the opt-in question for the app-open record and the update check.
+const ConsentPrompt = lazy(() => import('@/components/ConsentPrompt').then((m) => ({ default: m.ConsentPrompt })));
 
 // v1.20 — the workout pull loads on demand: it runs after sign-in, never on the
 // way to the first screen, and the startup bundle needed the room (LimeLog#110).
@@ -401,6 +403,9 @@ export default function App() {
           Non-blocking by design; see the component. */}
       <OptionalChunk>
         <ReferralPrompt />
+      </OptionalChunk>
+      <OptionalChunk>
+        <ConsentPrompt />
       </OptionalChunk>
     </BrowserRouter>
   );

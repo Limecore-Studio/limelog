@@ -5,7 +5,10 @@ import { supabase, isNexusConfigured, readStoredSession, clearStoredSession, sto
 const captcha = () => import('@/lib/captcha');
 import { signInWithGoogle as oauthSignInWithGoogle, initOAuthDeepLinkListener } from '@/lib/oauth';
 import { setGuestMode, isGuestMode } from '@/lib/guestMode';
-import { inheritFromNexus } from '@/lib/suiteSso';
+// v1.21.1 (limecore#101): on demand. Startup only reaches it when there is no
+// session to resume; the screens that offer it load on demand too.
+const suiteSso = () => import('@/lib/suiteSso');
+import type { InheritResult } from '@/lib/suiteSso';
 import { scheduleOriginStamp } from '@/lib/originMarker';
 // v1.2 — outbox replaces nexusSync's drainPendingQueue/getPendingCount as the
 // persistence + retry layer. The actual push handler (pushWorkoutToNexus) is
@@ -17,7 +20,8 @@ import {
   noteError as outboxNoteError,
   type OutboxStatus,
 } from '@/lib/outbox';
-import { watchAppOpens, recordAppOpen } from '@/lib/appOpens';
+// v1.21.1 (limecore#87): on demand; it records nothing without consent.
+const appOpens = () => import('@/lib/appOpens');
 import { useThemeStore } from '@/store/themeStore';
 import pkgJson from '../../package.json';
 import i18n from '@/i18n';
@@ -109,6 +113,14 @@ interface NexusStore {
    *  nothing changes. Resolves with whether guest mode was entered; rejects,
    *  with a message to show, when the clear failed (LimeLog#94). */
   continueAsGuest: (ask: (held: HeldAccountData) => Promise<boolean>) => Promise<boolean>;
+  /** v1.21.1 (LimeLog#138) — "Continue with Nexus". When the local data
+   *  belongs to an account (its session ended without a sign-out) and NCC is
+   *  signed in to a different one, `ask` is shown first, with NCC's address:
+   *  taking that account up clears this one's data as a sign-out does. On no
+   *  nothing changes and it resolves `{ ok: false, reason: 'cancelled' }`. */
+  continueWithNexus: (
+    ask: (held: HeldAccountData & { nexusEmail: string | null }) => Promise<boolean>,
+  ) => Promise<InheritResult>;
   setSyncEnabled: (v: boolean) => void;
   retryPending: () => Promise<{ sent: number; remaining: number }>;
   refreshPendingCount: () => void;
@@ -263,7 +275,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           // Deferred: recordAppOpen asks auth-js for the session, and auth-js
           // holds its lock while this listener runs (see referralSource.ts).
           // A repeat is a no-op: the day guard stops it.
-          setTimeout(() => void recordAppOpen(pkgJson.version), 0);
+          setTimeout(() => void appOpens().then((m) => m.recordAppOpen(pkgJson.version)), 0);
         }
         // Signing out ends the entitlement with it. `syncEntitlement(null)`
         // clears the cache and hands the store `false`, which drops a paid
@@ -371,8 +383,15 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
               // seconds the app opens on the sign-in screen and the inherit
               // carries on; if it lands, its SIGNED_IN reaches the listener
               // above and flips the gate.
+              //
+              // v1.21.1 (limecore#111) — only this device's own account. A
+              // different account signed in to NCC would be taken up by the
+              // account-switch wipe, deleting the previous account's unsynced
+              // workouts and local-only photos without a word. The sign-in
+              // screen still offers it, as the user's choice. A stale NCC
+              // session ('nexus-stale') ends here too, on the sign-in screen.
               const result = await Promise.race([
-                inheritFromNexus(),
+                suiteSso().then((m) => m.inheritFromNexus({ onlyUserId: readOwner() })),
                 new Promise<null>((res) => setTimeout(() => res(null), 3000)),
               ]);
               if (!result) console.warn('[nexus] auto-inherit still running after 3 s; not holding the launch for it');
@@ -420,7 +439,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
           // find no user and be skipped. The visibilitychange listener installed
           // here covers the commoner case — the app resumed from the background
           // days later without the process having died.
-          watchAppOpens(pkgJson.version);
+          void appOpens().then((m) => m.watchAppOpens(pkgJson.version));
 
           // v1.12 Item 5 — supporter entitlement, sited here for the same reason
           // as the line above: on a cold start there is usually no session until
@@ -658,6 +677,26 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     }
     await setGuestMode(true);
     return true;
+  },
+
+  continueWithNexus: async (ask) => {
+    // v1.21.1 (LimeLog#138) — the button used to take up whatever account
+    // NCC had. For a different one, that clears this account's local data
+    // (unsent workouts, local-only photos) through takeUp; the startup path
+    // already refuses it (limecore#111), so this is the one place left where
+    // it can happen, and it now asks first, as continueAsGuest does.
+    const { inheritFromNexus } = await suiteSso();
+    await ownerRecordKnown();
+    const owner = get().userId ? null : readOwner();
+    const first = await inheritFromNexus({ onlyUserId: owner });
+    if (first.reason !== 'other-account') return first;
+    const go = await ask({
+      email: readOwnerEmail(),
+      unsynced: outboxStatus().pending,
+      nexusEmail: first.email ?? null,
+    });
+    if (!go) return { ok: false, reason: 'cancelled' };
+    return inheritFromNexus();
   },
 
   setSyncEnabled: (v) => {

@@ -1,0 +1,3 @@
+Tu elección, tus datos.
+
+El registro de aperturas y la comprobación de actualizaciones de F-Droid están apagados hasta que digas que sí; la app pregunta una vez y hay un interruptor en Ajustes. La exportación guarda un archivo real en Android. Borrar la cuenta ya no finge: sin conexión te pide conectarte. Continuar con Nexus tiene su propia sesión y pregunta antes de cambiar a otra cuenta.

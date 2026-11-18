@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useNexusStore } from '@/store/nexusStore';
-import { inheritFromNexus } from '@/lib/suiteSso';
+import { openNexus } from '@/lib/suiteSso';
+import { askNexusSwitch } from '@/components/nexusSwitchAsk';
 import { Button, Card, Badge } from '@/components/ui';
 import { Cloud, CloudOff } from 'lucide-react';
 import { ChangeEmail } from '@/components/ChangeEmail';
@@ -42,6 +43,7 @@ export function NexusSyncCard() {
     signOutPending,
     setSyncEnabled,
     retryPending,
+    continueWithNexus,
   } = useNexusStore();
 
   // v1.18.1 (LimeLog#94) — signed in means a session (the account id), as
@@ -54,6 +56,8 @@ export function NexusSyncCard() {
   const [pwFlag, setPwFlag] = useState(false); // limecore#73: a submit failed on the rule
   const [retryStatus, setRetryStatus] = useState<string | null>(null);
   const [nexusAvailable, setNexusAvailable] = useState(false);
+  // limecore#101: NCC's published session has expired; it needs one launch.
+  const [nexusStale, setNexusStale] = useState(false);
   const confirm = useConfirm();
 
   // v1.18.1 (LimeLog#66): sign-out wipes this device's workouts, body
@@ -99,8 +103,10 @@ export function NexusSyncCard() {
   async function handleNexus() {
     setLocalError(null);
     try {
-      const result = await inheritFromNexus();
-      if (!result.ok) {
+      // v1.21.1 (LimeLog#138) — a different NCC account is asked about first.
+      const result = await continueWithNexus((held) => askNexusSwitch(held, { t, confirm, syncEnabled }));
+      setNexusStale(result.reason === 'nexus-stale');
+      if (!result.ok && result.reason !== 'nexus-stale' && result.reason !== 'cancelled') {
         setLocalError(result.reason || t('auth.errNexus'));
       }
       // On success, nexusStore.init's auth listener takes over.
@@ -270,9 +276,18 @@ export function NexusSyncCard() {
                 <span className="nexus-card__nexus-glyph" aria-hidden="true">◈</span>
                 {t('auth.nexus')}
               </Button>
-              <p className="nexus-card__nexus-note">
-                {t('auth.nexusNote')}
-              </p>
+              {nexusStale ? (
+                <>
+                  <p className="nexus-card__nexus-note" role="status">{t('auth.nexusStale')}</p>
+                  <Button type="button" variant="secondary" size="sm" fullWidth onClick={() => void openNexus()}>
+                    {t('auth.nexusOpen')}
+                  </Button>
+                </>
+              ) : (
+                <p className="nexus-card__nexus-note">
+                  {t('auth.nexusNote')}
+                </p>
+              )}
             </>
           )}
 
