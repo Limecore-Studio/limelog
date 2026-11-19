@@ -704,6 +704,7 @@ function ExerciseSection({
               <WeightInput
                 weightKg={s.weightKg}
                 unit={unit}
+                ariaLabel={unit}
                 placeholder={targetWeight !== undefined ? String(toDisplayWeight(targetWeight, unit)) : '—'}
                 onChange={(weightKg) => onUpdateSet(s.id, { weightKg })}
               />
@@ -711,6 +712,7 @@ function ExerciseSection({
                 type="number" inputMode="numeric" min="0" step="1"
                 id={`reps-${s.id}`}
                 aria-invalid={repsNeeded === s.id || undefined}
+                aria-label={t('log.colReps2')}
                 value={s.reps ?? ''} placeholder={targetReps}
                 onChange={(e) => {
                   if (repsNeeded === s.id) setRepsNeeded(null);
@@ -719,6 +721,7 @@ function ExerciseSection({
               />
               <input
                 type="number" inputMode="decimal" min="6" max="10" step="0.5"
+                aria-label={t('log.colRpe')}
                 value={s.rpe ?? ''} placeholder={targetRpe !== undefined ? String(targetRpe) : '—'}
                 onChange={(e) => onUpdateSet(s.id, { rpe: e.target.value === '' ? null : Number(e.target.value) })}
               />
