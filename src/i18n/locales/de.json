@@ -666,5 +666,16 @@
     "body": "Wenn etwas schiefgeht, kann LimeLog uns die technischen Details senden: App-Version, Fehler und den Bildschirm, auf dem er auftrat. Nie das, was du eingibst. Du kannst das in den Einstellungen ändern.",
     "yes": "Ja, senden",
     "notNow": "Nicht jetzt"
+  },
+  "guestData": {
+    "title": "Ohne Konto erfasst",
+    "body": "Auf diesem Gerät gibt es Trainings oder Messungen, die als Gast erfasst wurden. Zu {{email}} hinzufügen? Sie werden dann mit diesem Konto synchronisiert.",
+    "thisAccount": "diesem Konto",
+    "counts": "Trainings: {{workouts}} · Körpermessungen: {{measurements}} · Fortschrittsfotos: {{photos}}",
+    "keep": "Zu meinem Konto hinzufügen",
+    "notMine": "Nicht hinzufügen",
+    "removeTitle": "Gastdaten löschen?",
+    "removeBody": "Die als Gast erfassten Trainings, Messungen und Fotos werden von diesem Gerät gelöscht. Das kann nicht rückgängig gemacht werden.",
+    "removeFailed": "Ein Teil der Gastdaten konnte nicht gelöscht werden. Deinem Konto wurde nichts hinzugefügt. Versuche es erneut."
   }
 }

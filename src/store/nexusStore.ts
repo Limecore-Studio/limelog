@@ -28,7 +28,7 @@ import i18n from '@/i18n';
 // v1.18.1 (LimeLog#88) — the account-scoped local data is cleared in one
 // place (accountWipe.ts), by sign-out and by a different account's session
 // arriving (accountOwner.ts).
-import { wipeAccountLocalData, wipeUnownedLocalData, restoreAccountData } from '@/lib/accountWipe';
+import { wipeAccountLocalData, wipeUnownedLocalData, restoreAccountData, heldGuestData } from '@/lib/accountWipe';
 import {
   adoptLocalData,
   clearOwner,
@@ -38,18 +38,11 @@ import {
   ownerRecordPending,
   readOwner,
   readOwnerEmail,
+  answerGuestData as answerGuestDataFor,
+  type GuestHeld,
 } from '@/lib/accountOwner';
 
-const SYNC_ENABLED_KEY = 'wt_nexus_sync_enabled';
-
-function readSyncEnabled(): boolean {
-  const raw = localStorage.getItem(SYNC_ENABLED_KEY);
-  return raw === null ? true : raw === 'true';
-}
-
-function writeSyncEnabled(v: boolean): void {
-  localStorage.setItem(SYNC_ENABLED_KEY, String(v));
-}
+import { readSyncEnabled, writeSyncEnabled } from '@/lib/syncSetting';
 
 /** v1.18.1 (LimeLog#91) — what "Continue as guest" asks about: the local
  *  data of an account whose session ended without a sign-out. */
@@ -99,6 +92,13 @@ interface NexusStore {
    *  oldestEnqueuedAt, stuck count, lastError, lastSuccessAt — surfaced in
    *  the NexusSyncCard for diagnostic visibility. */
   outboxStatus: OutboxStatus;
+  /** v1.22 (limecore#95) — an account signed in over data logged as a guest,
+   *  and the person has not said yet whether it keeps it. Nothing is sent or
+   *  pulled for the account meanwhile. GuestDataPrompt asks. */
+  guestDataAsk: { userId: string; email: string | null; held: GuestHeld } | null;
+  /** Keep (true) adds the guest data to the account; false deletes it from
+   *  the device. Returns false when the delete did not fully happen. */
+  answerGuestData: (keep: boolean) => boolean;
 
   init: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
@@ -157,6 +157,21 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
   pendingCount: outboxStatus().pending,
   outboxStatus: outboxStatus(),
   lastPushAt: null,
+  guestDataAsk: null,
+
+  answerGuestData: (keep) => {
+    const ask = get().guestDataAsk;
+    if (!ask) return true;
+    if (!answerGuestDataFor(ask.userId, keep)) return false;
+    set({ guestDataAsk: null });
+    const s = get();
+    if (s.userId === ask.userId && takeUp(s.userId, s.userEmail) && s.syncEnabled) {
+      void outboxDrain().then((result) => {
+        useNexusStore.setState({ pendingCount: result.remaining, outboxStatus: outboxStatus() });
+      });
+    }
+    return true;
+  },
 
   init: async () => {
     if (!isNexusConfigured) return;
@@ -538,7 +553,10 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
     // into the emptied store, and none may start until this returns.
     // `finally`, so a sign-out that throws part-way cannot block the pull for
     // the rest of the launch.
-    set({ signingOut: true });
+    // v1.22 (limecore#95) — a guest question still open is moot: the data
+    // goes with the sign-out, and none of it is set aside for the account.
+    const guestPending = get().guestDataAsk !== null;
+    set({ signingOut: true, guestDataAsk: null });
     try {
       set({ loading: true, lastError: null });
       // The account's local data, outbox first, BEFORE the auth round-trip
@@ -552,7 +570,7 @@ export const useNexusStore = create<NexusStore>((set, get) => ({
       // (the holding screen's sign-out after a read that does not answer)
       // the owner is not known: nothing is set aside for anyone, and the
       // records and profile go with the rest (wipeUnownedLocalData).
-      const wiped = ownerRecordPending()
+      const wiped = ownerRecordPending() || guestPending
         ? wipeUnownedLocalData()
         : wipeAccountLocalData(readOwner() ?? get().userId);
       // v1.18.1 (LimeLog#88) — the data has no owner now. A guest carrying on
@@ -756,6 +774,18 @@ configureAccountOwner({
   // v1.18.1 (LimeLog#90) — the account taking the device up gets back the
   // records and profile set aside for it when it last left.
   restore: (userId) => restoreAccountData(userId),
+  // v1.22 (limecore#95) — the guest question.
+  guestData: () => heldGuestData(outboxStatus().pending),
+  askGuest: (userId, email, held) => {
+    if (useNexusStore.getState().guestDataAsk?.userId === userId) return;
+    useNexusStore.setState({ guestDataAsk: { userId, email, held } });
+  },
+  discardGuest: () => {
+    const ok = wipeUnownedLocalData();
+    const status = outboxStatus();
+    useNexusStore.setState({ pendingCount: status.pending, outboxStatus: status });
+    return ok;
+  },
   // v1.18.1 (LimeLog#92) — the mirrored record answered after the launch
   // stopped waiting for it; the take-ups refused meanwhile (stored session,
   // auth listener) happen now, then the queue that waited for them.

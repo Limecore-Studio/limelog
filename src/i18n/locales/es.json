@@ -682,5 +682,16 @@
     "body": "Si algo falla, LimeLog puede enviarnos los detalles técnicos: la versión de la app, el error y la pantalla en la que ocurrió. Nunca lo que escribes. Puedes cambiarlo en Ajustes.",
     "yes": "Sí, enviar",
     "notNow": "Ahora no"
+  },
+  "guestData": {
+    "title": "Registrado sin cuenta",
+    "body": "Este dispositivo tiene entrenamientos o medidas registrados como invitado. ¿Añadirlos a {{email}}? Después se sincronizarán con esa cuenta.",
+    "thisAccount": "esta cuenta",
+    "counts": "Entrenamientos: {{workouts}} · Medidas corporales: {{measurements}} · Fotos de progreso: {{photos}}",
+    "keep": "Añadir a mi cuenta",
+    "notMine": "No añadir",
+    "removeTitle": "¿Eliminar los datos de invitado?",
+    "removeBody": "Los entrenamientos, medidas y fotos registrados como invitado se eliminarán de este dispositivo. No se puede deshacer.",
+    "removeFailed": "No se pudo eliminar parte de los datos de invitado. No se ha añadido nada a tu cuenta. Inténtalo de nuevo."
   }
 }

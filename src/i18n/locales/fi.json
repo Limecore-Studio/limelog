@@ -666,5 +666,16 @@
     "body": "Jos jokin menee rikki, LimeLog voi lähettää meille tekniset tiedot: sovelluksen version, virheen ja näkymän, jossa se tapahtui. Ei koskaan sitä, mitä kirjoitat. Voit muuttaa tätä asetuksista.",
     "yes": "Kyllä, lähetä",
     "notNow": "Ei nyt"
+  },
+  "guestData": {
+    "title": "Kirjattu ilman tiliä",
+    "body": "Tällä laitteella on vierastilassa kirjattuja treenejä tai mittauksia. Lisätäänkö ne tilille {{email}}? Ne synkronoidaan sen jälkeen tälle tilille.",
+    "thisAccount": "tälle tilille",
+    "counts": "Treenit: {{workouts}} · Kehon mittaukset: {{measurements}} · Edistymiskuvat: {{photos}}",
+    "keep": "Lisää tililleni",
+    "notMine": "Älä lisää",
+    "removeTitle": "Poistetaanko vierastilan tiedot?",
+    "removeBody": "Vierastilassa kirjatut treenit, mittaukset ja kuvat poistetaan tältä laitteelta. Tätä ei voi perua.",
+    "removeFailed": "Osaa vierastilan tiedoista ei voitu poistaa. Tilillesi ei lisätty mitään. Yritä uudelleen."
   }
 }

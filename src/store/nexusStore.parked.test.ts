@@ -79,7 +79,7 @@ vi.mock('@/store/userStore', () => ({
   useUserStore: { setState: (s: object) => void Object.assign(h.user, s) },
   defaultProfile: () => ({ id: 'default', name: 'Athlete', unitPreference: 'kg', activeRestrictions: [] }),
 }));
-vi.mock('@/store/bodyMetricsStore', () => ({ useBodyMetricsStore: { setState: vi.fn() } }));
+vi.mock('@/store/bodyMetricsStore', () => ({ useBodyMetricsStore: { setState: vi.fn(), getState: () => ({ metrics: [] }) } }));
 vi.mock('@/types/bodyMetrics', () => ({ DEFAULT_PREFS: {} }));
 
 function storage() {
