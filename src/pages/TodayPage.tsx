@@ -1,4 +1,4 @@
-import { lazy, useMemo, useState } from 'react';
+import { lazy, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
@@ -32,8 +32,14 @@ export function TodayPage() {
   // would hide it from exactly the person it exists for.
   const [showCardio, setShowCardio] = useState(false);
   const { programs, activeProgram, exercises, advancePhase } = useProgramStore();
-  const { sessionLogs, startSession, unfinalizeSession, discardSession, stallFlags } = useLogStore();
+  const { sessionLogs, startSession, unfinalizeSession, discardSession, stallFlags, finishStaleWorkouts } = useLogStore();
   const unit = useUserStore((s) => s.profile.unitPreference);
+  // v1.22 (limelog#120) — a workout with sets done that has aged out of the
+  // resume cards below is finished, so it reaches History like it reached
+  // the cloud. Today is the app's landing page, so this runs on each visit.
+  useEffect(() => {
+    finishStaleWorkouts();
+  }, [finishStaleWorkouts]);
 
   const now = new Date();
   const today = getDayOfWeek();

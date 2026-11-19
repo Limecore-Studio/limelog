@@ -118,7 +118,7 @@ export function todaysLog(logs: SessionLog[], sessionId: string, now: Date): Ses
  * to vanish at midnight, so every Start tapped by mistake would otherwise sit
  * on Today for good.
  */
-const RESUME_WINDOW_MS = 7 * 24 * 3600 * 1000;
+export const RESUME_WINDOW_MS = 7 * 24 * 3600 * 1000;
 const EMPTY_LOG_WINDOW_MS = 24 * 3600 * 1000;
 
 export function resumableLogs(logs: SessionLog[], todaySessions: SessionTemplate[], now: Date): SessionLog[] {
@@ -128,4 +128,21 @@ export function resumableLogs(logs: SessionLog[], todaySessions: SessionTemplate
     .filter((l) => !l.finalizedAt && !l.activityType && !onCards.has(l.id))
     .filter((l) => age(l) <= RESUME_WINDOW_MS && (age(l) <= EMPTY_LOG_WINDOW_MS || l.sets.some((s) => s.completed)))
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
+}
+
+/**
+ * v1.22 (limelog#120) — unfinished workouts that have aged out of the resume
+ * window with at least one set done. Since v1.20 the first done set pushes the
+ * workout, so the cloud, NCC and the user's other devices already count it as
+ * done; on this device it could no longer be reached, finished or discarded.
+ * logStore.finishStaleWorkouts finishes these quietly.
+ */
+export function staleUnfinishedLogs(logs: SessionLog[], now: Date): SessionLog[] {
+  return logs.filter(
+    (l) =>
+      !l.finalizedAt &&
+      !l.activityType &&
+      now.getTime() - new Date(l.loggedAt).getTime() > RESUME_WINDOW_MS &&
+      l.sets.some((s) => s.completed),
+  );
 }

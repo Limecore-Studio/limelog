@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sessionsForDay, resolvePhase, phaseSessions, deloadTargetReps, resumableLogs } from './todaySessions';
+import { sessionsForDay, resolvePhase, phaseSessions, deloadTargetReps, resumableLogs, staleUnfinishedLogs } from './todaySessions';
 import { missedRepRatio } from '@/utils/oneRepMax';
 import type { Phase, SessionExercise, SessionTemplate } from '@/types/program';
 import type { SessionLog } from '@/types/logging';
@@ -172,5 +172,33 @@ describe('resumableLogs', () => {
       log('kept', 'x', new Date(2026, 0, 4, 18).toISOString(), done),
     ];
     expect(resumableLogs(logs, [], now).map((l) => l.id)).toEqual(['kept']);
+  });
+});
+
+// v1.22 (limelog#120) — a workout with sets done is in the cloud from its first
+// set, so once it drops off the resume cards it must still be finished here.
+describe('staleUnfinishedLogs', () => {
+  const now = new Date('2026-11-19T12:00:00Z');
+  const done = [{ completed: true }] as SessionLog['sets'];
+  const log = (id: string, loggedAt: string, over: Partial<SessionLog> = {}) =>
+    ({ id, sessionTemplateId: 't', loggedAt, sets: done, perceivedFatigue: null, ...over }) as SessionLog;
+
+  it('picks unfinished workouts with sets done, older than the resume window', () => {
+    const logs = [
+      log('old', '2026-11-10T18:00:00Z'),
+      log('recent', '2026-11-15T18:00:00Z'),
+      log('empty', '2026-11-01T18:00:00Z', { sets: [{ completed: false }] as SessionLog['sets'] }),
+      log('finished', '2026-11-01T18:00:00Z', { finalizedAt: '2026-11-01T19:00:00Z' }),
+      log('cardio', '2026-11-01T18:00:00Z', { activityType: 'run' } as Partial<SessionLog>),
+    ];
+    expect(staleUnfinishedLogs(logs, now).map((l) => l.id)).toEqual(['old']);
+  });
+
+  it('never overlaps the resume cards', () => {
+    const logs = [log('a', '2026-11-12T11:59:00Z'), log('b', '2026-11-12T12:01:00Z')];
+    const stale = staleUnfinishedLogs(logs, now).map((l) => l.id);
+    const resumable = resumableLogs(logs, [], now).map((l) => l.id);
+    expect(stale).toEqual(['a']);
+    expect(resumable).toEqual(['b']);
   });
 });
