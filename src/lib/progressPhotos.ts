@@ -179,3 +179,17 @@ export function listPhotos(): ProgressPhoto[] {
   const idx = loadIndex();
   return Object.values(idx).sort((a, b) => (a.date > b.date ? -1 : 1));
 }
+
+/** Read a captured-file URI (capacitor://, file://) into a JPEG data URL. Runs
+ *  after the camera is gone, so the heavy base64 exists only at save time.
+ *  v1.22 (limelog#125): shared by the panel and the restored-result path. */
+export async function photoDataUrlFromWebPath(webPath: string): Promise<string> {
+  const res = await fetch(webPath);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new PhotoError('unreadable'));
+    reader.readAsDataURL(blob);
+  });
+}
