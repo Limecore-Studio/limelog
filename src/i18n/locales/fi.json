@@ -361,9 +361,12 @@
       "sat": "La"
     },
     "deactivate": "Poista käytöstä",
-    "deletePhaseConfirm": "Poistetaanko vaihe ”{{name}}” ja sen harjoitukset? Tehdyt treenit jäävät Edistymiseen."
+    "deletePhaseConfirm": "Poistetaanko vaihe ”{{name}}” ja sen harjoitukset? Tehdyt treenit jäävät Edistymiseen.",
+    "deleteSessionConfirm": "Poistetaanko treeni ”{{name}}”? Tehdyt treenit jäävät Edistymiseen."
   },
   "library": {
+    "deleteConfirm": "Poistetaanko ”{{name}}” kirjastostasi?",
+    "deleteInUseConfirm": "Poistetaanko ”{{name}}” kirjastostasi? Sitä käytetään ohjelmassasi tai aiemmissa treeneissä, joten se säilyy niissä ja Edistymisessä. Sitä ei vain enää tarjota.",
     "title": "Liikekirjasto",
     "inLibrary_one": "{{count}} liike kirjastossasi",
     "inLibrary_other": "{{count}} liikettä kirjastossasi",

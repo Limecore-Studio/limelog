@@ -480,9 +480,12 @@
       "sat": "Sáb"
     },
     "deactivate": "Desativar",
-    "deletePhaseConfirm": "Excluir a fase “{{name}}” e os seus treinos? Os treinos concluídos continuam em Progresso."
+    "deletePhaseConfirm": "Excluir a fase “{{name}}” e os seus treinos? Os treinos concluídos continuam em Progresso.",
+    "deleteSessionConfirm": "Eliminar a sessão «{{name}}»? Os treinos terminados ficam no Progresso."
   },
   "library": {
+    "deleteConfirm": "Remover «{{name}}» da sua biblioteca?",
+    "deleteInUseConfirm": "Remover «{{name}}» da sua biblioteca? É usado no seu programa ou em treinos anteriores, por isso fica lá e no Progresso. Apenas deixa de ser sugerido.",
     "title": "Biblioteca de exercícios",
     "inLibrary_one": "{{count}} exercício na sua biblioteca",
     "inLibrary_other": "{{count}} exercícios na sua biblioteca",

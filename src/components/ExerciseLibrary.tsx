@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
+import { useDeleteExercise } from '@/components/useDeleteExercise';
 import { BUILTIN_EXERCISES } from '@/data/builtinExercises';
 import type { MovementPattern, Equipment } from '@/types';
 import { Button } from '@/components/ui';
@@ -16,7 +17,10 @@ export function ExerciseLibrary() {
   const { t } = useTranslation();
   const patternLabel = (p: MovementPattern) => t(`library.pattern.${p}`);
   const equipLabel = (e: Equipment) => t(`library.equip.${e}`);
-  const { exercises, addExercise, deleteExercise } = useProgramStore();
+  const { exercises: stored, addExercise } = useProgramStore();
+  // v1.22 (limelog#122): archived exercises are kept for history, not listed.
+  const exercises = useMemo(() => stored.filter((e) => !e.archived), [stored]);
+  const deleteExercise = useDeleteExercise();
 
   const [tab, setTab] = useState<Tab>('library');
   const [search, setSearch] = useState('');
@@ -134,7 +138,7 @@ export function ExerciseLibrary() {
                 {inStore && storeEntry ? (
                   <button
                     className="ex-lib__item-del"
-                    onClick={() => deleteExercise(storeEntry.id)}
+                    onClick={() => void deleteExercise(storeEntry)}
                     title={t('exlib.removeFromLibrary')}
                   >
                     <Trash2 size={13} />
@@ -205,7 +209,7 @@ export function ExerciseLibrary() {
                   {patternLabel(ex.movementPattern as MovementPattern)} · {equipLabel(ex.equipment as Equipment)} · {ex.primaryMuscle}
                 </span>
               </div>
-              <button className="ex-lib__item-del" onClick={() => deleteExercise(ex.id)} title={t('common.delete')}>
+              <button className="ex-lib__item-del" onClick={() => void deleteExercise(ex)} title={t('common.delete')}>
                 <Trash2 size={13} />
               </button>
             </div>

@@ -30,7 +30,9 @@ interface ProgramStore {
   // Exercise CRUD
   addExercise: (e: Omit<Exercise, 'id'>) => Exercise;
   updateExercise: (id: string, updates: Partial<Exercise>) => void;
-  deleteExercise: (id: string) => void;
+  /** `keep`: still referenced by a program or a logged workout, so it is
+   *  archived rather than removed (limelog#122). */
+  deleteExercise: (id: string, keep?: boolean) => void;
 
   // Program CRUD
   createProgram: (p: Omit<Program, 'id' | 'createdAt' | 'phases' | 'sessions' | 'userId'>) => Program;
@@ -56,7 +58,9 @@ interface ProgramStore {
   // Session CRUD
   addSession: (s: Omit<SessionTemplate, 'id' | 'exercises'>) => void;
   updateSession: (id: string, updates: Partial<SessionTemplate>) => void;
-  deleteSession: (id: string) => void;
+  /** `keep`: the session has workouts logged, so it is retired rather than
+   *  removed (limelog#121). */
+  deleteSession: (id: string, keep?: boolean) => void;
 
   // SessionExercise CRUD
   addSessionExercise: (sessionId: string, e: Omit<SessionExercise, 'id' | 'sessionId'>) => void;
@@ -77,6 +81,16 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
   workoutTemplates: storage.getWorkoutTemplates(),
 
   addExercise: (e) => {
+    // v1.22 (limelog#122) — re-adding an archived exercise brings the same row
+    // back, so its history links up again instead of a new id starting over.
+    const archived = get().exercises.find((x) => x.archived && x.name === e.name);
+    if (archived) {
+      const back: Exercise = { ...archived, archived: undefined };
+      const exercises = get().exercises.map((x) => (x.id === archived.id ? back : x));
+      storage.setExercises(exercises);
+      set({ exercises });
+      return back;
+    }
     const exercise: Exercise = { ...e, id: generateId() };
     const exercises = [...get().exercises, exercise];
     storage.setExercises(exercises);
@@ -90,8 +104,10 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
     set({ exercises });
   },
 
-  deleteExercise: (id) => {
-    const exercises = get().exercises.filter((e) => e.id !== id);
+  deleteExercise: (id, keep) => {
+    const exercises = keep
+      ? get().exercises.map((e) => (e.id === id ? { ...e, archived: true } : e))
+      : get().exercises.filter((e) => e.id !== id);
     storage.setExercises(exercises);
     set({ exercises });
   },
@@ -219,10 +235,12 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
     set({ programs, activeProgram: programs.find((p) => p.status === 'active') ?? null });
   },
 
-  deleteSession: (id) => {
+  deleteSession: (id, keep) => {
     const programs = get().programs.map((prog) => ({
       ...prog,
-      sessions: prog.sessions.filter((s) => s.id !== id),
+      sessions: keep
+        ? prog.sessions.map((s) => (s.id === id ? { ...s, retired: true } : s))
+        : prog.sessions.filter((s) => s.id !== id),
     }));
     storage.setPrograms(programs);
     set({ programs, activeProgram: programs.find((p) => p.status === 'active') ?? null });

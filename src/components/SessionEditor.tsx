@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
+import { useLogStore } from '@/store/logStore';
+import { useConfirm } from '@/components/confirmContext';
+import { sessionHasWorkouts } from '@/lib/exerciseRefs';
 import type { Program, SessionTemplate, DayOfWeek } from '@/types/program';
 import { Button } from '@/components/ui';
 import { SessionExerciseRow } from '@/components/SessionExerciseRow';
@@ -18,8 +21,17 @@ interface Props {
 export function SessionEditor({ session, program }: Props) {
   const { t } = useTranslation();
   const { updateSession, deleteSession, addSessionExercise, workoutTemplates, saveAsTemplate, applyTemplate, deleteWorkoutTemplate } = useProgramStore();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [editingName, setEditingName] = useState(false);
+
+  // v1.22 (limelog#121) — asks first, as deleting a phase does, and keeps a
+  // session with workouts logged (retired) so History still names them and
+  // one in progress can still be finished.
+  async function handleDelete() {
+    if (!(await confirm({ message: t('program.deleteSessionConfirm', { name: session.name }), confirmLabel: t('common.delete') }))) return;
+    deleteSession(session.id, sessionHasWorkouts(session.id, useLogStore.getState().sessionLogs));
+  }
   const [name, setName] = useState(session.name);
 
   // Template UI state
@@ -86,7 +98,7 @@ export function SessionEditor({ session, program }: Props) {
           <span className="session-editor__day">{t(`program.days.${DAY_KEYS[session.dayOfWeek]}`)}</span>
         </div>
         <div className="session-editor__header-right">
-          <button className="session-editor__del" onClick={(e) => { e.stopPropagation(); deleteSession(session.id); }}>
+          <button className="session-editor__del" onClick={(e) => { e.stopPropagation(); void handleDelete(); }} aria-label={t('common.delete')}>
             <Trash2 size={12} />
           </button>
           {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

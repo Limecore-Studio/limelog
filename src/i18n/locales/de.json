@@ -361,9 +361,12 @@
       "sat": "Sa"
     },
     "deactivate": "Deaktivieren",
-    "deletePhaseConfirm": "Phase „{{name}}“ und ihre Einheiten löschen? Abgeschlossene Workouts bleiben unter Fortschritt."
+    "deletePhaseConfirm": "Phase „{{name}}“ und ihre Einheiten löschen? Abgeschlossene Workouts bleiben unter Fortschritt.",
+    "deleteSessionConfirm": "Die Einheit „{{name}}“ löschen? Abgeschlossene Trainings bleiben im Fortschritt."
   },
   "library": {
+    "deleteConfirm": "„{{name}}“ aus deiner Bibliothek entfernen?",
+    "deleteInUseConfirm": "„{{name}}“ aus deiner Bibliothek entfernen? Die Übung wird in deinem Programm oder in früheren Trainings verwendet und bleibt dort und im Fortschritt erhalten. Sie wird nur nicht mehr angeboten.",
     "title": "Übungsbibliothek",
     "inLibrary_one": "{{count}} Übung in deiner Bibliothek",
     "inLibrary_other": "{{count}} Übungen in deiner Bibliothek",

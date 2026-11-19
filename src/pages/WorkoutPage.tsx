@@ -438,7 +438,7 @@ export function WorkoutPage() {
           <SwapExerciseSheet
             current={current}
             programmed={programmed}
-            exercises={exercises}
+            exercises={exercises.filter((e) => !e.archived)}
             restrictions={profile.activeRestrictions}
             onClose={() => setSwapSeId(null)}
             onPick={(toId) => {

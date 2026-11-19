@@ -39,7 +39,8 @@ export function SessionExerciseRow({ sessionExercise: se, sessionId, program: _ 
             value={se.exerciseId}
             onChange={(e) => updateSessionExercise(sessionId, se.id, { exerciseId: e.target.value })}
           >
-            {exercises.map((ex) => (
+            {/* v1.22 (limelog#122): archived ones only as the current pick. */}
+            {exercises.filter((ex) => !ex.archived || ex.id === se.exerciseId).map((ex) => (
               <option key={ex.id} value={ex.id}>{ex.name}</option>
             ))}
           </select>

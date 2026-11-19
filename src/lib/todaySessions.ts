@@ -38,8 +38,9 @@ export function phaseSessions(
   if (!program) return [];
   // A session whose phase was deleted is kept only so History can name its
   // workouts (deletePhase); it is never offered or reminded about.
+  // v1.22 (limelog#121): nor is one deleted while it had workouts (retired).
   const phaseIds = program.phases?.length ? new Set(program.phases.map((ph) => ph.id)) : null;
-  const live = phaseIds ? program.sessions.filter((s) => phaseIds.has(s.phaseId)) : program.sessions;
+  const live = program.sessions.filter((s) => !s.retired && (!phaseIds || phaseIds.has(s.phaseId)));
   if (!currentPhaseId) return live;
   const mine = live.filter((s) => s.phaseId === currentPhaseId);
   return mine.length > 0 ? mine : live;

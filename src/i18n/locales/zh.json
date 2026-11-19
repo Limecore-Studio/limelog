@@ -357,9 +357,12 @@
       "sat": "六"
     },
     "deactivate": "停用",
-    "deletePhaseConfirm": "删除阶段“{{name}}”及其训练？已完成的训练仍保留在“进度”中。"
+    "deletePhaseConfirm": "删除阶段“{{name}}”及其训练？已完成的训练仍保留在“进度”中。",
+    "deleteSessionConfirm": "删除训练课“{{name}}”？已完成的训练仍保留在进度中。"
   },
   "library": {
+    "deleteConfirm": "从你的动作库中移除“{{name}}”？",
+    "deleteInUseConfirm": "从你的动作库中移除“{{name}}”？它在你的计划或以往训练中被使用，因此会保留在那里和进度中，只是不再推荐。",
     "title": "动作库",
     "inLibrary_one": "你的动作库中有 {{count}} 个动作",
     "inLibrary_other": "你的动作库中有 {{count}} 个动作",

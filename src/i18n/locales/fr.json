@@ -369,9 +369,12 @@
     "sessions_many": "{{count}} séances",
     "exercises_many": "{{count}} exercices",
     "deactivate": "Désactiver",
-    "deletePhaseConfirm": "Supprimer la phase « {{name}} » et ses séances ? Les entraînements terminés restent dans Progrès."
+    "deletePhaseConfirm": "Supprimer la phase « {{name}} » et ses séances ? Les entraînements terminés restent dans Progrès.",
+    "deleteSessionConfirm": "Supprimer la séance « {{name}} » ? Les séances terminées restent dans Progression."
   },
   "library": {
+    "deleteConfirm": "Retirer « {{name}} » de votre bibliothèque ?",
+    "deleteInUseConfirm": "Retirer « {{name}} » de votre bibliothèque ? Il est utilisé dans votre programme ou des séances passées : il y reste, ainsi que dans Progression. Il ne sera simplement plus proposé.",
     "title": "Bibliothèque d'exercices",
     "inLibrary_one": "{{count}} exercice dans votre bibliothèque",
     "inLibrary_other": "{{count}} exercices dans votre bibliothèque",

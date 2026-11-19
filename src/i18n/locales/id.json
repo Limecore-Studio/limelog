@@ -464,9 +464,12 @@
       "sat": "Sab"
     },
     "deactivate": "Nonaktifkan",
-    "deletePhaseConfirm": "Hapus fase “{{name}}” beserta sesinya? Latihan yang selesai tetap ada di Progres."
+    "deletePhaseConfirm": "Hapus fase “{{name}}” beserta sesinya? Latihan yang selesai tetap ada di Progres.",
+    "deleteSessionConfirm": "Hapus sesi “{{name}}”? Latihan yang selesai tetap ada di Progres."
   },
   "library": {
+    "deleteConfirm": "Hapus “{{name}}” dari pustaka Anda?",
+    "deleteInUseConfirm": "Hapus “{{name}}” dari pustaka Anda? Latihan ini dipakai di program atau latihan sebelumnya, jadi tetap ada di sana dan di Progres. Hanya tidak akan ditawarkan lagi.",
     "title": "Pustaka gerakan",
     "inLibrary_other": "{{count}} gerakan di pustakamu",
     "customCount": "{{count}} kustom",
