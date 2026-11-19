@@ -32,12 +32,16 @@ export interface RecoveryAuthState {
   signOutPending: boolean;
 }
 
-export interface RecoveryGateDeps {
+// v1.22 (limelog#124): generic over what is pulled, so body metrics ride the
+// same once-per-sign-in rules as workouts. Workouts stay the default.
+export interface RecoveryGateDeps<T = SessionLog[]> {
   read: () => RecoveryAuthState;
-  /** Fetch the cloud workouts of `userId`. */
-  pull: (userId: string) => Promise<SessionLog[]>;
+  /** Fetch the cloud rows of `userId`. */
+  pull: (userId: string) => Promise<T>;
   /** Reinstate what is missing locally; returns how many were added. */
-  apply: (logs: SessionLog[]) => number;
+  apply: (rows: T) => number;
+  /** For the log lines. Default: 'workout'. */
+  what?: string;
   /** v1.18.1 (LimeLog#88) — whether the local data is `userId`'s yet. Until
    *  it is, this sign-in's pull waits (it is not spent), and it starts on the
    *  first evaluate() after. Default: always. */
@@ -61,7 +65,8 @@ interface Run {
   userId: string;
 }
 
-export function createRecoveryGate(deps: RecoveryGateDeps): RecoveryGate {
+export function createRecoveryGate<T = SessionLog[]>(deps: RecoveryGateDeps<T>): RecoveryGate {
+  const what = deps.what ?? 'workout';
   const defer = deps.defer ?? ((start: () => void) => void setTimeout(start, 0));
   /** The account whose sign-in has had its pull. Null after a sign-out. */
   let pulledFor: string | null = null;
@@ -77,19 +82,19 @@ export function createRecoveryGate(deps: RecoveryGateDeps): RecoveryGate {
   const execute = async (run: Run): Promise<void> => {
     if (!stillCurrent(run)) return;
     try {
-      const cloudSessions = await deps.pull(run.userId);
+      const cloudRows = await deps.pull(run.userId);
       if (!stillCurrent(run)) {
         console.warn('[recovery] signed out or switched account during the pull; result dropped');
         return;
       }
-      const restored = deps.apply(cloudSessions);
+      const restored = deps.apply(cloudRows);
       if (restored > 0) {
-        console.log(`[recovery] reinstated ${restored} workout(s) from cloud`);
+        console.log(`[recovery] reinstated ${restored} ${what}(s) from cloud`);
       }
     } catch (e) {
       if (!stillCurrent(run)) return;
       // Not retried until the next sign-in or launch, as before.
-      console.warn('[recovery] workout hydrate failed:', (e as Error).message);
+      console.warn(`[recovery] ${what} hydrate failed:`, (e as Error).message);
     }
   };
 

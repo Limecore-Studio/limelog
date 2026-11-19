@@ -74,6 +74,7 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   try {
     localStorage.removeItem('limelog-body-metrics');
     localStorage.removeItem('limelog-body-metrics-prefs');
+    localStorage.removeItem('limelog-body-metrics-deleted'); // v1.22, limelog#124
     // bodyMetricsStore reads DEFAULT_PREFS from types/bodyMetrics on the
     // next mount; the setState below restores in-memory state to that
     // baseline so an already-mounted BodyMetricsPanel re-renders empty
