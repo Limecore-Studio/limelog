@@ -454,3 +454,94 @@ describe('putting back what was set aside (LimeLog#90)', () => {
     expect(restore).not.toHaveBeenCalled();
   });
 });
+
+// v1.22 (limecore#95) — data logged with no account is not taken up, and its
+// queue is not sent, until the person signing in says whether it is theirs.
+describe('the guest question', () => {
+  const held = { workouts: 2, measurements: 1, photos: 0, queued: 1 };
+  const askGuest = vi.fn();
+  let discarded = 0;
+  const hooks = (has: () => typeof held | null, discardOk = true) =>
+    owner.configureAccountOwner({
+      wipe,
+      guestData: has,
+      askGuest,
+      discardGuest: () => {
+        discarded++;
+        if (discardOk) outbox.clear();
+        return discardOk;
+      },
+    });
+
+  beforeEach(() => {
+    askGuest.mockClear();
+    discarded = 0;
+  });
+
+  it('asks, and sends nothing, while unanswered', async () => {
+    hooks(() => held);
+    queued('guest workout');
+    h.user = 'user-b';
+    expect(owner.adoptLocalData('user-b', 'b@example.com')).toBe(false);
+    expect(askGuest).toHaveBeenCalledWith('user-b', 'b@example.com', held);
+    expect(owner.readOwner()).toBeNull();
+    expect(await outbox.drain()).toEqual({ sent: 0, remaining: 1 });
+    expect(h.sent).toEqual([]);
+    // Asked again on the next take-up, until answered.
+    expect(owner.adoptLocalData('user-b')).toBe(false);
+  });
+
+  it('Keep: the data and its queue go with the account', async () => {
+    hooks(() => held);
+    queued('guest workout');
+    h.user = 'user-b';
+    owner.adoptLocalData('user-b');
+    expect(owner.answerGuestData('user-b', true)).toBe(true);
+    expect(owner.adoptLocalData('user-b')).toBe(true);
+    expect(await outbox.drain()).toEqual({ sent: 1, remaining: 0 });
+    expect(h.sent).toEqual([{ session: 'user-b', userId: 'user-b', feedback: 'guest workout' }]);
+    expect(discarded).toBe(0);
+  });
+
+  it('Remove: deleted first, so nothing of it is sent', async () => {
+    hooks(() => held);
+    queued('guest workout');
+    h.user = 'user-b';
+    owner.adoptLocalData('user-b');
+    expect(owner.answerGuestData('user-b', false)).toBe(true);
+    expect(discarded).toBe(1);
+    expect(owner.adoptLocalData('user-b')).toBe(true);
+    expect(await outbox.drain()).toEqual({ sent: 0, remaining: 0 });
+    expect(h.sent).toEqual([]);
+  });
+
+  it('a Remove that did not fully happen leaves the question open', () => {
+    hooks(() => held, false);
+    owner.adoptLocalData('user-b');
+    expect(owner.answerGuestData('user-b', false)).toBe(false);
+    expect(owner.adoptLocalData('user-b')).toBe(false);
+    expect(askGuest).toHaveBeenCalledTimes(2);
+  });
+
+  it('an answer for one account does not count for another', () => {
+    hooks(() => held);
+    owner.adoptLocalData('user-b');
+    owner.answerGuestData('user-b', true);
+    expect(owner.adoptLocalData('user-c')).toBe(false);
+    expect(owner.adoptLocalData('user-b')).toBe(true);
+  });
+
+  it('nothing on the device: taken up without a question, as before', () => {
+    hooks(() => null);
+    expect(owner.adoptLocalData('user-b')).toBe(true);
+    expect(askGuest).not.toHaveBeenCalled();
+  });
+
+  it('data with an owner is not a guest\'s: the account switch rules apply, no question', () => {
+    owner.adoptLocalData('user-a');
+    hooks(() => held);
+    expect(owner.adoptLocalData('user-b')).toBe(true);
+    expect(askGuest).not.toHaveBeenCalled();
+    expect(wipe).toHaveBeenCalledTimes(1);
+  });
+});

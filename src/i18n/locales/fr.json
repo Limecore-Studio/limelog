@@ -682,5 +682,16 @@
     "body": "En cas de problème, LimeLog peut nous envoyer les détails techniques : la version de l’app, l’erreur et l’écran où elle s’est produite. Jamais ce que vous saisissez. Vous pouvez changer cela dans les Réglages.",
     "yes": "Oui, envoyer",
     "notNow": "Pas maintenant"
+  },
+  "guestData": {
+    "title": "Enregistré sans compte",
+    "body": "Cet appareil contient des séances ou des mesures enregistrées en mode invité. Les ajouter à {{email}} ? Elles seront ensuite synchronisées avec ce compte.",
+    "thisAccount": "ce compte",
+    "counts": "Séances : {{workouts}} · Mesures corporelles : {{measurements}} · Photos de progression : {{photos}}",
+    "keep": "Ajouter à mon compte",
+    "notMine": "Ne pas ajouter",
+    "removeTitle": "Supprimer les données invité ?",
+    "removeBody": "Les séances, mesures et photos enregistrées en mode invité seront supprimées de cet appareil. Action irréversible.",
+    "removeFailed": "Une partie des données invité n’a pas pu être supprimée. Rien n’a été ajouté à votre compte. Réessayez."
   }
 }

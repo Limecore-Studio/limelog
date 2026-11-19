@@ -51,6 +51,8 @@ const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
 // v1.21.1 (limecore#87): the opt-in question for the app-open record and the update check.
 const ConsentPrompt = lazy(() => import('@/components/ConsentPrompt').then((m) => ({ default: m.ConsentPrompt })));
+// v1.22 (limecore#95): the guest-data question, loaded only when it is asked.
+const GuestDataPrompt = lazy(() => import('@/components/GuestDataPrompt').then((m) => ({ default: m.GuestDataPrompt })));
 
 // v1.20 — the workout pull loads on demand: it runs after sign-in, never on the
 // way to the first screen, and the startup bundle needed the room (LimeLog#110).
@@ -144,6 +146,7 @@ export default function App() {
   // sign-in screen (and its code step) into the views.
   const userId = useNexusStore((s) => s.userId);
   const sessionUnverified = useNexusStore((s) => s.sessionUnverified);
+  const guestAsking = useNexusStore((s) => s.guestDataAsk !== null);
   const isNexusConfigured = useNexusStore((s) => s.configured);
   // v1.18.1 (LimeLog#94) — whether the local data is the signed-in
   // account's yet; until it is, the views below are not rendered.
@@ -423,6 +426,11 @@ export default function App() {
       <OptionalChunk>
         <ConsentPrompt />
       </OptionalChunk>
+      {guestAsking && (
+        <OptionalChunk>
+          <GuestDataPrompt />
+        </OptionalChunk>
+      )}
     </BrowserRouter>
   );
 }

@@ -666,5 +666,16 @@
     "body": "If something breaks, LimeLog can send us the technical details: the app version, the error and the screen it happened on. Never what you type. You can change this in Settings.",
     "yes": "Yes, send reports",
     "notNow": "Not now"
+  },
+  "guestData": {
+    "title": "Logged without an account",
+    "body": "This device has workouts or measurements that were logged as a guest. Add them to {{email}}? They will then sync to that account.",
+    "thisAccount": "this account",
+    "counts": "Workouts: {{workouts}} · Body measurements: {{measurements}} · Progress photos: {{photos}}",
+    "keep": "Add to my account",
+    "notMine": "Don’t add",
+    "removeTitle": "Delete the guest data?",
+    "removeBody": "The workouts, measurements and photos logged as a guest will be deleted from this device. This can’t be undone.",
+    "removeFailed": "Some of the guest data could not be deleted. Nothing has been added to your account. Try again."
   }
 }

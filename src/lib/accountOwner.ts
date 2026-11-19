@@ -13,8 +13,12 @@
 // DIFFERENT account first clears the local data (the same clear as sign-out,
 // accountWipe.ts) before anything is pulled or sent. Rules:
 //   - same account again: kept, unsent changes included; they are its own;
-//   - no owner yet (first sign-in, a guest's data, an explicit sign-out that
-//     already cleared it): taken up as it is, as before this change;
+//   - no owner yet (first sign-in, an explicit sign-out that already cleared
+//     it): taken up as it is;
+//   - no owner yet but data on the device (made as a guest): v1.22
+//     (limecore#95) asks the person first. Nothing is sent or pulled for the
+//     account until they answer: Keep takes it up as before, Remove deletes
+//     it from the device and then takes the account up empty;
 //   - the session ending without a sign-out changes nothing here: whoever
 //     signs in next decides, so signing back in as the same account keeps
 //     the work done offline.
@@ -55,9 +59,41 @@ interface OwnerHooks {
   /** v1.18.1 (LimeLog#92) — a mirror read that outlasted the launch's wait
    *  has settled: take-ups refused meanwhile can be tried again. */
   recordSettled?: () => void;
+  /** v1.22 (limecore#95) — what a guest left on the device, or null when
+   *  there is nothing. With no owner recorded and something held, the
+   *  take-up waits for answerGuestData. */
+  guestData?: () => GuestHeld | null;
+  /** Ask the person whether `userId` keeps the guest data. */
+  askGuest?: (userId: string, email: string | null, held: GuestHeld) => void;
+  /** Delete the guest data from the device. False when part of it stayed. */
+  discardGuest?: () => boolean;
+}
+
+/**
+ * v1.22 (limecore#95) — the answer to the guest question for `userId`. Keep
+ * lets the next take-up adopt the data as it is (and its queue then goes to
+ * that account); Remove deletes it first. False when Remove did not fully
+ * happen: the question stands, and nothing is taken up.
+ */
+export function answerGuestData(userId: string, keep: boolean): boolean {
+  if (!keep && !(hooks?.discardGuest?.() ?? false)) return false;
+  guestAnsweredFor = userId;
+  return true;
 }
 
 let hooks: OwnerHooks | null = null;
+
+/** v1.22 (limecore#95) — what was logged on the device with no account. */
+export interface GuestHeld {
+  workouts: number;
+  measurements: number;
+  photos: number;
+  /** Changes queued for upload (none of them sent: there was no owner). */
+  queued: number;
+}
+
+/** The account that answered the guest question, until it takes the data up. */
+let guestAnsweredFor: string | null = null;
 
 /** The owner for this launch when storage refused to record it (full: the
  *  progress photos are data URLs in localStorage). Without it the outbox,
@@ -299,6 +335,17 @@ export function adoptLocalData(userId: string | null | undefined, email?: string
     return true;
   }
   if (hooks?.paused?.()) return false;
+  // v1.22 (limecore#95) — data with no owner was logged as a guest, maybe by
+  // someone else on a shared device. It is not this account's until the
+  // person says so; until then the outbox (owner check) sends none of it and
+  // the recovery pull (same check) adds nothing to it.
+  if (owner === null && guestAnsweredFor !== userId && hooks?.guestData) {
+    const held = hooks.guestData();
+    if (held) {
+      hooks.askGuest?.(userId, email ?? null, held);
+      return false;
+    }
+  }
   if (owner !== null) {
     if (!hooks) return false;
     // The new owner is written only after a clear that fully succeeded. One
@@ -311,6 +358,7 @@ export function adoptLocalData(userId: string | null | undefined, email?: string
   }
   // A failed write still makes `userId` the owner for this launch (memory).
   writeOwner(userId);
+  guestAnsweredFor = null;
   writeOwnerEmail(email ?? null);
   restore(userId);
   return true;

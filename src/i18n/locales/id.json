@@ -650,5 +650,16 @@
     "body": "Jika ada yang rusak, LimeLog dapat mengirimi kami detail teknisnya: versi aplikasi, galatnya, dan layar tempat terjadinya. Tidak pernah apa yang kamu ketik. Kamu bisa mengubahnya di Pengaturan.",
     "yes": "Ya, kirim",
     "notNow": "Nanti saja"
+  },
+  "guestData": {
+    "title": "Dicatat tanpa akun",
+    "body": "Perangkat ini memiliki latihan atau pengukuran yang dicatat sebagai tamu. Tambahkan ke {{email}}? Data itu lalu akan disinkronkan ke akun tersebut.",
+    "thisAccount": "akun ini",
+    "counts": "Latihan: {{workouts}} · Ukuran tubuh: {{measurements}} · Foto progres: {{photos}}",
+    "keep": "Tambahkan ke akun saya",
+    "notMine": "Jangan tambahkan",
+    "removeTitle": "Hapus data tamu?",
+    "removeBody": "Latihan, pengukuran, dan foto yang dicatat sebagai tamu akan dihapus dari perangkat ini. Tindakan ini tidak dapat dibatalkan.",
+    "removeFailed": "Sebagian data tamu tidak dapat dihapus. Tidak ada yang ditambahkan ke akun Anda. Coba lagi."
   }
 }

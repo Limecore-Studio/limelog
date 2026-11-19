@@ -54,8 +54,8 @@ vi.mock('@/lib/outbox', () => ({
   installDrainTriggers: vi.fn(),
 }));
 vi.mock('@/store/themeStore', () => ({ useThemeStore: { getState: () => ({ syncEntitlement: vi.fn(async () => {}) }) } }));
-vi.mock('@/store/logStore', () => ({ useLogStore: { setState: vi.fn() } }));
-vi.mock('@/store/bodyMetricsStore', () => ({ useBodyMetricsStore: { setState: vi.fn() } }));
+vi.mock('@/store/logStore', () => ({ useLogStore: { setState: vi.fn(), getState: () => ({ sessionLogs: [] }) } }));
+vi.mock('@/store/bodyMetricsStore', () => ({ useBodyMetricsStore: { setState: vi.fn(), getState: () => ({ metrics: [] }) } }));
 vi.mock('@/types/bodyMetrics', () => ({ DEFAULT_PREFS: {} }));
 
 const A: Session = { user: { id: 'user-a', email: 'a@example.com', user_metadata: {} } };

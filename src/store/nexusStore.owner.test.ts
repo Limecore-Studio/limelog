@@ -21,6 +21,8 @@ const h = vi.hoisted(() => ({
   clearOk: undefined as boolean | undefined,
   noted: [] as string[],
   logStoreSet: [] as unknown[],
+  /** v1.22 (limecore#95) — workouts on the device, as logStore holds them. */
+  guestLogs: [] as unknown[],
 }));
 
 // v1.18.1 (LimeLog#92) — accountOwner mirrors the owner record into Preferences.
@@ -63,8 +65,8 @@ vi.mock('@/lib/outbox', () => ({
   installDrainTriggers: vi.fn(),
 }));
 vi.mock('@/store/themeStore', () => ({ useThemeStore: { getState: () => ({ syncEntitlement: vi.fn(async () => {}) }) } }));
-vi.mock('@/store/logStore', () => ({ useLogStore: { setState: (s: unknown) => void h.logStoreSet.push(s) } }));
-vi.mock('@/store/bodyMetricsStore', () => ({ useBodyMetricsStore: { setState: vi.fn() } }));
+vi.mock('@/store/logStore', () => ({ useLogStore: { setState: (s: unknown) => void h.logStoreSet.push(s), getState: () => ({ sessionLogs: h.guestLogs }) } }));
+vi.mock('@/store/bodyMetricsStore', () => ({ useBodyMetricsStore: { setState: vi.fn(), getState: () => ({ metrics: [] }) } }));
 vi.mock('@/types/bodyMetrics', () => ({ DEFAULT_PREFS: {} }));
 
 function storage() {
@@ -134,6 +136,7 @@ beforeEach(() => {
   h.listener = null;
   h.log = [];
   h.logStoreSet = [];
+  h.guestLogs = [];
   h.clearOk = undefined;
   h.noted = [];
 });
@@ -260,6 +263,59 @@ describe('guest data and explicit sign-out keep their behaviour', () => {
     const out = store.getState().signOut();
     h.listener!('TOKEN_REFRESHED', { user: A }); // a refresh landing mid-sign-out
     await out;
+    expect(localStorage.getItem(OWNER_KEY)).toBeNull();
+  });
+});
+
+// v1.22 (limecore#95) — a guest's workouts are not taken up, sent or pulled
+// over until the person signing in answers the question.
+describe('an account signing in over data logged as a guest', () => {
+  async function guestThenB() {
+    h.guest = true;
+    h.guestLogs = [{ id: 'g1' }];
+    h.getSession = async () => ({ data: { session: null }, error: null });
+    const store = await freshApp();
+    await store.getState().init();
+    h.listener!('SIGNED_IN', { user: B });
+    await flush();
+    return store;
+  }
+
+  it('asks, and neither sends, pulls nor takes the data up meanwhile', async () => {
+    const store = await guestThenB();
+    expect(store.getState().guestDataAsk).toMatchObject({ userId: B.id, email: B.email, held: { workouts: 1 } });
+    // A drain may still be fired; with no owner recorded the real outbox sends
+    // nothing (accountOwner.test.ts, "the guest question").
+    expect(localStorage.getItem(OWNER_KEY)).toBeNull();
+    expect(h.log).not.toContain(`pull:${B.id}`);
+    expect(h.log).not.toContain('wipe');
+  });
+
+  it('Keep: taken up as it is, then sent and pulled', async () => {
+    const store = await guestThenB();
+    expect(store.getState().answerGuestData(true)).toBe(true);
+    await flush();
+    expect(store.getState().guestDataAsk).toBeNull();
+    expect(localStorage.getItem(OWNER_KEY)).toBe(B.id);
+    expect(h.log).not.toContain('wipe');
+    expect(h.log).toContain('drain');
+    expect(h.log).toContain(`pull:${B.id}`);
+  });
+
+  it('Remove: cleared first, then the account is taken up empty and pulled', async () => {
+    const store = await guestThenB();
+    expect(store.getState().answerGuestData(false)).toBe(true);
+    await flush();
+    expect(h.log.indexOf('wipe')).toBeGreaterThanOrEqual(0);
+    expect(h.log.indexOf('wipe')).toBeLessThan(h.log.indexOf(`pull:${B.id}`));
+    expect(h.logStoreSet).toContainEqual({ sessionLogs: [], jumpLogs: [], stallFlags: [] });
+    expect(localStorage.getItem(OWNER_KEY)).toBe(B.id);
+  });
+
+  it('a sign-out while asked drops the question', async () => {
+    const store = await guestThenB();
+    await store.getState().signOut();
+    expect(store.getState().guestDataAsk).toBeNull();
     expect(localStorage.getItem(OWNER_KEY)).toBeNull();
   });
 });

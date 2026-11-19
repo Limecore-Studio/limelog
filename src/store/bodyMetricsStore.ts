@@ -14,6 +14,7 @@ import { create } from 'zustand';
 import type { BodyMetric, BodyMetricsPrefs } from '@/types/bodyMetrics';
 import { DEFAULT_PREFS } from '@/types/bodyMetrics';
 import { enqueue } from '@/lib/outbox';
+import { syncAllowed } from '@/lib/syncSetting';
 
 const STORAGE_KEY = 'limelog-body-metrics';
 const PREFS_KEY = 'limelog-body-metrics-prefs';
@@ -141,7 +142,10 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
     set({ metrics: next });
     const deleted = loadDeleted();
     if (deleted.includes(merged.date)) saveDeleted(deleted.filter((d) => d !== merged.date));
-    enqueue('upsert_body_metric', {
+    // v1.22 (limecore#95) — queued only when sync is on, as workouts are. It
+    // used to queue every save, so a guest's or a sync-off user's readings
+    // went up with the next account to sign in or the next time sync was on.
+    if (syncAllowed()) enqueue('upsert_body_metric', {
       id: merged.id,
       date: merged.date,
       weightKg: merged.weightKg,
@@ -171,7 +175,7 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
     set({ metrics: next });
     const deleted = loadDeleted();
     if (gone && !deleted.includes(gone.date)) saveDeleted([...deleted, gone.date]);
-    enqueue('delete_body_metric', { id, date: gone?.date });
+    if (syncAllowed()) enqueue('delete_body_metric', { id, date: gone?.date });
   },
 
   recoverMetrics(incoming) {

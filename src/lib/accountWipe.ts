@@ -25,6 +25,7 @@ import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics';
 import { useUserStore, defaultProfile } from '@/store/userStore';
 import { parkAccountData, restoreParked, PRS_KEY, PROFILE_KEY } from '@/lib/parkedData';
+import type { GuestHeld } from '@/lib/accountOwner';
 
 // useProgramStore is intentionally NOT wiped — programs / exercises /
 // workout templates are tool configuration, not history, and a global
@@ -113,6 +114,25 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   step(forgetReferralAskedLocally());
   step(forgetLastAppOpen());
   return ok;
+}
+
+// v1.22 (limecore#95) — what is on the device, for the guest question
+// (accountOwner.ts). Null when there is nothing to ask about.
+export function heldGuestData(queued: number): GuestHeld | null {
+  let photos = 0;
+  try {
+    const idx = JSON.parse(localStorage.getItem('limelog-progress-photos') ?? '{}');
+    if (idx && typeof idx === 'object') photos = Object.keys(idx).length;
+  } catch {
+    /* unreadable index: count none */
+  }
+  const held: GuestHeld = {
+    workouts: useLogStore.getState().sessionLogs.length,
+    measurements: useBodyMetricsStore.getState().metrics.length,
+    photos,
+    queued,
+  };
+  return held.workouts + held.measurements + held.photos + held.queued > 0 ? held : null;
 }
 
 // v1.18.1 (LimeLog#94) — a sign-out while the owner record is still being
