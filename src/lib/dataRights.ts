@@ -9,7 +9,8 @@
 // server-side account to delete.
 
 import type { Session } from '@supabase/supabase-js';
-import { Capacitor, registerPlugin } from '@capacitor/core';
+import { Capacitor } from '@capacitor/core';
+import { SaveFile } from './saveFile';
 import { storage } from '@/utils/storage';
 import { supabase, isNexusConfigured, readStoredSession, clearStoredSession } from './supabase';
 import { listPhotos } from './progressPhotos';
@@ -115,8 +116,8 @@ export async function buildExport(
     },
     notes: {
       progressPhotos: 'Photos are stored only on this device and are never '
-        + 'uploaded. Only the dates they were taken are listed here; the images '
-        + 'themselves are already in the app on this device.',
+        + 'uploaded. Only the dates they were taken are listed here. To keep the '
+        + 'images, save a copy of each from Body > Progress photos.',
     },
     data: {
       profile,
@@ -142,10 +143,7 @@ export async function sessionAccount(): Promise<{ id: string; email?: string } |
 }
 
 // v1.21.1 (limecore#103) — the native "create document" picker
-// (SaveFilePlugin.java). Registered here, on demand, with the only caller.
-const SaveFile = registerPlugin<{
-  save(o: { filename: string; mimeType: string; data: string }): Promise<{ saved: boolean; cancelled?: boolean }>;
-}>('SaveFile');
+// (SaveFilePlugin.java), registered in saveFile.ts.
 
 /** Save the export as a .json file. Returns the filename once it is written,
  *  or null when the user cancelled the picker; throws when it could not be

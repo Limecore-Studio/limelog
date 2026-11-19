@@ -268,6 +268,12 @@
     "noCustomFilter": "Nenhum exercício personalizado corresponde aos seus filtros."
   },
   "body": {
+    "savePhotoCopy": "Guardar uma cópia da foto de {{date}}",
+    "photoCopySaved": "{{name}} guardado",
+    "photoCopyFailed": "Não foi possível guardar a cópia.",
+    "photoFullTitle": "Armazenamento de fotos cheio",
+    "photoFullConfirm": "Este dispositivo guarda até 30 fotos de progresso. Tirar uma nova elimina a mais antiga, de {{date}}. Para a manter, cancele e guarde primeiro uma cópia.",
+    "photoFullContinue": "Eliminar a mais antiga e continuar",
     "photoRestored": "A sua foto de progresso de {{date}} foi guardada.",
     "photoRestoreFailed": "Não foi possível guardar a foto de progresso que acabou de tirar. Tire-a novamente.",
     "title": "Corpo",

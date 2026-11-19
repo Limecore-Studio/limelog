@@ -241,6 +241,12 @@
     "fdroidCheckNote": "LimeLog 每天向 f-droid.org 查询一次最新版本，不会发送任何关于你的信息。关闭后将不再发送该请求。"
   },
   "body": {
+    "savePhotoCopy": "保存 {{date}} 照片的副本",
+    "photoCopySaved": "已保存 {{name}}",
+    "photoCopyFailed": "无法保存副本。",
+    "photoFullTitle": "照片存储已满",
+    "photoFullConfirm": "此设备最多保存 30 张进度照片。拍摄新照片会删除最早的一张（{{date}}）。如需保留，请取消并先保存它的副本。",
+    "photoFullContinue": "删除最早的并继续",
     "photoRestored": "你在 {{date}} 的进度照片已保存。",
     "photoRestoreFailed": "你刚拍的进度照片无法保存。请重新拍摄。",
     "title": "身体",

@@ -244,6 +244,12 @@
     "fdroidCheckNote": "Einmal am Tag fragt LimeLog bei f-droid.org nach der neuesten Version. Über dich wird nichts gesendet. Ausgeschaltet unterbleibt die Anfrage ganz."
   },
   "body": {
+    "savePhotoCopy": "Kopie des Fotos vom {{date}} speichern",
+    "photoCopySaved": "{{name}} gespeichert",
+    "photoCopyFailed": "Die Kopie konnte nicht gespeichert werden.",
+    "photoFullTitle": "Fotospeicher ist voll",
+    "photoFullConfirm": "Auf diesem Gerät werden bis zu 30 Fortschrittsfotos gespeichert. Ein neues Foto löscht das älteste vom {{date}}. Um es zu behalten, brich ab und speichere zuerst eine Kopie.",
+    "photoFullContinue": "Ältestes löschen und fortfahren",
     "photoRestored": "Dein Fortschrittsfoto für {{date}} wurde gespeichert.",
     "photoRestoreFailed": "Das gerade aufgenommene Fortschrittsfoto konnte nicht gespeichert werden. Bitte nimm es erneut auf.",
     "title": "Körper",
