@@ -28,6 +28,7 @@ import { supabase, isNexusConfigured } from './supabase';
 import { selectAll, PAGE_SIZE } from './selectAll';
 import type { SessionLog, SetLog } from '@/types/logging';
 import type { Exercise } from '@/types/program';
+import type { BodyMetric } from '@/types/bodyMetrics';
 
 interface CloudSessionRow {
   id: string;
@@ -65,6 +66,19 @@ function coerceMood(m: string | null): Mood | null {
  *  doesn't match any local exercise. Keeps same-named sets grouped together. */
 function syntheticExerciseId(name: string): string {
   return `rec:${name.trim().toLowerCase().replace(/\s+/g, '-')}`;
+}
+
+/**
+ * v1.22 (limelog#123) — `workout_sessions.date` is a bare calendar day
+ * (YYYY-MM-DD). Restored as is, `new Date()` read it as UTC midnight, which is
+ * the previous evening west of Greenwich, so a recovered workout moved back a
+ * day. It comes back as local midday of that day instead: the same day in
+ * every zone. Anything else (a full moment) passes through unchanged.
+ */
+export function momentOfCloudDate(date: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!m) return date;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12).toISOString();
 }
 
 const SET_COLUMNS = 'id, session_id, exercise, weight_kg, reps, rpe';
@@ -195,7 +209,7 @@ export async function pullWorkoutsFromCloud(exercises: Exercise[], forUserId?: s
   }
 
   return (sessions as CloudSessionRow[]).map((s) => {
-    const date = s.date ?? new Date().toISOString();
+    const date = s.date ? momentOfCloudDate(s.date) : new Date().toISOString();
     const rows = setsBySession.get(s.id) ?? [];
     const setLogs: SetLog[] = rows.map((r, i) => ({
       id: r.id,
@@ -236,4 +250,90 @@ export async function pullWorkoutsFromCloud(exercises: Exercise[], forUserId?: s
     };
     return log;
   });
+}
+
+// -- v1.22 (limelog#124): body metrics ----------------------------------------
+//
+// body_metrics was push-only with no way back: after a sign-out and back in, a
+// reinstall or a new phone the Body page was empty while NCC still showed the
+// whole history. Same recovery-only contract as the workouts above: fetch
+// everything for the account; bodyMetricsStore.recoverMetrics adds only the
+// days the device does not have, so a local entry always wins.
+
+type CloudNum = number | string | null;
+
+export interface CloudBodyRow {
+  id: string;
+  date: string;
+  weight_kg: CloudNum;
+  chest_cm: CloudNum;
+  waist_cm: CloudNum;
+  hips_cm: CloudNum;
+  arms_cm: CloudNum;
+  legs_cm: CloudNum;
+  height_cm: CloudNum;
+  body_fat_pct: CloudNum;
+  water_pct: CloudNum;
+  protein_pct: CloudNum;
+  bmr_kcal: CloudNum;
+  visceral_fat: CloudNum;
+  bone_mass_kg: CloudNum;
+  muscle_mass_kg: CloudNum;
+  body_age: CloudNum;
+  notes: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+const BODY_COLUMNS =
+  'id, date, weight_kg, chest_cm, waist_cm, hips_cm, arms_cm, legs_cm, height_cm, body_fat_pct, water_pct, ' +
+  'protein_pct, bmr_kcal, visceral_fat, bone_mass_kg, muscle_mass_kg, body_age, notes, created_at, updated_at';
+
+/** numeric columns may arrive as strings; null is "not tracked". */
+function num(v: CloudNum): number | undefined {
+  if (v == null) return undefined;
+  const n = typeof v === 'number' ? v : Number(v);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+export function mapBodyRow(r: CloudBodyRow): BodyMetric {
+  const now = new Date().toISOString();
+  return {
+    id: r.id,
+    date: r.date,
+    weightKg: num(r.weight_kg),
+    chestCm: num(r.chest_cm),
+    waistCm: num(r.waist_cm),
+    hipsCm: num(r.hips_cm),
+    armsCm: num(r.arms_cm),
+    legsCm: num(r.legs_cm),
+    heightCm: num(r.height_cm),
+    bodyFatPct: num(r.body_fat_pct),
+    waterPct: num(r.water_pct),
+    proteinPct: num(r.protein_pct),
+    bmrKcal: num(r.bmr_kcal),
+    visceralFat: num(r.visceral_fat),
+    boneMassKg: num(r.bone_mass_kg),
+    muscleMassKg: num(r.muscle_mass_kg),
+    bodyAge: num(r.body_age),
+    notes: r.notes ?? undefined,
+    createdAt: r.created_at ?? now,
+    updatedAt: r.updated_at ?? now,
+  };
+}
+
+/** Every body_metrics row of `forUserId`. Throws when someone else (or no
+ *  one) is signed in by the time it runs, as the workout pull does. */
+export async function pullBodyMetricsFromCloud(forUserId: string): Promise<BodyMetric[]> {
+  if (!isNexusConfigured) return [];
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr) throw authErr;
+  if (!user) throw new Error('signed out before the pull started');
+  if (user.id !== forUserId) throw new Error('the signed-in account changed before the pull started');
+  const { data, error } = await selectAll<CloudBodyRow>(supabase, 'body_metrics', {
+    columns: BODY_COLUMNS,
+    filter: (q) => q.eq('user_id', user.id),
+  });
+  if (error) throw error;
+  return (data ?? []).map(mapBodyRow);
 }

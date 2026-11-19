@@ -11,6 +11,7 @@
 import type { SetLog, SessionLog, ExercisePR } from '@/types/logging';
 import { estimate1RM } from '@/utils/oneRepMax';
 import { localDateKey } from '@/utils/localDate';
+import { sessionMoment } from './sessionMoment';
 
 /** The best scoring set for an exercise within a list of sets, by estimated
  *  1RM. Only completed sets with a positive weight + reps count. Returns null
@@ -94,4 +95,49 @@ export function detectNewPRs(
     });
   }
   return newPRs;
+}
+
+/**
+ * v1.22 (limelog#119) — PR rows for finished workouts that have none, replayed
+ * in the order they were done, so the baseline is the user's real history.
+ *
+ * Nothing pulls `exercise_prs` back down, so after a reinstall, on a new phone
+ * or for workouts another device finished, the recovered history had no PRs:
+ * the next workout claimed one on every lift, and from then on the baseline
+ * was that workout. Workouts that already have PR rows keep them (they carry
+ * the ids the cloud and any retraction know); the rest are detected against
+ * everything finished before them. Rows for workouts no longer on the device
+ * count as a baseline from the start. Only the NEW rows are returned: the
+ * caller stores them without celebrating or pushing them (the cloud already
+ * has its own rows for workouts it gave back).
+ */
+export function rebuildPRs(
+  logs: SessionLog[],
+  existingPRs: ExercisePR[],
+  resolveName: (exerciseId: string) => string,
+  makeId: () => string,
+): ExercisePR[] {
+  const finished = logs
+    .filter((l) => l.finalizedAt)
+    .sort((a, b) => Date.parse(sessionMoment(a)) - Date.parse(sessionMoment(b)));
+  const known = new Map<string, ExercisePR[]>();
+  for (const p of existingPRs) {
+    const list = known.get(p.sessionId);
+    if (list) list.push(p);
+    else known.set(p.sessionId, [p]);
+  }
+  const present = new Set(finished.map((l) => l.id));
+  const seen: ExercisePR[] = existingPRs.filter((p) => !present.has(p.sessionId));
+  const added: ExercisePR[] = [];
+  for (const log of finished) {
+    const own = known.get(log.id);
+    if (own) {
+      seen.push(...own);
+      continue;
+    }
+    const fresh = detectNewPRs(log, seen, resolveName, makeId);
+    seen.push(...fresh);
+    added.push(...fresh);
+  }
+  return added;
 }

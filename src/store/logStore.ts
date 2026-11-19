@@ -6,7 +6,7 @@ import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { mapSessionLogToNexus } from '@/lib/nexusSync';
 import { enqueue as outboxEnqueue, cancel as outboxCancel } from '@/lib/outbox';
-import { detectNewPRs, currentPR } from '@/lib/prDetection';
+import { detectNewPRs, currentPR, rebuildPRs } from '@/lib/prDetection';
 import { staleUnfinishedLogs } from '@/lib/todaySessions';
 
 interface LogStore {
@@ -347,13 +347,15 @@ export const useLogStore = create<LogStore>((set, get) => ({
     const byId = new Map(incoming.map((l) => [l.id, { ...l, origin: 'cloud' as const }]));
     let changed = 0;
     const kept: SessionLog[] = [];
+    // Cloud workouts removed or replaced here: their PR rows go with them.
+    const stale = new Set<string>();
     for (const l of get().sessionLogs) {
       const theirs = byId.get(l.id);
       byId.delete(l.id);
       if (l.origin !== 'cloud' || !l.finalizedAt) { kept.push(l); continue; }
-      if (!theirs) { changed++; continue; }
+      if (!theirs) { changed++; stale.add(l.id); continue; }
       if (sameLog(l, theirs)) kept.push(l);
-      else { kept.push(theirs); changed++; }
+      else { kept.push(theirs); changed++; stale.add(l.id); }
     }
     const toAdd = [...byId.values()].filter((l) => !tombstoned.has(l.id));
     changed += toAdd.length;
@@ -365,6 +367,24 @@ export const useLogStore = create<LogStore>((set, get) => ({
     );
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    // v1.22 (limelog#119) — workouts that came from the cloud get their PRs,
+    // so the next workout is measured against the real history. Stored only:
+    // not celebrated, and not pushed (the cloud has its own rows for them, and
+    // a cloud workout is finished, undone or discarded on the device that made
+    // it, which retracts its own rows). A cloud workout removed or changed
+    // here drops its local rows, and a changed one is detected again.
+    if (toAdd.length > 0 || stale.size > 0) {
+      const { exercises } = useProgramStore.getState();
+      const nameOf = (id: string) =>
+        exercises.find((e) => e.id === id)?.name ?? (id.startsWith('rec:') ? id.slice(4).replace(/-/g, ' ') : 'Exercise');
+      const base = get().exercisePRs.filter((p) => !stale.has(p.sessionId));
+      const rebuilt = rebuildPRs(sessionLogs, base, nameOf, generateId);
+      if (rebuilt.length > 0 || base.length !== get().exercisePRs.length) {
+        const exercisePRs = [...rebuilt, ...base];
+        storage.setExercisePRs(exercisePRs);
+        set({ exercisePRs });
+      }
+    }
     return changed;
   },
 

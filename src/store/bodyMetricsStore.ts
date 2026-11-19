@@ -17,6 +17,29 @@ import { enqueue } from '@/lib/outbox';
 
 const STORAGE_KEY = 'limelog-body-metrics';
 const PREFS_KEY = 'limelog-body-metrics-prefs';
+// v1.22 (limelog#124) - days deleted on this device. The recovery pull runs at
+// every launch and sign-in, and can fetch a day before its queued delete has
+// landed; without this it would put the deleted entry back. Cleared when the
+// day is logged again, and by sign-out and erase with the other keys.
+export const DELETED_KEY = 'limelog-body-metrics-deleted';
+
+function loadDeleted(): string[] {
+  try {
+    const arr = JSON.parse(localStorage.getItem(DELETED_KEY) ?? '[]');
+    return Array.isArray(arr) ? arr : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveDeleted(dates: string[]): void {
+  try {
+    if (dates.length === 0) localStorage.removeItem(DELETED_KEY);
+    else localStorage.setItem(DELETED_KEY, JSON.stringify(dates));
+  } catch (e) {
+    console.error('[bodyMetrics] deleted-days save failed:', e);
+  }
+}
 
 function loadFromStorage(): BodyMetric[] {
   try {
@@ -66,6 +89,10 @@ interface BodyMetricsStore {
     input: Omit<BodyMetric, 'id' | 'createdAt' | 'updatedAt'> & { id?: string },
   ) => BodyMetric;
   remove: (id: string) => void;
+  /** v1.22 (limelog#124) - add pulled cloud rows for days this device has no
+   *  entry for (and did not delete). Local entries win; nothing is pushed.
+   *  Returns how many were added. */
+  recoverMetrics: (incoming: BodyMetric[]) => number;
   updatePrefs: (patch: Partial<BodyMetricsPrefs>) => void;
 
   // ── Selectors ────────────────────────────────────────────────────────
@@ -112,6 +139,8 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
       : [...get().metrics, merged];
     saveToStorage(next);
     set({ metrics: next });
+    const deleted = loadDeleted();
+    if (deleted.includes(merged.date)) saveDeleted(deleted.filter((d) => d !== merged.date));
     enqueue('upsert_body_metric', {
       id: merged.id,
       date: merged.date,
@@ -140,7 +169,24 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
     const next = get().metrics.filter((m) => m.id !== id);
     saveToStorage(next);
     set({ metrics: next });
+    const deleted = loadDeleted();
+    if (gone && !deleted.includes(gone.date)) saveDeleted([...deleted, gone.date]);
     enqueue('delete_body_metric', { id, date: gone?.date });
+  },
+
+  recoverMetrics(incoming) {
+    const skip = new Set([...get().metrics.map((m) => m.date), ...loadDeleted()]);
+    const add: BodyMetric[] = [];
+    for (const m of incoming) {
+      if (skip.has(m.date)) continue;
+      skip.add(m.date);
+      add.push(m);
+    }
+    if (add.length === 0) return 0;
+    const next = [...get().metrics, ...add];
+    saveToStorage(next);
+    set({ metrics: next });
+    return add.length;
   },
 
   updatePrefs(patch) {

@@ -11,6 +11,8 @@ import { TodayPage } from '@/pages/TodayPage';
 import { useProgramStore } from '@/store/programStore';
 import { useNexusStore } from '@/store/nexusStore';
 import { useLogStore } from '@/store/logStore';
+import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
+import type { BodyMetric } from '@/types/bodyMetrics';
 import { isGuestMode } from '@/lib/guestMode';
 import { isOnboarded, setOnboarded, hydrateOnboardedFromCloud, markOnboardedCloud, canAnswerLocallyNow } from '@/lib/onboarding';
 import { phaseSessions, resolvePhase } from '@/lib/todaySessions';
@@ -68,6 +70,18 @@ const recoveryGate = createRecoveryGate({
   apply: (logs) =>
     readOwner() === useNexusStore.getState().userId ? useLogStore.getState().recoverSessions(logs) : 0,
   ready: (userId) => readOwner() === userId,
+});
+
+// v1.22 (limelog#124) - body metrics come back the same way, once per
+// sign-in, into the same owner's data only. Its own gate, so a failure of one
+// pull does not hold the other back.
+const bodyRecoveryGate = createRecoveryGate<BodyMetric[]>({
+  read: () => useNexusStore.getState(),
+  pull: (userId) => import('@/lib/nexusRecovery').then((m) => m.pullBodyMetricsFromCloud(userId)),
+  apply: (rows) =>
+    readOwner() === useNexusStore.getState().userId ? useBodyMetricsStore.getState().recoverMetrics(rows) : 0,
+  ready: (userId) => readOwner() === userId,
+  what: 'body metric',
 });
 
 // v1.20 (LimeLog#110) — live sync: hints to NCC and the user's other devices
@@ -246,9 +260,11 @@ export default function App() {
   useEffect(() => {
     if (!nexusInitialized) return;
     recoveryGate.evaluate();
+    bodyRecoveryGate.evaluate();
     liveSync.evaluate();
     return useNexusStore.subscribe(() => {
       recoveryGate.evaluate();
+      bodyRecoveryGate.evaluate();
       liveSync.evaluate();
     });
   }, [nexusInitialized]);

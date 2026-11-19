@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { currentPR, detectNewPRs } from './prDetection';
+import { currentPR, detectNewPRs, rebuildPRs } from './prDetection';
 import { estimate1RM } from '@/utils/oneRepMax';
 import type { SessionLog, ExercisePR, SetLog } from '@/types/logging';
 
@@ -205,5 +205,44 @@ describe('detectNewPRs', () => {
       const prior = [{ id: 'p', exerciseId: 'squat', oneRepMaxKg: 109.08 }] as ExercisePR[];
       expect(detectNewPRs(sq(100, 4, 'b'), prior, name, makeId)).toHaveLength(1);
     });
+  });
+});
+
+// v1.22 (limelog#119) — history restored from the cloud came back with no PRs,
+// so the first workout after a reinstall claimed one on every lift.
+describe('rebuildPRs', () => {
+  const done = (id: string, at: string, weightKg: number, reps = 5) =>
+    session([set({ weightKg, reps })], { id, loggedAt: at, finalizedAt: at });
+
+  it('replays finished history in order: only real improvements are PRs', () => {
+    const logs = [
+      done('c', '2026-03-01T10:00:00.000Z', 90),
+      done('a', '2026-01-01T10:00:00.000Z', 80),
+      done('b', '2026-02-01T10:00:00.000Z', 100),
+    ];
+    const rows = rebuildPRs(logs, [], name, makeId);
+    expect(rows.map((p) => p.sessionId)).toEqual(['a', 'b']);
+    expect(currentPR(rows, 'squat')?.weightKg).toBe(100);
+  });
+
+  it('after a rebuild, a sub-max workout is not a new PR', () => {
+    const rows = rebuildPRs([done('a', '2026-01-01T10:00:00.000Z', 100)], [], name, makeId);
+    expect(detectNewPRs(session([set({ weightKg: 70 })], { id: 'new' }), rows, name, makeId)).toEqual([]);
+  });
+
+  it('keeps the rows a workout already has and returns only new ones', () => {
+    const own = detectNewPRs(done('a', '2026-01-01T10:00:00.000Z', 100), [], name, makeId);
+    const logs = [done('a', '2026-01-01T10:00:00.000Z', 100), done('b', '2026-02-01T10:00:00.000Z', 90)];
+    expect(rebuildPRs(logs, own, name, makeId)).toEqual([]);
+  });
+
+  it('skips workouts still in progress', () => {
+    const open = session([set({ weightKg: 200 })], { id: 'open', loggedAt: '2026-01-01T10:00:00.000Z' });
+    expect(rebuildPRs([open], [], name, makeId)).toEqual([]);
+  });
+
+  it('counts rows for workouts no longer on the device as a baseline', () => {
+    const orphan = [{ id: 'o', exerciseId: 'squat', oneRepMaxKg: 200, sessionId: 'gone' }] as ExercisePR[];
+    expect(rebuildPRs([done('a', '2026-01-01T10:00:00.000Z', 100)], orphan, name, makeId)).toEqual([]);
   });
 });

@@ -13,7 +13,7 @@
 
 import { supabase, isNexusConfigured } from './supabase';
 import type { SessionLog } from '@/types/logging';
-import { sessionMoment } from '@/lib/sessionMoment';
+import { sessionMoment, localParts } from '@/lib/sessionMoment';
 import type { Exercise, SessionTemplate } from '@/types/program';
 
 interface NexusSetPayload {
@@ -34,6 +34,7 @@ export interface NexusWorkoutPayload {
   // one workout became N duplicate cloud sessions (the "6 workouts" bug).
   sessionId: string;
   sessionType: string;
+  /** v1.22 (limelog#123): the user's local calendar day, YYYY-MM-DD. */
   date: string;
   notes?: string;
   sets: NexusSetPayload[];
@@ -78,7 +79,13 @@ export function mapSessionLogToNexus(
     sessionType: session?.name ?? log.activityType ?? 'workout',
     // v1.19 (LL#103): an activity's own moment, so a back-dated run lands on
     // its day in workout_sessions and in NCC (see sessionMoment).
-    date: sessionMoment(log),
+    // v1.22 (limelog#123): as the user's LOCAL day. The column is a `date`,
+    // and Postgres keeps the literal date part of an ISO moment, which is the
+    // UTC day: a workout finished at 00:30 in Helsinki or after ~19:00 in New
+    // York landed on the wrong day in NCC, which reads it as a local day.
+    // Builds before 1.22 still send the ISO moment; their rows keep the UTC
+    // day until the session is pushed again.
+    date: localParts(new Date(sessionMoment(log))).date,
     notes: log.notes,
     sets,
     activityType: log.activityType,

@@ -15,7 +15,7 @@ vi.mock('@/lib/nexusSync', () => ({
   mapSessionLogToNexus: (log: SessionLog) => ({ sessionId: log.id, sets: log.sets.filter((s) => s.completed).length }),
 }));
 vi.mock('@/lib/outbox', () => ({ enqueue: (...a: unknown[]) => enqueue(...a), cancel: (...a: unknown[]) => cancel(...a) }));
-vi.mock('@/lib/prDetection', () => ({ detectNewPRs: () => [], currentPR: () => null }));
+vi.mock('@/lib/prDetection', () => ({ detectNewPRs: () => [], currentPR: () => null, rebuildPRs: () => [] }));
 
 function storage() {
   const m = new Map<string, string>();
