@@ -19,9 +19,10 @@ vi.mock('./supabase', () => {
     supabase: {
       auth: { getUser: async () => ({ data: { user: { id: 'user-1' } }, error: null }) },
       from: (table: string) => ({
+        // v1.22 (limelog#118): the session upsert reads back the stored stamp.
         upsert: (row: Row) => {
           if (table === 'workout_sessions') sent.sessions.push(row);
-          return Promise.resolve(ok);
+          return Object.assign(Promise.resolve(ok), { select: () => Promise.resolve({ data: [row], error: null }) });
         },
         delete: () => chain,
       }),

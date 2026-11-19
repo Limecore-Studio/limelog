@@ -213,8 +213,10 @@ export function enqueue<K extends OutboxKind>(kind: K, payload: KindPayload[K]):
 /** Remove queued items of `kind` whose payload matches. Returns how many.
  *  v1.18.1 (LimeLog#72): a PR retracted while its insert is still queued. The
  *  delete queued after it is not enough on its own: an insert that has hit
- *  MAX_ATTEMPTS moves to the back, behind the delete, and lands after it. An
- *  item already being pushed is not in storage, and its delete follows it. */
+ *  MAX_ATTEMPTS moves to the back, behind the delete, and lands after it.
+ *  v1.22 (limelog#118): an item being pushed stays in storage while its push
+ *  is in flight, so cancelling removes it there too, and drain() does not
+ *  write it back if that push then fails. */
 export function cancel<K extends OutboxKind>(kind: K, match: (payload: KindPayload[K]) => boolean): number {
   const items = loadItems();
   const kept = items.filter((i) => i.kind !== kind || !match(i.payload as KindPayload[K]));
@@ -333,11 +335,19 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
         const failed = { ...item, attempts, lastAttemptAt: new Date().toISOString(), lastError: errMsg };
         // Same rule as the success path: rebuild from the live queue so items
         // enqueued during the await survive (limelog#28).
-        const others = loadItems().filter((i) => i.id !== item.id);
-        // At ceiling? Move to the back of the queue so subsequent items can
-        // still attempt. We never silently drop — the stuck-queue warning in
-        // Settings surfaces this.
-        saveItems(attempts >= MAX_ATTEMPTS ? [...others, failed] : [failed, ...others]);
+        const live = loadItems();
+        const others = live.filter((i) => i.id !== item.id);
+        // v1.22 (limelog#118) — an item cancelled while its push was in flight
+        // (Finish or Discard replaced it) is gone from the live queue, and
+        // stays gone. Writing it back from this in-memory copy resurrected the
+        // stale payload; once at MAX_ATTEMPTS it landed after the final push
+        // and its set clean-up deleted the workout's later sets.
+        if (others.length !== live.length) {
+          // At ceiling? Move to the back of the queue so subsequent items can
+          // still attempt. We never silently drop — the stuck-queue warning in
+          // Settings surfaces this.
+          saveItems(attempts >= MAX_ATTEMPTS ? [...others, failed] : [failed, ...others]);
+        }
         saveMeta({ ...loadMeta(), lastError: errMsg, lastErrorAt: new Date().toISOString() });
         // Stop the drain pass — most likely the next item would hit the same
         // error. Next trigger (online / visibility / manual) tries again.

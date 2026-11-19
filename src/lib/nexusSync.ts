@@ -108,6 +108,20 @@ export async function setRowId(sessionId: string, index: number): Promise<string
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
+/** v1.22 (limelog#118) — true when the row the upsert returned carries a
+ *  newer stamp than the one sent, i.e. the LWW guard kept the stored row.
+ *  An accepted write returns the sent stamp, or an earlier one when the server
+ *  clamped a stamp from the future. No row back (or no stamp) is not proof of
+ *  a rejection, so it counts as accepted, as every push did before. */
+export function sessionRejected(stored: unknown, sentStamp: string): boolean {
+  const row = Array.isArray(stored) ? stored[0] : stored;
+  const at = (row as { updated_at?: unknown } | null | undefined)?.updated_at;
+  if (typeof at !== 'string') return false;
+  const storedMs = Date.parse(at);
+  const sentMs = Date.parse(sentStamp);
+  return Number.isFinite(storedMs) && Number.isFinite(sentMs) && storedMs > sentMs;
+}
+
 /** v1.18.1 (LimeLog#88) — the session's account changed between the outbox
  *  picking an item and the push asking who is signed in. */
 export class AccountChangedError extends Error {
@@ -159,7 +173,7 @@ export async function pushWorkoutToNexus(workout: NexusWorkoutPayload, forUserId
   const sessionId = workout.sessionId;
   const now = new Date().toISOString();
 
-  const { error: sessionErr } = await supabase
+  const { data: stored, error: sessionErr } = await supabase
     .from('workout_sessions')
     .upsert({
       id: sessionId,
@@ -179,8 +193,16 @@ export async function pushWorkoutToNexus(workout: NexusWorkoutPayload, forUserId
       // session saved offline and pushed hours later must not beat an edit
       // made in between on another device (limecore#27, registry P6).
       updated_at: workout.updatedAt ?? now,
-    });
+    })
+    .select('updated_at');
   if (sessionErr) throw sessionErr;
+
+  // v1.22 (limelog#118) — the server's LWW guard (set_updated_at) keeps the
+  // stored row when this payload is older, and RETURNING then hands back the
+  // stored, newer stamp. The sets below belong to that rejected, older save:
+  // writing them, and above all deleting every set not in them, would cut a
+  // finished workout back to an earlier set list. So they are skipped too.
+  if (workout.updatedAt && sessionRejected(stored, workout.updatedAt)) return sessionId;
 
   // Limekana/limelog#28 — sets are written idempotently. The old
   // delete-everything-then-insert-fresh-uuids shape multiplied rows whenever
