@@ -200,6 +200,7 @@
     "resumeWorkout": "Lanjutkan latihan"
   },
   "settings": {
+    "exportInterrupted": "Ekspor terputus karena Android menutup LimeLog saat pemilih file terbuka. Tidak ada yang disimpan. Ketuk Ekspor lagi.",
     "errorReports": "Kirim laporan kesalahan",
     "errorReportsSub": "Mati secara bawaan · khusus akun",
     "errorReportsNote": "Saat aplikasi mengalami kesalahan yang tidak bisa dipulihkan, aplikasi mengirimkan jenis kesalahan, lokasinya di kode kami, versi aplikasi dan Android atau browser, serta layar yang terbuka. Tidak pernah apa yang Anda masukkan. Disimpan 90 hari.",
@@ -259,6 +260,8 @@
     "noCustomFilter": "Tidak ada gerakan kustom yang cocok dengan filtermu."
   },
   "body": {
+    "photoRestored": "Foto progres Anda untuk {{date}} telah disimpan.",
+    "photoRestoreFailed": "Foto progres yang baru Anda ambil tidak dapat disimpan. Silakan ambil lagi.",
     "title": "Tubuh",
     "subtitle": "Berat, ukuran, dan foto progres",
     "currentWeight": "Berat saat ini",

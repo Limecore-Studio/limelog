@@ -204,6 +204,7 @@
     "resumeWorkout": "Training fortsetzen"
   },
   "settings": {
+    "exportInterrupted": "Der Export wurde unterbrochen, weil Android LimeLog bei geöffneter Dateiauswahl geschlossen hat. Es wurde nichts gespeichert. Tippe erneut auf Exportieren.",
     "errorReports": "Fehlerberichte senden",
     "errorReportsSub": "Standardmäßig aus · nur mit Konto",
     "errorReportsNote": "Wenn die App auf einen Fehler stößt, von dem sie sich nicht erholt, sendet sie uns, welcher Fehler es war, wo in unserem Code, die App- und Android- bzw. Browserversion und den geöffneten Bildschirm. Nie, was du eingegeben hast. 90 Tage gespeichert.",
@@ -243,6 +244,8 @@
     "fdroidCheckNote": "Einmal am Tag fragt LimeLog bei f-droid.org nach der neuesten Version. Über dich wird nichts gesendet. Ausgeschaltet unterbleibt die Anfrage ganz."
   },
   "body": {
+    "photoRestored": "Dein Fortschrittsfoto für {{date}} wurde gespeichert.",
+    "photoRestoreFailed": "Das gerade aufgenommene Fortschrittsfoto konnte nicht gespeichert werden. Bitte nimm es erneut auf.",
     "title": "Körper",
     "subtitle": "Gewicht, Maße & Fortschrittsfotos",
     "currentWeight": "Aktuelles Gewicht",

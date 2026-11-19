@@ -27,6 +27,7 @@ const notifications = () => import('@/utils/notifications');
 import { OptionalChunk } from '@/components/OptionalChunk';
 import { useDataReady, showsSignIn } from '@/lib/dataReady';
 import { DataHold } from '@/components/DataHold';
+import { useConfirm } from '@/components/confirmContext';
 
 // v1.17 (limecore#13): every page a launch does not open on is its own chunk,
 // loaded the first time it is visited. Today (the index route) and the
@@ -313,6 +314,29 @@ export default function App() {
       void handle.then((h) => h.remove());
     };
   }, [activeProgram, exerciseLibrary, i18n.language]);
+
+  // v1.22 (limelog#125, #136) — a camera photo or an export picked while
+  // Android killed LimeLog comes back only as this event (lib/restoredResult.ts
+  // has why). Capacitor holds it until a listener attaches, so attaching here
+  // at start is in time; the handler loads on demand.
+  const confirm = useConfirm();
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    const handle = CapacitorApp.addListener('appRestoredResult', (e) => {
+      void import('@/lib/restoredResult').then(async (m) => {
+        const out = await m.handleRestoredResult(e);
+        if (!out) return;
+        const message =
+          out.kind === 'photoSaved' ? t('body.photoRestored', { date: out.date })
+            : out.kind === 'photoFailed' ? t('body.photoRestoreFailed')
+              : t('settings.exportInterrupted');
+        await confirm({ message, notice: true, destructive: false, confirmLabel: t('common.close') });
+      });
+    });
+    return () => {
+      void handle.then((h) => h.remove());
+    };
+  }, [confirm, t]);
 
   // Auth gate: show the first-launch screen on a fresh install (no email,
   // not in guest mode). Skipped when Supabase isn't configured (env vars

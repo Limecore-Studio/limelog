@@ -208,6 +208,7 @@
     "resumeWorkout": "Retomar treino"
   },
   "settings": {
+    "exportInterrupted": "A exportação foi interrompida porque o Android fechou o LimeLog com o seletor de ficheiros aberto. Nada foi guardado. Toque novamente em Exportar.",
     "errorReports": "Enviar relatórios de erro",
     "errorReportsSub": "Desativado por padrão · só com conta",
     "errorReportsNote": "Quando o app encontra um erro do qual não consegue se recuperar, ele nos envia qual foi o erro, onde no nosso código, a versão do app e do Android ou do navegador, e a tela aberta. Nunca o que você digitou. Guardados por 90 dias.",
@@ -267,6 +268,8 @@
     "noCustomFilter": "Nenhum exercício personalizado corresponde aos seus filtros."
   },
   "body": {
+    "photoRestored": "A sua foto de progresso de {{date}} foi guardada.",
+    "photoRestoreFailed": "Não foi possível guardar a foto de progresso que acabou de tirar. Tire-a novamente.",
     "title": "Corpo",
     "subtitle": "Peso, medidas e fotos de progresso",
     "currentWeight": "Peso atual",

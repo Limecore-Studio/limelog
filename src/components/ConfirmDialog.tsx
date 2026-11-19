@@ -63,9 +63,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
             {pending.title && <h2 className="cfd-title">{pending.title}</h2>}
             <p className="cfd-message">{pending.message}</p>
             <div className="cfd-actions">
-              <button className="cfd-btn" onClick={() => settle(false)}>
-                {pending.cancelLabel ?? t('common.cancel')}
-              </button>
+              {!pending.notice && (
+                <button className="cfd-btn" onClick={() => settle(false)}>
+                  {pending.cancelLabel ?? t('common.cancel')}
+                </button>
+              )}
               <button
                 className={`cfd-btn cfd-btn--${pending.destructive === false ? 'primary' : 'danger'}`}
                 onClick={() => settle(true)}
