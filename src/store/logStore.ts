@@ -7,6 +7,7 @@ import { useNexusStore } from '@/store/nexusStore';
 import { mapSessionLogToNexus } from '@/lib/nexusSync';
 import { enqueue as outboxEnqueue, cancel as outboxCancel } from '@/lib/outbox';
 import { detectNewPRs, currentPR } from '@/lib/prDetection';
+import { staleUnfinishedLogs } from '@/lib/todaySessions';
 
 interface LogStore {
   sessionLogs: SessionLog[];
@@ -42,7 +43,12 @@ interface LogStore {
       noteSummary: string;
     } | null,
   ) => void;
-  finalizeSession: (logId: string) => void;
+  /** `at` dates the finish (defaults to now); `quiet` skips the PR
+   *  celebration. Both for workouts finished on the user's behalf. */
+  finalizeSession: (logId: string, opts?: { at?: string; quiet?: boolean }) => void;
+  /** v1.22 (limelog#120) — finish unfinished workouts with sets done that have
+   *  aged out of the resume window. Returns how many. */
+  finishStaleWorkouts: (now?: Date) => number;
   unfinalizeSession: (logId: string) => void;
   discardSession: (logId: string) => void;
 
@@ -207,9 +213,9 @@ export const useLogStore = create<LogStore>((set, get) => ({
     set({ sessionLogs });
   },
 
-  finalizeSession: (logId) => {
+  finalizeSession: (logId, opts) => {
     cancelLivePush(logId);
-    const finalizedAt = new Date().toISOString();
+    const finalizedAt = opts?.at ?? new Date().toISOString();
     const sessionLogs = get().sessionLogs.map((l) =>
       l.id === logId ? { ...l, finalizedAt } : l
     );
@@ -230,7 +236,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     if (newPRs.length > 0) {
       const exercisePRs = [...newPRs, ...get().exercisePRs];
       storage.setExercisePRs(exercisePRs);
-      set({ exercisePRs, lastCelebratedPRs: newPRs });
+      set(opts?.quiet ? { exercisePRs } : { exercisePRs, lastCelebratedPRs: newPRs });
     }
 
     // v1.18.1 (LimeLog#75) — stall detection runs here, once per finished
@@ -273,7 +279,17 @@ export const useLogStore = create<LogStore>((set, get) => ({
     }
     const store = useNexusStore.getState();
     store.refreshPendingCount();
-    store.setLastPushAt(finalizedAt);
+    store.setLastPushAt(new Date().toISOString());
+  },
+
+  // v1.22 (limelog#120) — finished as of when it was started, which is the
+  // moment its in-progress push already gave the cloud row (sessionMoment
+  // falls back to loggedAt), so the workout keeps its day everywhere. Quiet:
+  // a PR found in a week-old workout is stored, not celebrated on app open.
+  finishStaleWorkouts: (now = new Date()) => {
+    const stale = staleUnfinishedLogs(get().sessionLogs, now);
+    for (const l of stale) get().finalizeSession(l.id, { at: l.loggedAt, quiet: true });
+    return stale.length;
   },
 
   unfinalizeSession: (logId) => {
