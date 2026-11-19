@@ -369,6 +369,8 @@
     }
   },
   "log": {
+    "pillReturn": "Kembali ke latihan",
+    "pillRest": "Istirahat {{time}}",
     "override": "Tetap lakukan",
     "swap": "Ganti",
     "swapAria": "Ganti {{name}} untuk latihan ini",

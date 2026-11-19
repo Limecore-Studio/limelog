@@ -475,6 +475,8 @@
     "restrictExercises": "Restrict specific exercises"
   },
   "log": {
+    "pillReturn": "Back to your workout",
+    "pillRest": "Rest {{time}}",
     "override": "Override",
     "swap": "Swap",
     "swapAria": "Swap {{name}} for this workout",

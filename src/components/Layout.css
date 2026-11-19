@@ -67,6 +67,11 @@
   position: relative;
 }
 
+/* v1.22 (limelog#147): room for the workout pill above the nav. */
+.app-main--pill {
+  padding-bottom: calc(var(--nav-height) + 64px);
+}
+
 .app-main > * {
   animation: page-strike 140ms var(--ease-strike);
 }

@@ -471,6 +471,8 @@
     "restrictExercises": "限制特定动作"
   },
   "log": {
+    "pillReturn": "返回训练",
+    "pillRest": "休息 {{time}}",
     "override": "忽略限制",
     "swap": "替换",
     "swapAria": "本次训练替换 {{name}}",

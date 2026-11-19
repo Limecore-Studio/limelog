@@ -22,6 +22,7 @@ import { SwapExerciseSheet } from '@/components/SwapExerciseSheet';
 import { effectiveExerciseId } from '@/lib/exerciseSwap';
 import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc } from 'lucide-react';
 import './WorkoutPage.css';
+import { loadActiveRest, saveActiveRest, clearActiveRest, type RestState } from '@/lib/activeRest';
 
 const DEFAULT_REST_SECONDS = 90;
 
@@ -41,45 +42,8 @@ function parseRepCeiling(targetReps: string): number {
 // resume we just recompute from wall-clock), and a kill-then-resume rehydrates
 // the live timer from storage. The persisted record is scoped to the workout's
 // logId so a stale timer never bleeds into a different session.
-interface RestState {
-  /** Absolute epoch ms when the rest ends. */
-  endsAt: number;
-  total: number;
-  exerciseName: string;
-}
-
-interface PersistedRest extends RestState {
-  logId: string;
-}
-
-const ACTIVE_REST_KEY = 'wt_active_rest';
-
-function loadActiveRest(): PersistedRest | null {
-  try {
-    const raw = localStorage.getItem(ACTIVE_REST_KEY);
-    if (!raw) return null;
-    const p = JSON.parse(raw) as PersistedRest;
-    return typeof p?.endsAt === 'number' && typeof p?.logId === 'string' ? p : null;
-  } catch {
-    return null;
-  }
-}
-
-function saveActiveRest(r: RestState, logId: string): void {
-  try {
-    localStorage.setItem(ACTIVE_REST_KEY, JSON.stringify({ ...r, logId }));
-  } catch {
-    /* non-fatal — the in-memory timer still works this session */
-  }
-}
-
-function clearActiveRest(): void {
-  try {
-    localStorage.removeItem(ACTIVE_REST_KEY);
-  } catch {
-    /* ignore */
-  }
-}
+// v1.22 (limelog#147): the record lives in lib/activeRest.ts, shared with
+// the workout pill in Layout.
 
 function remainingSecs(rest: RestState | null, now: number): number {
   return rest ? Math.max(0, Math.ceil((rest.endsAt - now) / 1000)) : 0;

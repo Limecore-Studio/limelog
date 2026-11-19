@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sessionsForDay, resolvePhase, phaseSessions, deloadTargetReps, resumableLogs, staleUnfinishedLogs } from './todaySessions';
+import { sessionsForDay, resolvePhase, phaseSessions, deloadTargetReps, resumableLogs, staleUnfinishedLogs, activeWorkoutId } from './todaySessions';
 import { missedRepRatio } from '@/utils/oneRepMax';
 import type { Phase, SessionExercise, SessionTemplate } from '@/types/program';
 import type { SessionLog } from '@/types/logging';
@@ -200,5 +200,26 @@ describe('staleUnfinishedLogs', () => {
     const resumable = resumableLogs(logs, [], now).map((l) => l.id);
     expect(stale).toEqual(['a']);
     expect(resumable).toEqual(['b']);
+  });
+});
+
+// v1.22 (limelog#147) — the workout the Layout pill shows.
+describe('activeWorkoutId', () => {
+  const now = new Date('2026-11-19T18:00:00Z').getTime();
+  const log = (id: string, loggedAt: string, over: Partial<SessionLog> = {}) =>
+    ({ id, sessionTemplateId: 't', loggedAt, sets: [], perceivedFatigue: null, ...over }) as SessionLog;
+
+  it('the newest unfinished workout started in the last 6 hours', () => {
+    const logs = [log('a', '2026-11-19T16:00:00Z'), log('b', '2026-11-19T17:30:00Z')];
+    expect(activeWorkoutId(logs, now)).toBe('b');
+  });
+
+  it('not a finished one, a cardio log, or one begun and forgotten yesterday', () => {
+    const logs = [
+      log('done', '2026-11-19T17:00:00Z', { finalizedAt: '2026-11-19T17:50:00Z' }),
+      log('run', '2026-11-19T17:00:00Z', { activityType: 'run' } as Partial<SessionLog>),
+      log('old', '2026-11-18T18:00:00Z'),
+    ];
+    expect(activeWorkoutId(logs, now)).toBeNull();
   });
 });
