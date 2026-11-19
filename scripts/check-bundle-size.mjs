@@ -49,7 +49,10 @@ import { fileURLToPath } from 'node:url';
 // v1.22 (limecore#126): English, the fallback language, is a chunk like the
 // other nine (src/i18n/index.ts), 633.3 -> 611.2 KiB. Strings added to
 // en.json no longer count against this budget.
-const BUDGET_KIB = 612; // 2026-11-19 (limecore#126): 611.2 measured with en.json on demand; was 634 (2026-11-16, limecore#101): 632.9 measured with the Nexus inherit on demand, set at 634 not 633 because the other v1.21.1 PRs (delete account, export file, opt-in consent) add about 0.2-0.4 KiB of startup between them; the release PR sets it to the measured total; was 635 (2026-11-06, LimeLog#116): 634.7 measured; was 653 (2026-11-05, limecore#73): 652.7 measured with the sign-in screen on demand; was 660 (2026-10-30, LimeLog#110: 659.4 with the workout pull on demand), 662, 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
+// 20 KiB of headroom is kept above the measured size on the owner's decision
+// (2026-11-19, limecore#126), for the v1.22 fixes that touch the first screen.
+// The release PR sets it back to the measured size.
+const BUDGET_KIB = 632; // 2026-11-19 (limecore#126): 611.2 measured with en.json on demand, plus 20 KiB of v1.22 headroom (owner decision); was 634 (2026-11-16, limecore#101): 632.9 measured with the Nexus inherit on demand, set at 634 not 633 because the other v1.21.1 PRs (delete account, export file, opt-in consent) add about 0.2-0.4 KiB of startup between them; the release PR sets it to the measured total; was 635 (2026-11-06, LimeLog#116): 634.7 measured; was 653 (2026-11-05, limecore#73): 652.7 measured with the sign-in screen on demand; was 660 (2026-10-30, LimeLog#110: 659.4 with the workout pull on demand), 662, 661 (2026-10-12), 655 (2026-10-08, limecore#21: 653.2 KiB measured)
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
