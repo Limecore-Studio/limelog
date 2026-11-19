@@ -44,6 +44,11 @@ export interface Exercise {
   equipment: Equipment;
   isBilateral: boolean;
   notes?: string;
+  /** v1.22 (limelog#122) — removed from the library while programs or logged
+   *  workouts still refer to it: no longer offered, still resolved by id so
+   *  history, Progress and the cloud push keep its name. Adding the same
+   *  name again brings it back with its id. */
+  archived?: boolean;
 }
 
 export type PhaseType = 'accumulation' | 'intensification' | 'peaking' | 'deload';
@@ -69,6 +74,10 @@ export interface SessionTemplate {
   orderIndex: number;
   exercises: SessionExercise[];
   previousPerformance?: Record<string, number>;
+  /** v1.22 (limelog#121) — deleted while it had workouts logged: kept, like
+   *  deletePhase's kept sessions, so History can name them and an unfinished
+   *  one can still be finished, but never offered or reminded about. */
+  retired?: boolean;
 }
 
 export interface SessionExercise {

@@ -369,9 +369,12 @@
     "sessions_many": "{{count}} sesiones",
     "exercises_many": "{{count}} ejercicios",
     "deactivate": "Desactivar",
-    "deletePhaseConfirm": "¿Eliminar la fase «{{name}}» y sus sesiones? Los entrenamientos terminados se quedan en Progreso."
+    "deletePhaseConfirm": "¿Eliminar la fase «{{name}}» y sus sesiones? Los entrenamientos terminados se quedan en Progreso.",
+    "deleteSessionConfirm": "¿Eliminar la sesión «{{name}}»? Los entrenamientos terminados se quedan en Progreso."
   },
   "library": {
+    "deleteConfirm": "¿Quitar «{{name}}» de tu biblioteca?",
+    "deleteInUseConfirm": "¿Quitar «{{name}}» de tu biblioteca? Se usa en tu programa o en entrenamientos anteriores, así que se mantiene allí y en Progreso. Solo dejará de ofrecerse.",
     "title": "Biblioteca de ejercicios",
     "inLibrary_one": "{{count}} ejercicio en tu biblioteca",
     "inLibrary_other": "{{count}} ejercicios en tu biblioteca",

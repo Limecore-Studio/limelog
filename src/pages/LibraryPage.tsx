@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
+import { useDeleteExercise } from '@/components/useDeleteExercise';
 import { BUILTIN_EXERCISES } from '@/data/builtinExercises';
 import type { MovementPattern, BuiltinMovementPattern, Equipment, BuiltinEquipment } from '@/types';
 import { Button, Tabs, TabPanel } from '@/components/ui';
@@ -35,7 +36,10 @@ function matchesFilter(
 
 export function LibraryPage() {
   const { t } = useTranslation();
-  const { exercises, addExercise, deleteExercise } = useProgramStore();
+  const { exercises: stored, addExercise } = useProgramStore();
+  // v1.22 (limelog#122): archived exercises are kept for history, not listed.
+  const exercises = useMemo(() => stored.filter((e) => !e.archived), [stored]);
+  const deleteExercise = useDeleteExercise();
   // defaultValue keeps a user's own wording intact — without it a custom
   // pattern rendered as the raw key, "library.pattern.sandbag".
   const patternLabel = (p: MovementPattern) => t(`library.pattern.${p}`, { defaultValue: p });
@@ -272,7 +276,7 @@ export function LibraryPage() {
                 </div>
                 <button
                   className="lib-page__item-del"
-                  onClick={() => deleteExercise(ex.id)}
+                  onClick={() => void deleteExercise(ex)}
                   aria-label={t('library.removeAria', { name: ex.name })}
                 >
                   <Trash2 size={14} aria-hidden="true" />

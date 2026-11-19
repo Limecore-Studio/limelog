@@ -14,7 +14,8 @@ interface Props { onClose: () => void; }
 export function InjuryForm({ onClose }: Props) {
   const { t } = useTranslation();
   const { addRestriction } = useUserStore();
-  const { exercises } = useProgramStore();
+  // v1.22 (limelog#122): archived exercises are not offered.
+  const exercises = useProgramStore((s) => s.exercises).filter((e) => !e.archived);
   const [label, setLabel] = useState('');
   const [severity, setSeverity] = useState<InjurySeverity>('avoid');
   const [patterns, setPatterns] = useState<MovementPattern[]>([]);

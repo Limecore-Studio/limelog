@@ -50,7 +50,7 @@ export function PhaseList({ program }: Props) {
   }
 
   const phaseSessions = (phaseId: string) =>
-    program.sessions.filter((s) => s.phaseId === phaseId).sort((a, b) => a.orderIndex - b.orderIndex);
+    program.sessions.filter((s) => s.phaseId === phaseId && !s.retired).sort((a, b) => a.orderIndex - b.orderIndex);
 
   return (
     <div className="phase-list">

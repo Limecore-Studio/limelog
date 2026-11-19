@@ -361,9 +361,12 @@
       "sat": "Sat"
     },
     "deactivate": "Deactivate",
-    "deletePhaseConfirm": "Delete the phase “{{name}}” and its sessions? Finished workouts stay in Progress."
+    "deletePhaseConfirm": "Delete the phase “{{name}}” and its sessions? Finished workouts stay in Progress.",
+    "deleteSessionConfirm": "Delete the session “{{name}}”? Finished workouts stay in Progress."
   },
   "library": {
+    "deleteConfirm": "Remove “{{name}}” from your library?",
+    "deleteInUseConfirm": "Remove “{{name}}” from your library? It is used in your program or in past workouts, so it stays there and in Progress. It just won’t be offered any more.",
     "title": "Exercise Library",
     "inLibrary_one": "{{count}} exercise in your library",
     "inLibrary_other": "{{count}} exercises in your library",
