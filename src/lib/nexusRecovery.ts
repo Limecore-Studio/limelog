@@ -68,6 +68,19 @@ function syntheticExerciseId(name: string): string {
   return `rec:${name.trim().toLowerCase().replace(/\s+/g, '-')}`;
 }
 
+/**
+ * v1.22 (limelog#123) — `workout_sessions.date` is a bare calendar day
+ * (YYYY-MM-DD). Restored as is, `new Date()` read it as UTC midnight, which is
+ * the previous evening west of Greenwich, so a recovered workout moved back a
+ * day. It comes back as local midday of that day instead: the same day in
+ * every zone. Anything else (a full moment) passes through unchanged.
+ */
+export function momentOfCloudDate(date: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!m) return date;
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12).toISOString();
+}
+
 const SET_COLUMNS = 'id, session_id, exercise, weight_kg, reps, rpe';
 
 /** Sessions per request. At the usual 15–20 sets a session this stays well
@@ -196,7 +209,7 @@ export async function pullWorkoutsFromCloud(exercises: Exercise[], forUserId?: s
   }
 
   return (sessions as CloudSessionRow[]).map((s) => {
-    const date = s.date ?? new Date().toISOString();
+    const date = s.date ? momentOfCloudDate(s.date) : new Date().toISOString();
     const rows = setsBySession.get(s.id) ?? [];
     const setLogs: SetLog[] = rows.map((r, i) => ({
       id: r.id,
