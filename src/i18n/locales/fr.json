@@ -248,6 +248,12 @@
     "fdroidCheckNote": "Une fois par jour, LimeLog demande à f-droid.org quelle est la version la plus récente. Rien vous concernant n’est envoyé. Désactivée, la requête n’est plus envoyée du tout."
   },
   "body": {
+    "savePhotoCopy": "Enregistrer une copie de la photo du {{date}}",
+    "photoCopySaved": "{{name}} enregistré",
+    "photoCopyFailed": "La copie n’a pas pu être enregistrée.",
+    "photoFullTitle": "Stockage des photos plein",
+    "photoFullConfirm": "Cet appareil conserve jusqu’à 30 photos de progression. En prendre une nouvelle supprime la plus ancienne, du {{date}}. Pour la garder, annulez et enregistrez-en d’abord une copie.",
+    "photoFullContinue": "Supprimer la plus ancienne et continuer",
     "photoRestored": "Votre photo de progression du {{date}} a été enregistrée.",
     "photoRestoreFailed": "La photo de progression que vous venez de prendre n’a pas pu être enregistrée. Reprenez-la.",
     "title": "Corps",

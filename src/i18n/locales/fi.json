@@ -244,6 +244,12 @@
     "fdroidCheckNote": "LimeLog kysyy kerran päivässä f-droid.orgilta uusinta versiota. Sinusta ei lähetetä mitään. Kun tämä on pois päältä, kyselyä ei tehdä lainkaan."
   },
   "body": {
+    "savePhotoCopy": "Tallenna kopio kuvasta {{date}}",
+    "photoCopySaved": "Tallennettu {{name}}",
+    "photoCopyFailed": "Kopiota ei voitu tallentaa.",
+    "photoFullTitle": "Kuvatila on täynnä",
+    "photoFullConfirm": "Laitteelle mahtuu enintään 30 edistymiskuvaa. Uuden kuvan ottaminen poistaa vanhimman, päivältä {{date}}. Jos haluat säilyttää sen, peruuta ja tallenna siitä ensin kopio.",
+    "photoFullContinue": "Poista vanhin ja jatka",
     "photoRestored": "Edistymiskuvasi päivälle {{date}} tallennettiin.",
     "photoRestoreFailed": "Juuri ottamaasi edistymiskuvaa ei voitu tallentaa. Ota se uudelleen.",
     "title": "Keho",

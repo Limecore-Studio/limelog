@@ -22,7 +22,7 @@ import {
   CameraSource,
 } from '@capacitor/camera';
 import { Button, Card } from '@/components/ui';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, Download, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/confirmContext';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import {
@@ -41,6 +41,8 @@ import {
   savePhoto,
   savePhotoFromDataUrl,
   photoDataUrlFromWebPath,
+  photoToEvict,
+  savePhotoCopy,
   getPhoto,
   deletePhoto,
   listPhotos,
@@ -240,8 +242,33 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
   // Web path keeps using <input type="file"> + canvas pipeline — no
   // process-kill risk in a browser tab, and Capacitor.isNativePlatform()
   // gates the plugin call so non-Android builds don't fail at import.
+  // v1.22 (limelog#126) — with the gallery full, a new day's photo deletes
+  // the oldest. Said BEFORE the camera opens, with the chance to keep a copy
+  // (Cancel, then save it) instead of a notice after it is gone.
+  async function okToEvict(): Promise<boolean> {
+    const oldest = photoToEvict(form.date);
+    if (!oldest) return true;
+    return confirm({
+      title: t('body.photoFullTitle'),
+      message: t('body.photoFullConfirm', { date: oldest }),
+      confirmLabel: t('body.photoFullContinue'),
+    });
+  }
+
+  async function handleSaveCopy(p: ProgressPhoto) {
+    setPhotoNotice(null);
+    try {
+      const name = await savePhotoCopy(p);
+      if (name) setPhotoNotice(t('body.photoCopySaved', { name }));
+    } catch (err) {
+      console.warn('[photos] save copy failed:', err);
+      setPhotoNotice(t('body.photoCopyFailed'));
+    }
+  }
+
   async function capturePhotoNative() {
     setPhotoNotice(null);
+    if (!(await okToEvict())) return;
     try {
       localStorage.setItem(PHOTO_DATE_KEY, form.date);
     } catch {
@@ -604,6 +631,12 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
                 accept="image/*"
                 capture="environment"
                 onChange={handlePhotoCapture}
+                onClick={(e) => {
+                  // v1.22 (limelog#126): ask before the picker when full.
+                  if (!photoToEvict(form.date)) return;
+                  e.preventDefault();
+                  void okToEvict().then((ok) => ok && fileInputRef.current?.click());
+                }}
                 className="body-metrics-photo-input"
               />
               <label htmlFor="body-metrics-photo-input" className="body-metrics-photo-label">
@@ -633,6 +666,15 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
                 <img src={p.dataUrl} alt={t('body.photoAlt', { date: p.date })} loading="lazy" />
                 <figcaption className="body-metrics-photo__caption">
                   {p.date}
+                  <button
+                    type="button"
+                    className="body-metrics-photo__delete"
+                    aria-label={t('body.savePhotoCopy', { date: p.date })}
+                    title={t('body.savePhotoCopy', { date: p.date })}
+                    onClick={() => void handleSaveCopy(p)}
+                  >
+                    <Download size={12} aria-hidden />
+                  </button>
                   <button
                     type="button"
                     className="body-metrics-photo__delete"

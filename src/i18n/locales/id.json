@@ -260,6 +260,12 @@
     "noCustomFilter": "Tidak ada gerakan kustom yang cocok dengan filtermu."
   },
   "body": {
+    "savePhotoCopy": "Simpan salinan foto dari {{date}}",
+    "photoCopySaved": "{{name}} disimpan",
+    "photoCopyFailed": "Salinan tidak dapat disimpan.",
+    "photoFullTitle": "Penyimpanan foto penuh",
+    "photoFullConfirm": "Perangkat ini menyimpan hingga 30 foto progres. Mengambil foto baru akan menghapus yang terlama, dari {{date}}. Untuk menyimpannya, batalkan dan simpan salinannya terlebih dahulu.",
+    "photoFullContinue": "Hapus yang terlama dan lanjutkan",
     "photoRestored": "Foto progres Anda untuk {{date}} telah disimpan.",
     "photoRestoreFailed": "Foto progres yang baru Anda ambil tidak dapat disimpan. Silakan ambil lagi.",
     "title": "Tubuh",

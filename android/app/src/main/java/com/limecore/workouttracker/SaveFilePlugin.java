@@ -9,7 +9,10 @@ package com.limecore.workouttracker;
 // text to the document the user picks. No storage permission is needed, and no
 // new dependency: the F-Droid recipe and the reproducible build are unchanged.
 //
-// save({ filename, mimeType, data }) resolves:
+// v1.22 (limelog#126): encoding: "base64" writes `data` decoded, for a JPEG
+// (a progress photo copy); text otherwise.
+//
+// save({ filename, mimeType, data, encoding? }) resolves:
 //   { saved: true }                     — written
 //   { saved: false, cancelled: true }   — the user backed out of the picker
 //   { saved: false, interrupted: true } — v1.22 (limelog#136): Android killed
@@ -28,6 +31,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.DocumentsContract;
+import android.util.Base64;
 
 import androidx.activity.result.ActivityResult;
 
@@ -46,6 +50,7 @@ public class SaveFilePlugin extends Plugin {
 
     /** The text of the save in progress. Lost with the process, on purpose. */
     private String pendingData;
+    private boolean pendingBase64;
 
     @PluginMethod
     public void save(PluginCall call) {
@@ -57,6 +62,7 @@ public class SaveFilePlugin extends Plugin {
         }
         String mimeType = call.getString("mimeType", "application/json");
         pendingData = data;
+        pendingBase64 = "base64".equals(call.getString("encoding"));
         call.getData().remove("data");
         Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -96,7 +102,7 @@ public class SaveFilePlugin extends Plugin {
         // leaving the tail of a longer old export behind.
         try (OutputStream os = getContext().getContentResolver().openOutputStream(uri, "wt")) {
             if (os == null) throw new java.io.IOException("could not open the chosen file");
-            os.write(data.getBytes(StandardCharsets.UTF_8));
+            os.write(pendingBase64 ? Base64.decode(data, Base64.DEFAULT) : data.getBytes(StandardCharsets.UTF_8));
             os.flush();
             out.put("saved", true);
             call.resolve(out);

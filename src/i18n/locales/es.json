@@ -248,6 +248,12 @@
     "fdroidCheckNote": "Una vez al día, LimeLog consulta en f-droid.org cuál es la versión más reciente. No se envía nada sobre ti. Si lo desactivas, la consulta no se hace en absoluto."
   },
   "body": {
+    "savePhotoCopy": "Guardar una copia de la foto del {{date}}",
+    "photoCopySaved": "Guardado {{name}}",
+    "photoCopyFailed": "No se pudo guardar la copia.",
+    "photoFullTitle": "El almacenamiento de fotos está lleno",
+    "photoFullConfirm": "Este dispositivo guarda hasta 30 fotos de progreso. Hacer una nueva elimina la más antigua, del {{date}}. Para conservarla, cancela y guarda antes una copia.",
+    "photoFullContinue": "Eliminar la más antigua y continuar",
     "photoRestored": "Se guardó tu foto de progreso del {{date}}.",
     "photoRestoreFailed": "No se pudo guardar la foto de progreso que acabas de hacer. Vuelve a hacerla.",
     "title": "Cuerpo",

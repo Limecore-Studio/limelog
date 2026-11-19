@@ -244,6 +244,12 @@
     "fdroidCheckNote": "Once a day, LimeLog asks f-droid.org for its newest version. Nothing about you is sent. Turning this off stops the request entirely."
   },
   "body": {
+    "savePhotoCopy": "Save a copy of the photo from {{date}}",
+    "photoCopySaved": "Saved {{name}}",
+    "photoCopyFailed": "The copy could not be saved.",
+    "photoFullTitle": "Photo storage is full",
+    "photoFullConfirm": "This device keeps up to 30 progress photos. Taking a new one deletes the oldest, from {{date}}. To keep it, cancel and save a copy of it first.",
+    "photoFullContinue": "Delete oldest and continue",
     "photoRestored": "Your progress photo for {{date}} was saved.",
     "photoRestoreFailed": "The progress photo you just took could not be saved. Please take it again.",
     "title": "Body",
