@@ -399,6 +399,7 @@
   white-space: nowrap;
 }
 .ex-section__swap {
+  min-height: 44px; /* v1.22 (limelog#154) */
   margin-inline-start: auto;
   display: inline-flex;
   align-items: center;
@@ -573,6 +574,7 @@
 }
 
 .ex-section__add {
+  min-height: 44px; /* v1.22 (limelog#154) */
   display: inline-flex;
   align-items: center;
   gap: 6px;

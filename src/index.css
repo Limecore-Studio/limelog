@@ -213,3 +213,14 @@ select option {
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
+
+/* v1.22 (limelog#153) — honour reduced motion everywhere, as NCC does. The
+   rest countdown is state-driven, so it still updates. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

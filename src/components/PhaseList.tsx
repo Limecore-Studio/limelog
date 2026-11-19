@@ -56,19 +56,29 @@ export function PhaseList({ program }: Props) {
     <div className="phase-list">
       {program.phases.map((phase) => (
         <div key={phase.id} className="phase-list__item">
-          <button className="phase-list__header" onClick={() => setOpenPhase(openPhase === phase.id ? null : phase.id)}>
-            <div className="phase-list__header-left">
-              <Badge label={t(`program.phaseType.${phase.type}`)} variant={PHASE_VARIANT[phase.type]} />
-              <span className="phase-list__name">{phase.name}</span>
-            </div>
-            <div className="phase-list__header-right">
-              <span className="phase-list__weeks">{t('program.weekRange', { start: phase.weekStart, end: phase.weekEnd })}</span>
-              <button className="phase-list__del" onClick={(e) => { e.stopPropagation(); void handleDeletePhase(phase.id, phase.name); }}>
-                <Trash2 size={13} />
-              </button>
-              {openPhase === phase.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-            </div>
-          </button>
+          {/* v1.22 (limelog#152, #158): the delete sat inside the header
+              <button> (a button nested in a button). The toggle and the delete
+              are siblings now. */}
+          <div className="phase-list__header">
+            <button
+              type="button"
+              className="phase-list__toggle"
+              aria-expanded={openPhase === phase.id}
+              onClick={() => setOpenPhase(openPhase === phase.id ? null : phase.id)}
+            >
+              <span className="phase-list__header-left">
+                <Badge label={t(`program.phaseType.${phase.type}`)} variant={PHASE_VARIANT[phase.type]} />
+                <span className="phase-list__name">{phase.name}</span>
+              </span>
+              <span className="phase-list__header-right">
+                <span className="phase-list__weeks">{t('program.weekRange', { start: phase.weekStart, end: phase.weekEnd })}</span>
+                {openPhase === phase.id ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </span>
+            </button>
+            <button type="button" className="phase-list__del" aria-label={t('common.delete')} onClick={() => void handleDeletePhase(phase.id, phase.name)}>
+              <Trash2 size={13} />
+            </button>
+          </div>
 
           {openPhase === phase.id && (
             <div className="phase-list__body">

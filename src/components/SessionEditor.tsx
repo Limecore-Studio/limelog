@@ -75,35 +75,40 @@ export function SessionEditor({ session, program }: Props) {
 
   return (
     <div className="session-editor">
-      <button className="session-editor__header" onClick={() => setOpen((v) => !v)}>
-        <div className="session-editor__header-left">
-          {editingName ? (
+      {/* v1.22 (limelog#152, #158): the header <button> held the delete button
+          and, while renaming, the name input; neither is valid inside a
+          <button>. The toggle, the input and the delete are siblings now. */}
+      <div className="session-editor__header">
+        {editingName ? (
+          <div className="session-editor__header-left">
             <input
               className="session-editor__name-input"
               value={name}
               autoFocus
-              onClick={(e) => e.stopPropagation()}
               onChange={(e) => setName(e.target.value)}
               onBlur={handleNameSave}
               {...enterSubmit(handleNameSave)}
             />
-          ) : (
-            <span
-              className="session-editor__name"
-              onDoubleClick={(e) => { e.stopPropagation(); setEditingName(true); }}
-            >
-              {session.name}
+            <span className="session-editor__day">{t(`program.days.${DAY_KEYS[session.dayOfWeek]}`)}</span>
+          </div>
+        ) : (
+          <button type="button" className="session-editor__toggle" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+            <span className="session-editor__header-left">
+              <span
+                className="session-editor__name"
+                onDoubleClick={(e) => { e.stopPropagation(); setEditingName(true); }}
+              >
+                {session.name}
+              </span>
+              <span className="session-editor__day">{t(`program.days.${DAY_KEYS[session.dayOfWeek]}`)}</span>
             </span>
-          )}
-          <span className="session-editor__day">{t(`program.days.${DAY_KEYS[session.dayOfWeek]}`)}</span>
-        </div>
-        <div className="session-editor__header-right">
-          <button className="session-editor__del" onClick={(e) => { e.stopPropagation(); void handleDelete(); }} aria-label={t('common.delete')}>
-            <Trash2 size={12} />
+            {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
-          {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </div>
-      </button>
+        )}
+        <button type="button" className="session-editor__del" onClick={() => void handleDelete()} aria-label={t('common.delete')}>
+          <Trash2 size={12} />
+        </button>
+      </div>
 
       {open && (
         <div className="session-editor__body">

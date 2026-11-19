@@ -22,6 +22,7 @@
 .fatigue__dot {
   flex: 1;
   height: 32px;
+  min-height: 44px; /* v1.22 (limelog#154): tapped mid-set; ten can't be wider */
   border-radius: var(--radius-sm);
   background: var(--bg-overlay);
   border: 1px solid var(--border-subtle);
