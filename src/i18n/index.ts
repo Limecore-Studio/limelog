@@ -14,17 +14,21 @@
 // chunks are part of dist, so they ship inside the APK and load offline. Init
 // itself is still synchronous, so no Suspense boundary is required
 // (react.useSuspense = false).
+//
+// v1.22 (limecore#126): English is a chunk too. It is still the fallback, so
+// `i18nReady` loads it alongside the active language, and first render waits
+// for both exactly as it waited for the active one before. Its strings no
+// longer count against the startup budget (scripts/check-bundle-size.mjs).
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-
-import en from './locales/en.json';
 
 export const SUPPORTED_LANGS = ['en', 'fi', 'fr', 'de', 'es', 'zh', 'hi', 'pt', 'id', 'ar'] as const;
 export type Lang = (typeof SUPPORTED_LANGS)[number];
 
 // Spelled out rather than globbed, so a missing locale file fails the build
 // instead of a user's first launch.
-const LOADERS: Record<Exclude<Lang, 'en'>, () => Promise<{ default: object }>> = {
+const LOADERS: Record<Lang, () => Promise<{ default: object }>> = {
+  en: () => import('./locales/en.json'),
   fi: () => import('./locales/fi.json'),
   fr: () => import('./locales/fr.json'),
   de: () => import('./locales/de.json'),
@@ -87,7 +91,7 @@ export async function setLanguage(lang: Lang): Promise<void> {
 }
 
 async function loadLanguage(lang: Lang): Promise<void> {
-  if (lang === 'en' || i18n.hasResourceBundle(lang, 'translation')) return;
+  if (i18n.hasResourceBundle(lang, 'translation')) return;
   const { default: strings } = await LOADERS[lang]();
   i18n.addResourceBundle(lang, 'translation', strings);
 }
@@ -99,7 +103,10 @@ let requested: Lang | undefined;
 
 async function applyLanguage(lang: Lang): Promise<void> {
   requested = lang;
-  await loadLanguage(lang);
+  // English is the fallback for any key a language lacks, so it is loaded
+  // whatever the active language is (a no-op after the first call). A failed
+  // fallback must not keep the active language from applying.
+  await Promise.all([loadLanguage('en').catch(() => {}), loadLanguage(lang)]);
   if (requested !== lang) return;
   applyDirection(lang);
   await i18n.changeLanguage(lang);
@@ -129,7 +136,7 @@ function applyDirection(lang: string): void {
 }
 
 i18n.use(initReactI18next).init({
-  resources: { en: { translation: en } },
+  resources: {},
   lng: 'en',
   fallbackLng: 'en',
   supportedLngs: SUPPORTED_LANGS as unknown as string[],
@@ -139,9 +146,11 @@ i18n.use(initReactI18next).init({
 });
 
 /**
- * Resolves once the detected language is loaded and active, with <html dir>
- * and <html lang> set for it. Never rejects: if the chunk cannot load, the app
- * starts in English rather than not starting.
+ * Resolves once the detected language and the English fallback are loaded and
+ * the detected one is active, with <html dir> and <html lang> set for it.
+ * Never rejects: if a chunk cannot load, the app starts rather than not
+ * starting (the chunks ship inside the APK, so on a device this does not
+ * happen).
  */
 export const i18nReady: Promise<void> = applyLanguage(detectLanguage()).catch(() => {});
 
