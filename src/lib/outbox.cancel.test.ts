@@ -14,6 +14,8 @@ const server = vi.hoisted(() => ({
   sets: new Map<string, Row>(),
   /** When set, the next session upsert waits on it and fails if it rejects. */
   gate: null as Promise<void> | null,
+  /** Follow-up reads of a session's stored stamp. */
+  reads: 0,
 }));
 
 vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
@@ -25,8 +27,12 @@ vi.mock('./supabase', () => {
       server.gate = null;
       if (gate) await gate;
       const old = server.sessions.get(row.id as string);
-      // set_updated_at, step 3: an older stamp keeps the stored row.
-      if (old && String(row.updated_at) < String(old.updated_at)) return { data: [old], error: null };
+      // set_updated_at, step 3: an older stamp keeps the stored row (returns
+      // OLD), and zz_skip_noop_update then skips it: RETURNING is empty.
+      if (old && String(row.updated_at) < String(old.updated_at)) return { data: [], error: null };
+      // zz_skip_noop_update also skips a write that changes only updated_at.
+      const same = (r: Row) => JSON.stringify({ ...r, updated_at: null });
+      if (old && same(old) === same(row)) return { data: [], error: null };
       server.sessions.set(row.id as string, row);
       return { data: [row], error: null };
     };
@@ -51,6 +57,13 @@ vi.mock('./supabase', () => {
     supabase: {
       auth: { getUser: async () => ({ data: { user: { id: 'user-1' } }, error: null }) },
       from: (table: string) => ({
+        select: () => ({
+          eq: (_c: string, id: string) => {
+            server.reads++;
+            const r = server.sessions.get(id);
+            return Promise.resolve({ data: r ? [{ updated_at: r.updated_at }] : [], error: null });
+          },
+        }),
         upsert: (rows: Row | Row[]) => {
           if (table === 'workout_sessions') return upsertSession(rows as Row);
           for (const r of rows as Row[]) server.sets.set(r.id as string, r);
@@ -102,6 +115,7 @@ beforeEach(() => {
   server.sessions.clear();
   server.sets.clear();
   server.gate = null;
+  server.reads = 0;
   outbox.resetWorkoutStamps();
   online(true);
 });
@@ -149,6 +163,25 @@ describe('a stale workout push the LWW guard rejects (limelog#118)', () => {
     await pushWorkoutToNexus(workout(6, { updatedAt: '2026-11-19T18:00:00.000Z' }), 'user-1');
     expect(server.sets.size).toBe(15);
     expect(server.sessions.get('sess-1')?.updated_at).toBe('2026-11-19T18:40:00.000Z');
+  });
+
+  it('a rejection with an empty RETURNING (the real server) is settled by reading the stored stamp', async () => {
+    await pushWorkoutToNexus(workout(15, { updatedAt: '2026-11-19T18:40:00.000Z' }), 'user-1');
+    expect(server.reads).toBe(0);
+    await pushWorkoutToNexus(workout(6, { updatedAt: '2026-11-19T18:00:00.000Z' }), 'user-1');
+    expect(server.reads).toBe(1);
+    expect(server.sets.size).toBe(15);
+  });
+
+  it('a no-op re-push with a newer stamp (also empty RETURNING) still counts as accepted', async () => {
+    await pushWorkoutToNexus(workout(15, { updatedAt: '2026-11-19T18:00:00.000Z' }), 'user-1');
+    const before = server.sessions.get('sess-1');
+    // Same content, newer stamp: the server skips it and keeps the older stamp.
+    server.sessions.set('sess-1', { ...before!, updated_at: '2026-11-19T18:00:00.000Z' });
+    server.sets.delete([...server.sets.keys()][14]);
+    await pushWorkoutToNexus(workout(15, { updatedAt: '2026-11-19T18:40:00.000Z' }), 'user-1');
+    expect(server.reads).toBe(1);
+    expect(server.sets.size).toBe(15);
   });
 
   it('a newer save still replaces the set list', async () => {

@@ -108,11 +108,11 @@ export async function setRowId(sessionId: string, index: number): Promise<string
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
 }
 
-/** v1.22 (limelog#118) — true when the row the upsert returned carries a
- *  newer stamp than the one sent, i.e. the LWW guard kept the stored row.
- *  An accepted write returns the sent stamp, or an earlier one when the server
- *  clamped a stamp from the future. No row back (or no stamp) is not proof of
- *  a rejection, so it counts as accepted, as every push did before. */
+/** v1.22 (limelog#118) — true when the stored row carries a newer stamp than
+ *  the one sent, i.e. the LWW guard kept the stored row. An accepted write
+ *  stores the sent stamp, or an earlier one when the server clamped a stamp
+ *  from the future. No row (or no stamp) is not proof of a rejection, so it
+ *  counts as accepted, as every push did before. */
 export function sessionRejected(stored: unknown, sentStamp: string): boolean {
   const row = Array.isArray(stored) ? stored[0] : stored;
   const at = (row as { updated_at?: unknown } | null | undefined)?.updated_at;
@@ -202,7 +202,21 @@ export async function pushWorkoutToNexus(workout: NexusWorkoutPayload, forUserId
   // stored, newer stamp. The sets below belong to that rejected, older save:
   // writing them, and above all deleting every set not in them, would cut a
   // finished workout back to an earlier set list. So they are skipped too.
-  if (workout.updatedAt && sessionRejected(stored, workout.updatedAt)) return sessionId;
+  //
+  // RETURNING is usually EMPTY on a rejection: the LWW guard returns OLD, and
+  // `zz_skip_noop_update` (which fires after it, by name) then sees nothing
+  // changed and skips the row. A real no-op re-push is skipped the same way.
+  // So an empty reply is settled by reading the stored stamp: newer than the
+  // one sent is a rejection; older or equal is the no-op, and goes on.
+  if (workout.updatedAt) {
+    let row: unknown = stored;
+    if (!Array.isArray(stored) || stored.length === 0) {
+      const { data, error } = await supabase.from('workout_sessions').select('updated_at').eq('id', sessionId);
+      if (error) throw error;
+      row = data;
+    }
+    if (sessionRejected(row, workout.updatedAt)) return sessionId;
+  }
 
   // Limekana/limelog#28 — sets are written idempotently. The old
   // delete-everything-then-insert-fresh-uuids shape multiplied rows whenever
