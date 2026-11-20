@@ -7,7 +7,7 @@ import type { SessionLog } from '@/types/logging';
 // a third flagged a plateau, and the flag stayed when the lifter went on to
 // add weight.
 
-vi.mock('@/store/programStore', () => ({ useProgramStore: { getState: () => ({ exercises: [], activeProgram: null }) } }));
+vi.mock('@/store/programStore', () => ({ useProgramStore: { getState: () => ({ exercises: [], activeProgram: null, releaseEmptyStart: () => {} }) } }));
 vi.mock('@/store/nexusStore', () => ({ useNexusStore: { getState: () => ({ configured: false, syncEnabled: false }) } }));
 vi.mock('@/lib/nexusSync', () => ({ mapSessionLogToNexus: vi.fn() }));
 vi.mock('@/lib/outbox', () => ({ enqueue: vi.fn() }));

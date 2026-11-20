@@ -61,6 +61,11 @@ interface ProgramStore {
   /** `keep`: the session has workouts logged, so it is retired rather than
    *  removed (limelog#121). */
   deleteSession: (id: string, keep?: boolean) => void;
+  /** v1.22 (limelog#149) — after a workout of `sessionId` is discarded or
+   *  finished: a session "Start an empty workout" made that still has no
+   *  exercises goes again (retired instead when `hasWorkouts`, so History
+   *  keeps its name), and a program it made goes with its last session. */
+  releaseEmptyStart: (sessionId: string, hasWorkouts: boolean) => void;
 
   // SessionExercise CRUD
   addSessionExercise: (sessionId: string, e: Omit<SessionExercise, 'id' | 'sessionId'>) => void;
@@ -244,6 +249,15 @@ export const useProgramStore = create<ProgramStore>((set, get) => ({
     }));
     storage.setPrograms(programs);
     set({ programs, activeProgram: programs.find((p) => p.status === 'active') ?? null });
+  },
+
+  releaseEmptyStart: (sessionId, hasWorkouts) => {
+    const prog = get().programs.find((p) => p.sessions.some((s) => s.id === sessionId));
+    const session = prog?.sessions.find((s) => s.id === sessionId);
+    if (!prog || !session?.fromEmptyStart || session.exercises.length > 0) return;
+    get().deleteSession(sessionId, hasWorkouts);
+    const left = get().programs.find((p) => p.id === prog.id);
+    if (left?.fromEmptyStart && left.sessions.length === 0) get().deleteProgram(left.id);
   },
 
   addSessionExercise: (sessionId, e) => {

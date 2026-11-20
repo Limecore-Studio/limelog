@@ -21,6 +21,7 @@ vi.mock('@/store/nexusStore', () => ({
 const { useProgramStore } = await import('@/store/programStore');
 const { useLogStore } = await import('@/store/logStore');
 const { startEmptyWorkout } = await import('./emptyWorkout');
+const { sessionsForDay } = await import('./todaySessions');
 
 const t = ((k: string) => k) as unknown as TFunction;
 const friday = new Date(2026, 10, 20);
@@ -69,3 +70,43 @@ describe('startEmptyWorkout', () => {
     expect(useProgramStore.getState().activeProgram?.id).toBe(programs()[0].id);
   });
 });
+
+// Review of #168: an empty workout that ends with nothing added must not leave
+// a session (and "My training") behind, to be offered every week.
+describe('an empty workout that ends with no exercise added', () => {
+  const sessions = () => programs().flatMap((p) => p.sessions);
+
+  it('discarded: its session and the "My training" it made are removed', () => {
+    const logId = startEmptyWorkout(t, friday);
+    useLogStore.getState().discardSession(logId);
+    expect(programs()).toEqual([]);
+    expect(useProgramStore.getState().activeProgram).toBeNull();
+  });
+
+  it('finished: the session is retired (History still names it), never offered again', () => {
+    const logId = startEmptyWorkout(t, friday);
+    useLogStore.getState().finalizeSession(logId);
+    expect(sessions()).toHaveLength(1);
+    expect(sessions()[0].retired).toBe(true);
+    const active = useProgramStore.getState().activeProgram;
+    expect(sessionsForDay(active, 5, active?.phases[0].id)).toEqual([]);
+  });
+
+  it('with an exercise added, the session stays, as planned', () => {
+    const logId = startEmptyWorkout(t, friday);
+    const sessionId = sessions()[0].id;
+    useProgramStore.getState().addSessionExercise(sessionId, { exerciseId: 'bench', orderIndex: 0, targetSets: 3, targetReps: '8-10' });
+    useLogStore.getState().discardSession(logId);
+    expect(sessions().map((s) => [s.id, !!s.retired])).toEqual([[sessionId, false]]);
+  });
+
+  it('in the user’s own program: only the session goes, never the program or its other sessions', () => {
+    const p = useProgramStore.getState().createProgram({ name: 'Block', status: 'archived' });
+    useProgramStore.getState().addPhase(p.id, { name: 'A', type: 'accumulation', orderIndex: 0, weekStart: 1, weekEnd: 4 });
+    useProgramStore.getState().setActiveProgram(p.id);
+    const logId = startEmptyWorkout(t, friday);
+    useLogStore.getState().discardSession(logId);
+    expect(programs().map((x) => [x.name, x.sessions.length])).toEqual([['Block', 0]]);
+  });
+});
+

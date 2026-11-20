@@ -17,7 +17,7 @@ export function startEmptyWorkout(t: TFunction, today: Date = new Date()): strin
   const name = t('today.emptyProgramName');
   let program = store().activeProgram ?? store().programs.find((p) => p.name === name) ?? null;
   if (!program) {
-    program = store().createProgram({ name, status: 'archived' });
+    program = store().createProgram({ name, status: 'archived', fromEmptyStart: true });
   }
   if (program.phases.length === 0) {
     store().addPhase(program.id, { name: t('program.defaultPhaseName'), type: 'accumulation', orderIndex: 0, weekStart: 1, weekEnd: 4 });
@@ -33,6 +33,8 @@ export function startEmptyWorkout(t: TFunction, today: Date = new Date()): strin
     name: t('today.emptyWorkoutName'),
     dayOfWeek: today.getDay() as DayOfWeek,
     orderIndex: current.sessions.filter((s) => s.phaseId === phaseId).length,
+    // Taken back if the workout ends with no exercise added (releaseEmptyStart).
+    fromEmptyStart: true,
   });
   const sessions = store().programs.find((p) => p.id === program!.id)!.sessions;
   const session = sessions[sessions.length - 1];
