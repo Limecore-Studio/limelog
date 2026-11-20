@@ -171,6 +171,9 @@
     "ormCaption": "{{unit}} — arvioitu 1RM, treenin paras"
   },
   "today": {
+    "emptyWorkout": "Aloita tyhjä treeni",
+    "emptyWorkoutName": "Treeni",
+    "emptyProgramName": "Oma treeni",
     "starterTitle": "Aloita treenaaminen tänään",
     "starterBody": "Valitse valmis koko kehon ohjelma (kolme päivää viikossa päänostoilla) tai rakenna oma. Voit muuttaa kaikkea myöhemmin.",
     "starterUse": "Käytä koko kehon ohjelmaa",
@@ -333,6 +336,7 @@
     }
   },
   "program": {
+    "defaultPhaseName": "Pohja",
     "renameSession": "Nimeä treeni uudelleen",
     "title": "Ohjelmat",
     "new": "Uusi",
@@ -495,6 +499,8 @@
     "restrictExercises": "Rajoita tiettyjä liikkeitä"
   },
   "log": {
+    "addExercise": "Lisää liike",
+    "emptyWorkoutHint": "Lisää tänään tekemäsi liikkeet. Ne jäävät tähän treeniin seuraavaa kertaa varten.",
     "prBadge": "ENN",
     "pillReturn": "Takaisin treeniin",
     "pillRest": "Lepo {{time}}",

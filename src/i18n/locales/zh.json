@@ -169,6 +169,9 @@
     "ormCaption": "{{unit}} —— 估算 1RM，每次训练取最佳"
   },
   "today": {
+    "emptyWorkout": "开始空白训练",
+    "emptyWorkoutName": "训练",
+    "emptyProgramName": "我的训练",
     "starterTitle": "今天开始训练",
     "starterBody": "选择一个现成的全身计划（每周三天，包含主要动作），或创建你自己的。之后可以随时修改。",
     "starterUse": "使用全身计划",
@@ -329,6 +332,7 @@
     }
   },
   "program": {
+    "defaultPhaseName": "基础",
     "renameSession": "重命名训练课",
     "title": "训练计划",
     "new": "新建",
@@ -491,6 +495,8 @@
     "restrictExercises": "限制特定动作"
   },
   "log": {
+    "addExercise": "添加动作",
+    "emptyWorkoutHint": "添加你今天要做的动作。它们会保留在这次训练课中，供下次使用。",
     "prBadge": "纪录",
     "pillReturn": "返回训练",
     "pillRest": "休息 {{time}}",

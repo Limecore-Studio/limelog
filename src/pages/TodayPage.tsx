@@ -32,6 +32,12 @@ export function TodayPage() {
   // would hide it from exactly the person it exists for.
   const [showCardio, setShowCardio] = useState(false);
   const [starting, setStarting] = useState(false);
+  // v1.22 (limelog#149, M part): log a lift without building a program first.
+  const startEmpty = () => {
+    void import('@/lib/emptyWorkout')
+      .then((m) => navigate(`/workout/${m.startEmptyWorkout(t)}`))
+      .catch((e) => console.error('[empty workout] could not start it:', e));
+  };
   const { programs, activeProgram, exercises, advancePhase } = useProgramStore();
   const { sessionLogs, startSession, unfinalizeSession, discardSession, stallFlags, finishStaleWorkouts } = useLogStore();
   const unit = useUserStore((s) => s.profile.unitPreference);
@@ -161,6 +167,7 @@ export function TodayPage() {
                   {t('today.starterUse')}
                 </Button>
                 <Button variant="ghost" onClick={() => navigate('/program')}>{t('today.starterOwn')}</Button>
+                <Button variant="ghost" onClick={startEmpty}>{t('today.emptyWorkout')}</Button>
               </div>
             }
           />
@@ -169,7 +176,12 @@ export function TodayPage() {
             icon={<Dumbbell size={36} />}
             title={t('today.noProgramTitle')}
             description={t('today.noProgramBody')}
-            action={<Button variant="primary" onClick={() => navigate('/program')}>{t('today.goToPrograms')}</Button>}
+            action={
+              <div className="today-starter__actions">
+                <Button variant="primary" onClick={() => navigate('/program')}>{t('today.goToPrograms')}</Button>
+                <Button variant="ghost" onClick={startEmpty}>{t('today.emptyWorkout')}</Button>
+              </div>
+            }
           />
         )}
         {/* A program is for lifting. Cardio needs none, so it stays reachable

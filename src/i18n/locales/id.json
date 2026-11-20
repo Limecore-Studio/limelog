@@ -169,6 +169,9 @@
     "ormCaption": "{{unit}} — estimasi 1RM, terbaik per sesi"
   },
   "today": {
+    "emptyWorkout": "Mulai latihan kosong",
+    "emptyWorkoutName": "Latihan",
+    "emptyProgramName": "Latihan saya",
     "starterTitle": "Mulai berlatih hari ini",
     "starterBody": "Pilih program seluruh tubuh yang siap pakai (tiga hari seminggu dengan latihan utama) atau buat sendiri. Anda bisa mengubah semuanya nanti.",
     "starterUse": "Pakai program seluruh tubuh",
@@ -388,6 +391,8 @@
     }
   },
   "log": {
+    "addExercise": "Tambah latihan",
+    "emptyWorkoutHint": "Tambahkan latihan yang Anda lakukan hari ini. Latihan itu tetap ada di sesi ini untuk lain kali.",
     "prBadge": "PR",
     "pillReturn": "Kembali ke latihan",
     "pillRest": "Istirahat {{time}}",
@@ -442,6 +447,7 @@
     "restrictionModify": "{{label}} — sesuaikan beban atau rentang gerak"
   },
   "program": {
+    "defaultPhaseName": "Dasar",
     "renameSession": "Ganti nama sesi",
     "title": "Program",
     "new": "Baru",

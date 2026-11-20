@@ -19,6 +19,7 @@ import { WeightInput } from '@/components/WeightInput';
 import { convertLoad, usesBarbell } from '@/utils/plateMath';
 import { useThemeStore } from '@/store/themeStore';
 import { SwapExerciseSheet } from '@/components/SwapExerciseSheet';
+import { AddExerciseSheet } from '@/components/AddExerciseSheet';
 import { effectiveExerciseId } from '@/lib/exerciseSwap';
 import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc, Trophy } from 'lucide-react';
 import { prSetId } from '@/lib/prDetection';
@@ -56,7 +57,7 @@ export function WorkoutPage() {
   const confirm = useConfirm();
   const { logId = '' } = useParams();
   const navigate = useNavigate();
-  const { programs, exercises, updateSessionExercise } = useProgramStore();
+  const { programs, exercises, updateSessionExercise, addSessionExercise } = useProgramStore();
   const { sessionLogs, logSet, updateSet, deleteSet, swapExercise, setPerceivedFatigue, finalizeSession, discardSession, currentPRFor } = useLogStore();
   const { profile } = useUserStore();
   // v1.14 Item 13 — the bay is a Cast Iron idea, so the weight-up modal
@@ -79,6 +80,8 @@ export function WorkoutPage() {
   const [modal, setModal] = useState<{ qualifying: QualifyingExercise[] } | null>(null);
   // v1.15 Item 8 — the SessionExercise whose swap sheet is open.
   const [swapSeId, setSwapSeId] = useState<string | null>(null);
+  // v1.22 (limelog#149, M part): the Add exercise sheet.
+  const [adding, setAdding] = useState(false);
 
   // Rehydrate a still-running rest on mount (covers process-death + resume, and
   // a plain remount). Only adopt it if it belongs to THIS workout and hasn't
@@ -389,6 +392,30 @@ export function WorkoutPage() {
             />
           );
         })}
+
+        {/* v1.22 (limelog#149, M part): an empty workout starts with no
+            exercises; any workout can take one more. It joins this session,
+            so the next one has it planned. */}
+        {orderedExercises.length === 0 && <p className="workout-empty-hint">{t('log.emptyWorkoutHint')}</p>}
+        <button type="button" className="workout-add-exercise" onClick={() => setAdding(true)}>
+          <Plus size={14} aria-hidden="true" />
+          <span>{t('log.addExercise')}</span>
+        </button>
+        {adding && (
+          <AddExerciseSheet
+            exercises={exercises}
+            onClose={() => setAdding(false)}
+            onPick={(exerciseId) => {
+              addSessionExercise(session.id, {
+                exerciseId,
+                orderIndex: orderedExercises.length,
+                targetSets: 3,
+                targetReps: '8-10',
+              });
+              setAdding(false);
+            }}
+          />
+        )}
 
         <div className="workout-finalize">
           <FatigueRating
