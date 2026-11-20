@@ -1,12 +1,13 @@
+import { haptic } from '@/lib/haptic';
+
 /**
- * Plays a two-tone "ding" using the Web Audio API and triggers a short vibration.
+ * Plays a two-tone "ding" using the Web Audio API and a success haptic.
  * Safe to call on any platform — silently no-ops if unavailable.
  */
 export function playRestComplete(): void {
-  // Vibrate: short-pause-short
-  try {
-    if ('vibrate' in navigator) navigator.vibrate([180, 80, 180]);
-  } catch { /* vibration is best-effort — ignore if unsupported/blocked */ }
+  // v1.22 (limecore#130): the haptic plugin, not navigator.vibrate, which a
+  // WebView ignores without the VIBRATE permission (the app had none).
+  haptic.success();
 
   // Web Audio ding: 880 Hz → 660 Hz, ~1 s decay
   try {
