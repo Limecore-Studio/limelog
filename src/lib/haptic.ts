@@ -14,9 +14,13 @@ import { Capacitor } from '@capacitor/core';
 
 type Kind = 'light' | 'success' | 'warning';
 
+/** One import for the life of the page, shared by every call. */
+let plugin: Promise<typeof import('@capacitor/haptics')> | null = null;
+
 function fire(kind: Kind): void {
   if (!Capacitor.isNativePlatform()) return;
-  void import('@capacitor/haptics')
+  plugin ??= import('@capacitor/haptics');
+  void plugin
     .then(({ Haptics, ImpactStyle, NotificationType }) =>
       kind === 'light'
         ? Haptics.impact({ style: ImpactStyle.Light })

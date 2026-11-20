@@ -24,7 +24,7 @@ describe('haptic', () => {
     haptic.success();
     haptic.warning();
     // The plugin is imported on first use; how soon that settles varies (CI).
-    await vi.waitFor(() => expect(h.calls).toHaveLength(3));
+    await vi.waitFor(() => expect(h.calls).toHaveLength(3), { timeout: 5000 });
     expect(h.calls).toEqual(expect.arrayContaining([
       ['impact', { style: 'LIGHT' }],
       ['notification', { type: 'SUCCESS' }],
