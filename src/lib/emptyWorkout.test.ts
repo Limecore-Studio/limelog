@@ -12,6 +12,9 @@ function storage() {
   };
 }
 vi.stubGlobal('localStorage', storage());
+// Never the real client: on Node 20 (CI) creating it throws (no WebSocket).
+vi.mock('@/lib/supabase', () => ({ isNexusConfigured: false, supabase: {} }));
+vi.mock('@capacitor/preferences', () => ({ Preferences: { get: async () => ({ value: null }), set: async () => {}, remove: async () => {} } }));
 vi.mock('@/store/nexusStore', () => ({
   useNexusStore: { getState: () => ({ configured: false, syncEnabled: false, refreshPendingCount: () => {}, setLastPushAt: () => {} }) },
 }));
