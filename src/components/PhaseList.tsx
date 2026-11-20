@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
 import { useLogStore } from '@/store/logStore';
 import { useConfirm } from '@/components/confirmContext';
-import type { Program, PhaseType } from '@/types/program';
+import type { Program, PhaseType, DayOfWeek } from '@/types/program';
 import { Button, Badge } from '@/components/ui';
 import { SessionEditor } from '@/components/SessionEditor';
 import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react';
@@ -88,7 +88,9 @@ export function PhaseList({ program }: Props) {
               <Button size="sm" variant="ghost" onClick={() => addSession({
                 phaseId: phase.id,
                 name: t('program.newSession'),
-                dayOfWeek: 1,
+                // v1.22 (limelog#149): today, not Monday whatever today is,
+                // so a new session can be started straight away.
+                dayOfWeek: new Date().getDay() as DayOfWeek,
                 orderIndex: phaseSessions(phase.id).length,
               })}>
                 <Plus size={13} /> {t('program.addSession')}

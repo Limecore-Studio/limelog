@@ -7,7 +7,7 @@ import { sessionHasWorkouts } from '@/lib/exerciseRefs';
 import type { Program, SessionTemplate, DayOfWeek } from '@/types/program';
 import { Button } from '@/components/ui';
 import { SessionExerciseRow } from '@/components/SessionExerciseRow';
-import { ChevronDown, ChevronUp, Plus, Trash2, BookmarkPlus, FolderOpen } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, BookmarkPlus, FolderOpen, Pencil } from 'lucide-react';
 import './SessionEditor.css';
 import { enterSubmit } from '../lib/imeSubmit';
 
@@ -103,6 +103,13 @@ export function SessionEditor({ session, program }: Props) {
               <span className="session-editor__day">{t(`program.days.${DAY_KEYS[session.dayOfWeek]}`)}</span>
             </span>
             {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        )}
+        {/* v1.22 (limelog#149): renaming was double-tap only, which nobody
+            finds on a phone. */}
+        {!editingName && (
+          <button type="button" className="session-editor__del" onClick={() => setEditingName(true)} aria-label={t('program.renameSession')}>
+            <Pencil size={12} />
           </button>
         )}
         <button type="button" className="session-editor__del" onClick={() => void handleDelete()} aria-label={t('common.delete')}>

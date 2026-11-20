@@ -171,6 +171,16 @@
     "ormCaption": "{{unit}} — estimated 1RM, best per session"
   },
   "today": {
+    "starterTitle": "Start training today",
+    "starterBody": "Pick a ready full-body program (three days a week with the main lifts) or build your own. You can change everything later.",
+    "starterUse": "Use the full-body program",
+    "starterOwn": "Build my own",
+    "starterProgramName": "Full-body starter",
+    "starterProgramDesc": "Three full-body days a week with the main lifts.",
+    "starterPhaseName": "Base",
+    "starterDayA": "Full body A",
+    "starterDayB": "Full body B",
+    "starterDayC": "Full body C",
     "noProgramTitle": "No active program",
     "noProgramBody": "Create a program in the Program tab to get started.",
     "goToPrograms": "Go to Programs",
@@ -323,6 +333,7 @@
     }
   },
   "program": {
+    "renameSession": "Rename session",
     "title": "Programs",
     "new": "New",
     "back": "Programs",

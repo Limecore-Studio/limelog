@@ -31,6 +31,7 @@ export function TodayPage() {
   // someone who only runs has no program, so gating it behind the program view
   // would hide it from exactly the person it exists for.
   const [showCardio, setShowCardio] = useState(false);
+  const [starting, setStarting] = useState(false);
   const { programs, activeProgram, exercises, advancePhase } = useProgramStore();
   const { sessionLogs, startSession, unfinalizeSession, discardSession, stallFlags, finishStaleWorkouts } = useLogStore();
   const unit = useUserStore((s) => s.profile.unitPreference);
@@ -136,12 +137,41 @@ export function TodayPage() {
           </div>
         </div>
         {resumeCards}
-        <EmptyState
-          icon={<Dumbbell size={36} />}
-          title={t('today.noProgramTitle')}
-          description={t('today.noProgramBody')}
-          action={<Button variant="primary" onClick={() => navigate('/program')}>{t('today.goToPrograms')}</Button>}
-        />
+        {programs.length === 0 ? (
+          // v1.22 (limelog#149, owner decision): no program at all, which is
+          // the first launch. A ready full-body program, or build your own as
+          // before. The program is built on demand (data/starterProgram.ts).
+          <EmptyState
+            icon={<Dumbbell size={36} />}
+            title={t('today.starterTitle')}
+            description={t('today.starterBody')}
+            action={
+              <div className="today-starter__actions">
+                <Button
+                  variant="primary"
+                  disabled={starting}
+                  onClick={() => {
+                    setStarting(true);
+                    void import('@/data/starterProgram')
+                      .then((m) => m.createStarterProgram(t))
+                      .catch((e) => console.error('[starter] could not create it:', e))
+                      .finally(() => setStarting(false));
+                  }}
+                >
+                  {t('today.starterUse')}
+                </Button>
+                <Button variant="ghost" onClick={() => navigate('/program')}>{t('today.starterOwn')}</Button>
+              </div>
+            }
+          />
+        ) : (
+          <EmptyState
+            icon={<Dumbbell size={36} />}
+            title={t('today.noProgramTitle')}
+            description={t('today.noProgramBody')}
+            action={<Button variant="primary" onClick={() => navigate('/program')}>{t('today.goToPrograms')}</Button>}
+          />
+        )}
         {/* A program is for lifting. Cardio needs none, so it stays reachable
             here — this is the screen a runner who never builds a program sees
             every time they open the app. */}

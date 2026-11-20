@@ -211,3 +211,12 @@
   justify-content: flex-end;
   margin: 4px 0 2px;
 }
+
+/* v1.22 (limelog#149) — the starter-program offer's two choices. */
+.today-starter__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 280px;
+}

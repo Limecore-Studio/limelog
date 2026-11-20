@@ -173,6 +173,16 @@
     "ormCaption": "{{unit}} — 1RM estimado, el mejor por sesión"
   },
   "today": {
+    "starterTitle": "Empieza a entrenar hoy",
+    "starterBody": "Elige un programa de cuerpo completo listo (tres días por semana con los ejercicios básicos) o crea el tuyo. Puedes cambiarlo todo después.",
+    "starterUse": "Usar el programa de cuerpo completo",
+    "starterOwn": "Crear el mío",
+    "starterProgramName": "Inicio cuerpo completo",
+    "starterProgramDesc": "Tres días de cuerpo completo por semana con los ejercicios básicos.",
+    "starterPhaseName": "Base",
+    "starterDayA": "Cuerpo completo A",
+    "starterDayB": "Cuerpo completo B",
+    "starterDayC": "Cuerpo completo C",
     "noProgramTitle": "Sin programa activo",
     "noProgramBody": "Crea un programa en la pestaña Programa para empezar.",
     "goToPrograms": "Ir a programas",
@@ -328,6 +338,7 @@
     }
   },
   "program": {
+    "renameSession": "Renombrar sesión",
     "title": "Programas",
     "new": "Nuevo",
     "back": "Programas",

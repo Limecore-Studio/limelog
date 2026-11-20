@@ -171,6 +171,16 @@
     "ormCaption": "{{unit}} — arvioitu 1RM, treenin paras"
   },
   "today": {
+    "starterTitle": "Aloita treenaaminen tänään",
+    "starterBody": "Valitse valmis koko kehon ohjelma (kolme päivää viikossa päänostoilla) tai rakenna oma. Voit muuttaa kaikkea myöhemmin.",
+    "starterUse": "Käytä koko kehon ohjelmaa",
+    "starterOwn": "Rakennan oman",
+    "starterProgramName": "Koko kehon aloitusohjelma",
+    "starterProgramDesc": "Kolme koko kehon treeniä viikossa päänostoilla.",
+    "starterPhaseName": "Pohja",
+    "starterDayA": "Koko keho A",
+    "starterDayB": "Koko keho B",
+    "starterDayC": "Koko keho C",
     "noProgramTitle": "Ei aktiivista ohjelmaa",
     "noProgramBody": "Luo ohjelma Ohjelma-välilehdellä aloittaaksesi.",
     "goToPrograms": "Siirry ohjelmiin",
@@ -323,6 +333,7 @@
     }
   },
   "program": {
+    "renameSession": "Nimeä treeni uudelleen",
     "title": "Ohjelmat",
     "new": "Uusi",
     "back": "Ohjelmat",
