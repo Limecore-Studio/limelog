@@ -204,6 +204,7 @@
     "resumeWorkout": "Jatka treeniä"
   },
   "settings": {
+    "exportInterrupted": "Vienti keskeytyi, koska Android sulki LimeLogin tiedostovalitsimen ollessa auki. Mitään ei tallennettu. Napauta Vie uudelleen.",
     "errorReports": "Lähetä virheraportit",
     "errorReportsSub": "Oletuksena pois · vain tilillä",
     "errorReportsNote": "Kun sovellus kohtaa virheen, josta se ei toivu, se lähettää meille virheen tyypin, kohdan koodissamme, sovelluksen ja Androidin tai selaimen version sekä avoinna olleen näkymän. Ei koskaan syöttämiäsi tietoja. Säilytetään 90 päivää.",
@@ -243,6 +244,14 @@
     "fdroidCheckNote": "LimeLog kysyy kerran päivässä f-droid.orgilta uusinta versiota. Sinusta ei lähetetä mitään. Kun tämä on pois päältä, kyselyä ei tehdä lainkaan."
   },
   "body": {
+    "savePhotoCopy": "Tallenna kopio kuvasta {{date}}",
+    "photoCopySaved": "Tallennettu {{name}}",
+    "photoCopyFailed": "Kopiota ei voitu tallentaa.",
+    "photoFullTitle": "Kuvatila on täynnä",
+    "photoFullConfirm": "Laitteelle mahtuu enintään 30 edistymiskuvaa. Uuden kuvan ottaminen poistaa vanhimman, päivältä {{date}}. Jos haluat säilyttää sen, peruuta ja tallenna siitä ensin kopio.",
+    "photoFullContinue": "Poista vanhin ja jatka",
+    "photoRestored": "Edistymiskuvasi päivälle {{date}} tallennettiin.",
+    "photoRestoreFailed": "Juuri ottamaasi edistymiskuvaa ei voitu tallentaa. Ota se uudelleen.",
     "title": "Keho",
     "subtitle": "Paino, mitat & edistymiskuvat",
     "currentWeight": "Nykyinen paino",
@@ -476,6 +485,8 @@
   },
   "log": {
     "prBadge": "ENN",
+    "pillReturn": "Takaisin treeniin",
+    "pillRest": "Lepo {{time}}",
     "override": "Kumoa",
     "swap": "Vaihda",
     "swapAria": "Vaihda {{name}} tähän treeniin",

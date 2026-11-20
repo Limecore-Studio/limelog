@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { Calendar, BarChart2, Layers, BookOpen, Scale } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
 import { useNexusStore } from '@/store/nexusStore';
+import { useLogStore } from '@/store/logStore';
+import { activeWorkoutId } from '@/lib/todaySessions';
 import './Layout.css';
 import { OptionalChunk } from '@/components/OptionalChunk';
 
@@ -15,6 +17,8 @@ const FdroidUpdateNote = lazy(() => import('@/components/FdroidUpdateNote').then
 const PolicyUpdatedNote = lazy(() => import('@/components/PolicyUpdatedNote').then((m) => ({ default: m.PolicyUpdatedNote })));
 // v1.20 (limecore#71): almost every launch never shows it.
 const ReportPromptCard = lazy(() => import('@/components/ReportPromptCard').then((m) => ({ default: m.ReportPromptCard })));
+// v1.22 (limelog#147): loaded only while a workout is open.
+const WorkoutPill = lazy(() => import('@/components/WorkoutPill').then((m) => ({ default: m.WorkoutPill })));
 
 // v1.7 — labels resolved via i18n at render time (labelKey → t()).
 const NAV_ITEMS = [
@@ -101,6 +105,7 @@ export function Layout() {
   const userEmail = useNexusStore((s) => s.userEmail);
   const signedIn = useNexusStore((s) => !!s.userId);
   const initials = avatarInitials(name, userName, userEmail);
+  const openWorkout = useLogStore((s) => activeWorkoutId(s.sessionLogs, Date.now()));
   return (
     <div className="app-shell">
       {/* v1.16 (limecore#16) — once, for people who used LimeLog under the old
@@ -118,7 +123,7 @@ export function Layout() {
           {initials ?? <GuestAvatar />}
         </NavLink>
       </header>
-      <main className="app-main">
+      <main className={`app-main${openWorkout ? ' app-main--pill' : ''}`}>
         {/* v1.16 (#26) — Android only, once a day, off in Settings. Renders
             nothing unless F-Droid has a newer build than this one. */}
         <OptionalChunk>
@@ -137,6 +142,11 @@ export function Layout() {
           <Outlet />
         </Suspense>
       </main>
+      {openWorkout && (
+        <OptionalChunk>
+          <WorkoutPill logId={openWorkout} />
+        </OptionalChunk>
+      )}
       <nav className="app-nav">
         {NAV_ITEMS.map(({ to, icon: Icon, labelKey }) => (
           <NavLink key={to} to={to} className={({ isActive }) => `nav-item${isActive ? ' nav-item--active' : ''}`}>

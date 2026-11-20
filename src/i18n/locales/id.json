@@ -200,6 +200,7 @@
     "resumeWorkout": "Lanjutkan latihan"
   },
   "settings": {
+    "exportInterrupted": "Ekspor terputus karena Android menutup LimeLog saat pemilih file terbuka. Tidak ada yang disimpan. Ketuk Ekspor lagi.",
     "errorReports": "Kirim laporan kesalahan",
     "errorReportsSub": "Mati secara bawaan · khusus akun",
     "errorReportsNote": "Saat aplikasi mengalami kesalahan yang tidak bisa dipulihkan, aplikasi mengirimkan jenis kesalahan, lokasinya di kode kami, versi aplikasi dan Android atau browser, serta layar yang terbuka. Tidak pernah apa yang Anda masukkan. Disimpan 90 hari.",
@@ -259,6 +260,14 @@
     "noCustomFilter": "Tidak ada gerakan kustom yang cocok dengan filtermu."
   },
   "body": {
+    "savePhotoCopy": "Simpan salinan foto dari {{date}}",
+    "photoCopySaved": "{{name}} disimpan",
+    "photoCopyFailed": "Salinan tidak dapat disimpan.",
+    "photoFullTitle": "Penyimpanan foto penuh",
+    "photoFullConfirm": "Perangkat ini menyimpan hingga 30 foto progres. Mengambil foto baru akan menghapus yang terlama, dari {{date}}. Untuk menyimpannya, batalkan dan simpan salinannya terlebih dahulu.",
+    "photoFullContinue": "Hapus yang terlama dan lanjutkan",
+    "photoRestored": "Foto progres Anda untuk {{date}} telah disimpan.",
+    "photoRestoreFailed": "Foto progres yang baru Anda ambil tidak dapat disimpan. Silakan ambil lagi.",
     "title": "Tubuh",
     "subtitle": "Berat, ukuran, dan foto progres",
     "currentWeight": "Berat saat ini",
@@ -370,6 +379,8 @@
   },
   "log": {
     "prBadge": "PR",
+    "pillReturn": "Kembali ke latihan",
+    "pillRest": "Istirahat {{time}}",
     "override": "Tetap lakukan",
     "swap": "Ganti",
     "swapAria": "Ganti {{name}} untuk latihan ini",

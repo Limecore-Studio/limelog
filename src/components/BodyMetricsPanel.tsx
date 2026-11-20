@@ -12,7 +12,8 @@
 // measurement fields appear in the form, so a weight-only user isn't
 // confronted with six empty inputs.
 
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { PHOTO_DATE_KEY } from '@/lib/restoredResult';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
 import {
@@ -21,7 +22,7 @@ import {
   CameraSource,
 } from '@capacitor/camera';
 import { Button, Card } from '@/components/ui';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, Download, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/confirmContext';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import {
@@ -39,6 +40,9 @@ import {
 import {
   savePhoto,
   savePhotoFromDataUrl,
+  photoDataUrlFromWebPath,
+  photoToEvict,
+  savePhotoCopy,
   getPhoto,
   deletePhoto,
   listPhotos,
@@ -109,6 +113,13 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
   const [scaleErr, setScaleErr] = useState<ScaleKey | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [photosNonce, setPhotosNonce] = useState(0); // re-renders gallery
+  // v1.22 (limelog#125) — a photo saved from a restored camera result
+  // (App.tsx) while this panel is open shows up at once.
+  useEffect(() => {
+    const bump = () => setPhotosNonce((n) => n + 1);
+    window.addEventListener('limelog:photos-changed', bump);
+    return () => window.removeEventListener('limelog:photos-changed', bump);
+  }, []);
 
   const unit = prefs.unitSystem;
   const isImperial = unit === 'imperial';
@@ -221,16 +232,48 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
   // and the photo is silently dropped.
   //
   // @capacitor/camera persists the capture URI on the native side and
-  // re-delivers the result on Activity recreation via a saved-instance
-  // bundle, so the Promise resolves correctly after process death. The
-  // plugin also applies width + quality at capture time, so we skip the
-  // canvas resize on this path (savePhotoFromDataUrl bypasses it).
+  // re-delivers the result on Activity recreation. v1.22 (limelog#125): that
+  // result does NOT resolve this Promise after process death (it died with
+  // the old WebView); it arrives as App's `appRestoredResult` event, which
+  // lib/restoredResult.ts handles, saving for the day put in PHOTO_DATE_KEY
+  // below. The plugin also applies width + quality at capture time, so we
+  // skip the canvas resize on this path (savePhotoFromDataUrl bypasses it).
   //
   // Web path keeps using <input type="file"> + canvas pipeline — no
   // process-kill risk in a browser tab, and Capacitor.isNativePlatform()
   // gates the plugin call so non-Android builds don't fail at import.
+  // v1.22 (limelog#126) — with the gallery full, a new day's photo deletes
+  // the oldest. Said BEFORE the camera opens, with the chance to keep a copy
+  // (Cancel, then save it) instead of a notice after it is gone.
+  async function okToEvict(): Promise<boolean> {
+    const oldest = photoToEvict(form.date);
+    if (!oldest) return true;
+    return confirm({
+      title: t('body.photoFullTitle'),
+      message: t('body.photoFullConfirm', { date: oldest }),
+      confirmLabel: t('body.photoFullContinue'),
+    });
+  }
+
+  async function handleSaveCopy(p: ProgressPhoto) {
+    setPhotoNotice(null);
+    try {
+      const name = await savePhotoCopy(p);
+      if (name) setPhotoNotice(t('body.photoCopySaved', { name }));
+    } catch (err) {
+      console.warn('[photos] save copy failed:', err);
+      setPhotoNotice(t('body.photoCopyFailed'));
+    }
+  }
+
   async function capturePhotoNative() {
     setPhotoNotice(null);
+    if (!(await okToEvict())) return;
+    try {
+      localStorage.setItem(PHOTO_DATE_KEY, form.date);
+    } catch {
+      /* without it a restored photo is saved for today */
+    }
     try {
       const photo = await CapacitorCamera.getPhoto({
         quality: 72,
@@ -260,7 +303,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
         setPhotoNotice(t('body.photoNoImage'));
         return;
       }
-      const dataUrl = await uriToDataUrl(webPath);
+      const dataUrl = await photoDataUrlFromWebPath(webPath);
       const { evicted } = await savePhotoFromDataUrl(form.date, dataUrl);
       setPhotosNonce((n) => n + 1);
       if (evicted > 0) {
@@ -279,22 +322,14 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       // The plugin's and the fetch's are the platform's English.
       console.warn('[photos] capture failed:', msg);
       setPhotoNotice(t('body.photoSaveFailed'));
+    } finally {
+      // Back in the same process: this call handled it, not the restore path.
+      try {
+        localStorage.removeItem(PHOTO_DATE_KEY);
+      } catch {
+        /* nothing kept */
+      }
     }
-  }
-
-  // Read a captured-file URI (capacitor://… / file://…) into a JPEG data URL
-  // for local storage. Runs after we're back from the camera, so the heavy
-  // base64 only exists momentarily at save time — not across the camera intent.
-  async function uriToDataUrl(webPath: string): Promise<string> {
-    const res = await fetch(webPath);
-    const blob = await res.blob();
-    return await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      // A PhotoError, so the notice below shows its (translated) message.
-      reader.onerror = () => reject(new PhotoError('unreadable'));
-      reader.readAsDataURL(blob);
-    });
   }
 
   async function handlePhotoCapture(e: React.ChangeEvent<HTMLInputElement>) {
@@ -596,6 +631,12 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
                 accept="image/*"
                 capture="environment"
                 onChange={handlePhotoCapture}
+                onClick={(e) => {
+                  // v1.22 (limelog#126): ask before the picker when full.
+                  if (!photoToEvict(form.date)) return;
+                  e.preventDefault();
+                  void okToEvict().then((ok) => ok && fileInputRef.current?.click());
+                }}
                 className="body-metrics-photo-input"
               />
               <label htmlFor="body-metrics-photo-input" className="body-metrics-photo-label">
@@ -625,6 +666,15 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
                 <img src={p.dataUrl} alt={t('body.photoAlt', { date: p.date })} loading="lazy" />
                 <figcaption className="body-metrics-photo__caption">
                   {p.date}
+                  <button
+                    type="button"
+                    className="body-metrics-photo__delete"
+                    aria-label={t('body.savePhotoCopy', { date: p.date })}
+                    title={t('body.savePhotoCopy', { date: p.date })}
+                    onClick={() => void handleSaveCopy(p)}
+                  >
+                    <Download size={12} aria-hidden />
+                  </button>
                   <button
                     type="button"
                     className="body-metrics-photo__delete"

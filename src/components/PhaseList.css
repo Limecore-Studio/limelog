@@ -99,3 +99,33 @@
   justify-content: flex-end;
   gap: 8px;
 }
+
+/* v1.22 (limelog#154) — a 44 px hit area around the small trash icon, without
+   changing how it looks. */
+.phase-list__del { position: relative; }
+.phase-list__del::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}
+
+/* v1.22 (limelog#152, #158) — the toggle is its own button beside the delete. */
+.phase-list__header { gap: 6px; }
+.phase-list__toggle {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}

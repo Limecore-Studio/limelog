@@ -208,6 +208,7 @@
     "resumeWorkout": "Reprendre la séance"
   },
   "settings": {
+    "exportInterrupted": "L’export a été interrompu car Android a fermé LimeLog pendant que le sélecteur de fichiers était ouvert. Rien n’a été enregistré. Touchez à nouveau Exporter.",
     "errorReports": "Envoyer les rapports d’erreur",
     "errorReportsSub": "Désactivé par défaut · compte requis",
     "errorReportsNote": "Quand l’app rencontre une erreur dont elle ne peut se remettre, elle nous envoie l’erreur, l’endroit de notre code, la version de l’app et d’Android ou du navigateur, et l’écran ouvert. Jamais ce que vous avez saisi. Conservés 90 jours.",
@@ -247,6 +248,14 @@
     "fdroidCheckNote": "Une fois par jour, LimeLog demande à f-droid.org quelle est la version la plus récente. Rien vous concernant n’est envoyé. Désactivée, la requête n’est plus envoyée du tout."
   },
   "body": {
+    "savePhotoCopy": "Enregistrer une copie de la photo du {{date}}",
+    "photoCopySaved": "{{name}} enregistré",
+    "photoCopyFailed": "La copie n’a pas pu être enregistrée.",
+    "photoFullTitle": "Stockage des photos plein",
+    "photoFullConfirm": "Cet appareil conserve jusqu’à 30 photos de progression. En prendre une nouvelle supprime la plus ancienne, du {{date}}. Pour la garder, annulez et enregistrez-en d’abord une copie.",
+    "photoFullContinue": "Supprimer la plus ancienne et continuer",
+    "photoRestored": "Votre photo de progression du {{date}} a été enregistrée.",
+    "photoRestoreFailed": "La photo de progression que vous venez de prendre n’a pas pu être enregistrée. Reprenez-la.",
     "title": "Corps",
     "subtitle": "Poids, mensurations & photos de progression",
     "currentWeight": "Poids actuel",
@@ -485,6 +494,8 @@
   },
   "log": {
     "prBadge": "RP",
+    "pillReturn": "Revenir à la séance",
+    "pillRest": "Repos {{time}}",
     "override": "Passer outre",
     "swap": "Remplacer",
     "swapAria": "Remplacer {{name}} pour cette séance",

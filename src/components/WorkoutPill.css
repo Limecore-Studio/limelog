@@ -1,0 +1,65 @@
+/* v1.22 (limelog#147) — the workout-in-progress strip above the bottom nav.
+   Same industrial language as the nav: sharp corners, condensed caps,
+   tabular figures, one lime signal. */
+.workout-pill {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 8px);
+  transform: translateX(-50%);
+  z-index: 99;
+  display: inline-flex;
+  align-items: stretch;
+  min-height: 44px;
+  padding: 0;
+  background: var(--bg-raised);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-pill);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+.workout-pill__dot {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  margin: 0 8px 0 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+  animation: workout-pill-beat 1.6s ease-in-out infinite;
+}
+
+.workout-pill__time {
+  align-self: center;
+  padding-right: 14px;
+}
+
+.workout-pill__rest {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border-left: 1px solid var(--accent-border);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.workout-pill:active {
+  background: var(--bg-overlay);
+}
+
+.workout-pill:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes workout-pill-beat {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}

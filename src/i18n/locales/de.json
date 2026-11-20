@@ -204,6 +204,7 @@
     "resumeWorkout": "Training fortsetzen"
   },
   "settings": {
+    "exportInterrupted": "Der Export wurde unterbrochen, weil Android LimeLog bei geöffneter Dateiauswahl geschlossen hat. Es wurde nichts gespeichert. Tippe erneut auf Exportieren.",
     "errorReports": "Fehlerberichte senden",
     "errorReportsSub": "Standardmäßig aus · nur mit Konto",
     "errorReportsNote": "Wenn die App auf einen Fehler stößt, von dem sie sich nicht erholt, sendet sie uns, welcher Fehler es war, wo in unserem Code, die App- und Android- bzw. Browserversion und den geöffneten Bildschirm. Nie, was du eingegeben hast. 90 Tage gespeichert.",
@@ -243,6 +244,14 @@
     "fdroidCheckNote": "Einmal am Tag fragt LimeLog bei f-droid.org nach der neuesten Version. Über dich wird nichts gesendet. Ausgeschaltet unterbleibt die Anfrage ganz."
   },
   "body": {
+    "savePhotoCopy": "Kopie des Fotos vom {{date}} speichern",
+    "photoCopySaved": "{{name}} gespeichert",
+    "photoCopyFailed": "Die Kopie konnte nicht gespeichert werden.",
+    "photoFullTitle": "Fotospeicher ist voll",
+    "photoFullConfirm": "Auf diesem Gerät werden bis zu 30 Fortschrittsfotos gespeichert. Ein neues Foto löscht das älteste vom {{date}}. Um es zu behalten, brich ab und speichere zuerst eine Kopie.",
+    "photoFullContinue": "Ältestes löschen und fortfahren",
+    "photoRestored": "Dein Fortschrittsfoto für {{date}} wurde gespeichert.",
+    "photoRestoreFailed": "Das gerade aufgenommene Fortschrittsfoto konnte nicht gespeichert werden. Bitte nimm es erneut auf.",
     "title": "Körper",
     "subtitle": "Gewicht, Maße & Fortschrittsfotos",
     "currentWeight": "Aktuelles Gewicht",
@@ -476,6 +485,8 @@
   },
   "log": {
     "prBadge": "PB",
+    "pillReturn": "Zurück zum Training",
+    "pillRest": "Pause {{time}}",
     "override": "Überschreiben",
     "swap": "Tauschen",
     "swapAria": "{{name}} für dieses Training tauschen",

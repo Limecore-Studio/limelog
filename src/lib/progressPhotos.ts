@@ -17,6 +17,8 @@
 // dependency surface unchanged for this v1.2 feature.
 
 import i18n from '@/i18n';
+import { Capacitor } from '@capacitor/core';
+import { SaveFile } from './saveFile';
 
 const STORAGE_KEY = 'limelog-progress-photos';
 const MAX_PHOTOS = 30;
@@ -87,13 +89,14 @@ function saveIndex(idx: PhotoIndex): void {
   }
 }
 
-function evictOldestIfFull(idx: PhotoIndex): { evicted: number } {
+// v1.22 (limelog#126) — oldest by DATE, as the header always said (it went by
+// savedAt, so a back-dated photo was evicted ahead of an older day's), and
+// never the day just saved: a back-dated photo older than all the others
+// would otherwise evict itself.
+function evictOldestIfFull(idx: PhotoIndex, keep?: string): { evicted: number } {
   const entries = Object.entries(idx);
   if (entries.length <= MAX_PHOTOS) return { evicted: 0 };
-  // Sort by savedAt ascending (oldest first), evict until we're at cap.
-  const sorted = entries.sort((a, b) =>
-    a[1].savedAt < b[1].savedAt ? -1 : 1,
-  );
+  const sorted = entries.filter(([k]) => k !== keep).sort((a, b) => (a[0] < b[0] ? -1 : 1));
   const toEvict = sorted.slice(0, entries.length - MAX_PHOTOS);
   for (const [k] of toEvict) delete idx[k];
   return { evicted: toEvict.length };
@@ -157,9 +160,37 @@ export async function savePhotoFromDataUrl(
   };
   const idx = loadIndex();
   idx[date] = photo;
-  const { evicted } = evictOldestIfFull(idx);
+  const { evicted } = evictOldestIfFull(idx, date);
   saveIndex(idx);
   return { photo, evicted };
+}
+
+/** v1.22 (limelog#126) — the day a new photo for `date` would push out, or
+ *  null when nothing would go (room left, or that day is only replaced). Asked
+ *  BEFORE the camera opens, so the user can keep a copy or cancel. */
+export function photoToEvict(date: string): string | null {
+  const idx = loadIndex();
+  if (idx[date] || Object.keys(idx).length < MAX_PHOTOS) return null;
+  return Object.keys(idx).sort()[0] ?? null;
+}
+
+/** v1.22 (limelog#126) — save a copy of a photo as a JPEG where the user
+ *  chooses (the system picker on Android, a download on the web). Resolves
+ *  with the file name, or null when the user cancelled. */
+export async function savePhotoCopy(photo: ProgressPhoto): Promise<string | null> {
+  const name = `limelog-photo-${photo.date}.jpg`;
+  if (Capacitor.isNativePlatform()) {
+    const base64 = photo.dataUrl.slice(photo.dataUrl.indexOf(',') + 1);
+    const { saved } = await SaveFile.save({ filename: name, mimeType: 'image/jpeg', data: base64, encoding: 'base64' });
+    return saved ? name : null;
+  }
+  const a = document.createElement('a');
+  a.href = photo.dataUrl;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return name;
 }
 
 export function getPhoto(date: string): ProgressPhoto | null {
@@ -178,4 +209,18 @@ export function deletePhoto(date: string): void {
 export function listPhotos(): ProgressPhoto[] {
   const idx = loadIndex();
   return Object.values(idx).sort((a, b) => (a.date > b.date ? -1 : 1));
+}
+
+/** Read a captured-file URI (capacitor://, file://) into a JPEG data URL. Runs
+ *  after the camera is gone, so the heavy base64 exists only at save time.
+ *  v1.22 (limelog#125): shared by the panel and the restored-result path. */
+export async function photoDataUrlFromWebPath(webPath: string): Promise<string> {
+  const res = await fetch(webPath);
+  const blob = await res.blob();
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new PhotoError('unreadable'));
+    reader.readAsDataURL(blob);
+  });
 }

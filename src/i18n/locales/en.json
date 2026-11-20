@@ -204,6 +204,7 @@
     "resumeWorkout": "Resume workout"
   },
   "settings": {
+    "exportInterrupted": "The export was interrupted because Android closed LimeLog while the file picker was open. Nothing was saved. Tap Export again.",
     "errorReports": "Send error reports",
     "errorReportsSub": "Off by default · account only",
     "errorReportsNote": "When the app hits an error it cannot recover from, it sends us which error it was, where in our code, the app and Android or browser version, and the screen that was open. Never what you entered. Kept 90 days.",
@@ -243,6 +244,14 @@
     "fdroidCheckNote": "Once a day, LimeLog asks f-droid.org for its newest version. Nothing about you is sent. Turning this off stops the request entirely."
   },
   "body": {
+    "savePhotoCopy": "Save a copy of the photo from {{date}}",
+    "photoCopySaved": "Saved {{name}}",
+    "photoCopyFailed": "The copy could not be saved.",
+    "photoFullTitle": "Photo storage is full",
+    "photoFullConfirm": "This device keeps up to 30 progress photos. Taking a new one deletes the oldest, from {{date}}. To keep it, cancel and save a copy of it first.",
+    "photoFullContinue": "Delete oldest and continue",
+    "photoRestored": "Your progress photo for {{date}} was saved.",
+    "photoRestoreFailed": "The progress photo you just took could not be saved. Please take it again.",
     "title": "Body",
     "subtitle": "Weight, measurements & progress photos",
     "currentWeight": "Current weight",
@@ -476,6 +485,8 @@
   },
   "log": {
     "prBadge": "PR",
+    "pillReturn": "Back to your workout",
+    "pillRest": "Rest {{time}}",
     "override": "Override",
     "swap": "Swap",
     "swapAria": "Swap {{name}} for this workout",

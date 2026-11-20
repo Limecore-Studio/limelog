@@ -20,6 +20,9 @@ export function ProgramPage() {
 
   function handleCreate(name: string, description: string) {
     const p = createProgram({ name, description, status: 'archived' });
+    // v1.22 (limelog#150): the first program is the active one, so Today has
+    // something to show without a trip to "Set active".
+    if (!programs.some((x) => x.status === 'active')) setActiveProgram(p.id);
     setViewingProgramId(p.id);
     setShowNew(false);
   }

@@ -19,6 +19,8 @@ export interface ConfirmOptions {
   /** Renders the confirm button in the danger colour. Default true — every
    *  current caller guards a destructive action. */
   destructive?: boolean;
+  /** v1.22 — a notice: one button (confirmLabel), no cancel. */
+  notice?: boolean;
 }
 
 export type Confirm = (opts: ConfirmOptions) => Promise<boolean>;

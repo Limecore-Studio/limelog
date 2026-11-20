@@ -76,3 +76,15 @@
   padding: 0 8px;
   font-size: 13px;
 }
+
+/* v1.22 (limelog#154) — a 44 px hit area around the small trash icon, without
+   changing how it looks. */
+.se-row__del { position: relative; }
+.se-row__del::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 44px;
+  height: 44px;
+  transform: translate(-50%, -50%);
+}

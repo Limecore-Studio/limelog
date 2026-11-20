@@ -28,7 +28,7 @@ export function SessionExerciseRow({ sessionExercise: se, sessionId, program: _ 
           <span className="se-row__name">{exercise?.name ?? t('log.unknownExercise')}</span>
           <span className="se-row__targets">{se.targetSets}×{se.targetReps}{se.targetRpe ? ` @RPE${se.targetRpe}` : ''}</span>
         </button>
-        <button className="se-row__del" onClick={() => removeSessionExercise(sessionId, se.id)}>
+        <button className="se-row__del" onClick={() => removeSessionExercise(sessionId, se.id)} aria-label={t('common.delete')}>
           <Trash2 size={12} />
         </button>
       </div>
