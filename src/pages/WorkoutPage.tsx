@@ -22,6 +22,7 @@ import { SwapExerciseSheet } from '@/components/SwapExerciseSheet';
 import { effectiveExerciseId } from '@/lib/exerciseSwap';
 import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc } from 'lucide-react';
 import './WorkoutPage.css';
+import { haptic } from '@/lib/haptic';
 import { loadActiveRest, saveActiveRest, clearActiveRest, type RestState } from '@/lib/activeRest';
 
 const DEFAULT_REST_SECONDS = 90;
@@ -192,12 +193,20 @@ export function WorkoutPage() {
     return result;
   }
 
+  // v1.22 (limecore#130): a finished workout is the user's own action, so it
+  // gets the success haptic. Not in finalizeSession, which also finishes
+  // stale workouts quietly in the background (#120).
+  function finishWorkout() {
+    finalizeSession(log!.id);
+    haptic.success();
+  }
+
   function handleFinish() {
     const qualifying = computeQualifying();
     if (qualifying.length > 0) {
       setModal({ qualifying });
     } else {
-      finalizeSession(log!.id);
+      finishWorkout();
       clearActiveRest();
       navigate('/today');
     }
@@ -211,14 +220,14 @@ export function WorkoutPage() {
         updateSessionExercise(item.sessionId, item.se.id, { targetWeight: newWeight });
       }
     }
-    finalizeSession(log!.id);
+    finishWorkout();
     clearActiveRest();
     setModal(null);
     navigate('/today');
   }
 
   function handleModalSkip() {
-    finalizeSession(log!.id);
+    finishWorkout();
     clearActiveRest();
     setModal(null);
     navigate('/today');
@@ -366,6 +375,8 @@ export function WorkoutPage() {
               onDeleteSet={(setId) => deleteSet(log.id, setId)}
               onCompleteSet={(setId, completed, restSecs) => {
                 updateSet(log.id, setId, { completed });
+                // v1.22 (limecore#130): confirms the tick (and the rest it starts).
+                if (completed) haptic.light();
                 // v1.18.1 (LimeLog#75): no stall check here any more. It ran on
                 // every tick against the workout still in progress, so the first
                 // set of a session flagged a plateau the rest of it then broke.

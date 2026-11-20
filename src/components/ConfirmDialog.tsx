@@ -26,6 +26,7 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ConfirmContext, type Confirm, type ConfirmOptions } from './confirmContext';
+import { haptic } from '@/lib/haptic';
 import './ConfirmDialog.css';
 
 export function ConfirmProvider({ children }: { children: ReactNode }) {
@@ -70,7 +71,11 @@ export function ConfirmProvider({ children }: { children: ReactNode }) {
               )}
               <button
                 className={`cfd-btn cfd-btn--${pending.destructive === false ? 'primary' : 'danger'}`}
-                onClick={() => settle(true)}
+                onClick={() => {
+                  // v1.22 (limecore#130): confirming a destructive action.
+                  if (pending.destructive !== false) haptic.warning();
+                  settle(true);
+                }}
                 autoFocus
               >
                 {pending.confirmLabel ?? t('common.confirm')}
