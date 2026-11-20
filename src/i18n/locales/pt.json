@@ -173,6 +173,16 @@
     "ormCaption": "{{unit}} — 1RM estimado, o melhor por sessão"
   },
   "today": {
+    "starterTitle": "Comece a treinar hoje",
+    "starterBody": "Escolha um programa de corpo inteiro pronto (três dias por semana com os exercícios principais) ou crie o seu. Pode alterar tudo depois.",
+    "starterUse": "Usar o programa de corpo inteiro",
+    "starterOwn": "Criar o meu",
+    "starterProgramName": "Início corpo inteiro",
+    "starterProgramDesc": "Três dias de corpo inteiro por semana com os exercícios principais.",
+    "starterPhaseName": "Base",
+    "starterDayA": "Corpo inteiro A",
+    "starterDayB": "Corpo inteiro B",
+    "starterDayC": "Corpo inteiro C",
     "noProgramTitle": "Nenhum programa ativo",
     "noProgramBody": "Crie um programa na aba Programa para começar.",
     "goToPrograms": "Ir para Programas",
@@ -388,6 +398,7 @@
     }
   },
   "log": {
+    "prBadge": "RP",
     "pillReturn": "Voltar ao treino",
     "pillRest": "Descanso {{time}}",
     "override": "Ignorar",
@@ -441,6 +452,7 @@
     "restrictionModify": "{{label}} — ajuste a carga ou a amplitude"
   },
   "program": {
+    "renameSession": "Mudar o nome da sessão",
     "title": "Programas",
     "new": "Novo",
     "back": "Programas",

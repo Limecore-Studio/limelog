@@ -169,6 +169,16 @@
     "ormCaption": "{{unit}} — estimasi 1RM, terbaik per sesi"
   },
   "today": {
+    "starterTitle": "Mulai berlatih hari ini",
+    "starterBody": "Pilih program seluruh tubuh yang siap pakai (tiga hari seminggu dengan latihan utama) atau buat sendiri. Anda bisa mengubah semuanya nanti.",
+    "starterUse": "Pakai program seluruh tubuh",
+    "starterOwn": "Buat sendiri",
+    "starterProgramName": "Pemula seluruh tubuh",
+    "starterProgramDesc": "Tiga hari latihan seluruh tubuh seminggu dengan latihan utama.",
+    "starterPhaseName": "Dasar",
+    "starterDayA": "Seluruh tubuh A",
+    "starterDayB": "Seluruh tubuh B",
+    "starterDayC": "Seluruh tubuh C",
     "noProgramTitle": "Tidak ada program aktif",
     "noProgramBody": "Buat program di tab Program untuk memulai.",
     "goToPrograms": "Buka Program",
@@ -378,6 +388,7 @@
     }
   },
   "log": {
+    "prBadge": "PR",
     "pillReturn": "Kembali ke latihan",
     "pillRest": "Istirahat {{time}}",
     "override": "Tetap lakukan",
@@ -431,6 +442,7 @@
     "restrictionModify": "{{label}} — sesuaikan beban atau rentang gerak"
   },
   "program": {
+    "renameSession": "Ganti nama sesi",
     "title": "Program",
     "new": "Baru",
     "back": "Program",

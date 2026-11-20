@@ -171,6 +171,16 @@
     "ormCaption": "{{unit}} — geschätztes 1RM, bester Wert pro Training"
   },
   "today": {
+    "starterTitle": "Heute mit dem Training beginnen",
+    "starterBody": "Wähle ein fertiges Ganzkörperprogramm (drei Tage pro Woche mit den Grundübungen) oder erstelle dein eigenes. Du kannst später alles ändern.",
+    "starterUse": "Ganzkörperprogramm verwenden",
+    "starterOwn": "Eigenes erstellen",
+    "starterProgramName": "Ganzkörper-Einstieg",
+    "starterProgramDesc": "Drei Ganzkörpertage pro Woche mit den Grundübungen.",
+    "starterPhaseName": "Basis",
+    "starterDayA": "Ganzkörper A",
+    "starterDayB": "Ganzkörper B",
+    "starterDayC": "Ganzkörper C",
     "noProgramTitle": "Kein aktives Programm",
     "noProgramBody": "Erstelle ein Programm im Tab Programm, um zu starten.",
     "goToPrograms": "Zu den Programmen",
@@ -323,6 +333,7 @@
     }
   },
   "program": {
+    "renameSession": "Einheit umbenennen",
     "title": "Programme",
     "new": "Neu",
     "back": "Programme",
@@ -484,6 +495,7 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "prBadge": "PB",
     "pillReturn": "Zurück zum Training",
     "pillRest": "Pause {{time}}",
     "override": "Überschreiben",

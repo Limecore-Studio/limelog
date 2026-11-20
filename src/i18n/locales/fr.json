@@ -173,6 +173,16 @@
     "ormCaption": "{{unit}} — 1RM estimé, meilleur par séance"
   },
   "today": {
+    "starterTitle": "Commencez à vous entraîner aujourd’hui",
+    "starterBody": "Choisissez un programme corps entier prêt (trois jours par semaine avec les mouvements de base) ou créez le vôtre. Vous pourrez tout modifier ensuite.",
+    "starterUse": "Utiliser le programme corps entier",
+    "starterOwn": "Créer le mien",
+    "starterProgramName": "Départ corps entier",
+    "starterProgramDesc": "Trois séances corps entier par semaine avec les mouvements de base.",
+    "starterPhaseName": "Base",
+    "starterDayA": "Corps entier A",
+    "starterDayB": "Corps entier B",
+    "starterDayC": "Corps entier C",
     "noProgramTitle": "Aucun programme actif",
     "noProgramBody": "Crée un programme dans l'onglet Programme pour commencer.",
     "goToPrograms": "Aller aux programmes",
@@ -328,6 +338,7 @@
     }
   },
   "program": {
+    "renameSession": "Renommer la séance",
     "title": "Programmes",
     "new": "Nouveau",
     "back": "Programmes",
@@ -493,6 +504,7 @@
     "restrictExercises": "Restreindre des exercices précis"
   },
   "log": {
+    "prBadge": "RP",
     "pillReturn": "Revenir à la séance",
     "pillRest": "Repos {{time}}",
     "override": "Passer outre",

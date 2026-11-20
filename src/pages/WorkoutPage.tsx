@@ -21,8 +21,10 @@ import { convertLoad, usesBarbell } from '@/utils/plateMath';
 import { useThemeStore } from '@/store/themeStore';
 import { SwapExerciseSheet } from '@/components/SwapExerciseSheet';
 import { effectiveExerciseId } from '@/lib/exerciseSwap';
-import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc, Trophy } from 'lucide-react';
+import { prSetId } from '@/lib/prDetection';
 import './WorkoutPage.css';
+import { haptic } from '@/lib/haptic';
 import { loadActiveRest, saveActiveRest, clearActiveRest, type RestState } from '@/lib/activeRest';
 
 const DEFAULT_REST_SECONDS = 90;
@@ -193,12 +195,20 @@ export function WorkoutPage() {
     return result;
   }
 
+  // v1.22 (limecore#130): a finished workout is the user's own action, so it
+  // gets the success haptic. Not in finalizeSession, which also finishes
+  // stale workouts quietly in the background (#120).
+  function finishWorkout() {
+    finalizeSession(log!.id);
+    haptic.success();
+  }
+
   function handleFinish() {
     const qualifying = computeQualifying();
     if (qualifying.length > 0) {
       setModal({ qualifying });
     } else {
-      finalizeSession(log!.id);
+      finishWorkout();
       clearActiveRest();
       navigate('/today');
     }
@@ -212,14 +222,14 @@ export function WorkoutPage() {
         updateSessionExercise(item.sessionId, item.se.id, { targetWeight: newWeight });
       }
     }
-    finalizeSession(log!.id);
+    finishWorkout();
     clearActiveRest();
     setModal(null);
     navigate('/today');
   }
 
   function handleModalSkip() {
-    finalizeSession(log!.id);
+    finishWorkout();
     clearActiveRest();
     setModal(null);
     navigate('/today');
@@ -343,6 +353,8 @@ export function WorkoutPage() {
               equipment={exercise.equipment}
               lastSession={lastSession}
               pr={pr}
+              // v1.22 (limelog#148): the set that beats the record, badged now.
+              prSet={prSetId(mySets, pr)}
               targetSetsCount={se.targetSets}
               targetReps={se.targetReps}
               targetRpe={se.targetRpe}
@@ -367,6 +379,8 @@ export function WorkoutPage() {
               onDeleteSet={(setId) => deleteSet(log.id, setId)}
               onCompleteSet={(setId, completed, restSecs) => {
                 updateSet(log.id, setId, { completed });
+                // v1.22 (limecore#130): confirms the tick (and the rest it starts).
+                if (completed) haptic.light();
                 // v1.18.1 (LimeLog#75): no stall check here any more. It ran on
                 // every tick against the workout still in progress, so the first
                 // set of a session flagged a plateau the rest of it then broke.
@@ -434,6 +448,8 @@ interface ExerciseSectionProps {
   equipment?: string;
   lastSession?: LastSessionRef | null;
   pr?: ExercisePR | null;
+  /** v1.22 (limelog#148) — the set Finish will record as a new PR. */
+  prSet: string | null;
   targetSetsCount: number;
   targetReps: string;
   targetRpe?: number;
@@ -461,6 +477,7 @@ function ExerciseSection({
   equipment,
   lastSession,
   pr,
+  prSet,
   targetSetsCount,
   targetReps,
   targetRpe,
@@ -678,14 +695,21 @@ function ExerciseSection({
           {sets.map((s, i) => (
             <div
               key={`row-${i}`}
-              className={`ex-section__set-grid ex-section__set-row${s.completed ? ' ex-section__set-row--done' : ''}`}
+              className={`ex-section__set-grid ex-section__set-row${s.completed ? ' ex-section__set-row--done' : ''}${s.id === prSet ? ' ex-section__set-row--pr' : ''}`}
             >
               <button
                 className="ex-section__set-check"
                 onClick={() => tapDone(s)}
-                aria-label={s.completed ? t('log.setDone', { n: s.setNumber }) : t('log.markSetDone', { n: s.setNumber })}
+                aria-label={(s.completed ? t('log.setDone', { n: s.setNumber }) : t('log.markSetDone', { n: s.setNumber }))
+                  + (s.id === prSet ? `, ${t('workout.personalRecord')}` : '')}
               >
                 {s.completed ? '✓' : s.setNumber}
+                {s.id === prSet && (
+                  <span className="ex-section__pr-badge" title={t('workout.personalRecord')}>
+                    <Trophy size={9} aria-hidden="true" />
+                    {t('log.prBadge')}
+                  </span>
+                )}
               </button>
               <WeightInput
                 weightKg={s.weightKg}
