@@ -169,6 +169,16 @@
     "ormCaption": "{{unit}} —— 估算 1RM，每次训练取最佳"
   },
   "today": {
+    "starterTitle": "今天开始训练",
+    "starterBody": "选择一个现成的全身计划（每周三天，包含主要动作），或创建你自己的。之后可以随时修改。",
+    "starterUse": "使用全身计划",
+    "starterOwn": "自己创建",
+    "starterProgramName": "全身入门",
+    "starterProgramDesc": "每周三天全身训练，包含主要动作。",
+    "starterPhaseName": "基础",
+    "starterDayA": "全身 A",
+    "starterDayB": "全身 B",
+    "starterDayC": "全身 C",
     "noProgramTitle": "没有进行中的计划",
     "noProgramBody": "在“计划”标签中创建一个计划即可开始。",
     "goToPrograms": "前往计划",
@@ -319,6 +329,7 @@
     }
   },
   "program": {
+    "renameSession": "重命名训练课",
     "title": "训练计划",
     "new": "新建",
     "back": "训练计划",

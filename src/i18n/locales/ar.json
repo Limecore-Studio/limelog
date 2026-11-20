@@ -179,6 +179,16 @@
     "ormCaption": "{{unit}} — 1RM المقدّر، الأفضل في كل جلسة"
   },
   "today": {
+    "starterTitle": "ابدأ التدريب اليوم",
+    "starterBody": "اختر برنامجًا جاهزًا للجسم كله (ثلاثة أيام أسبوعيًا مع التمارين الأساسية) أو أنشئ برنامجك. يمكنك تغيير كل شيء لاحقًا.",
+    "starterUse": "استخدم برنامج الجسم كله",
+    "starterOwn": "سأنشئ برنامجي",
+    "starterProgramName": "بداية الجسم كله",
+    "starterProgramDesc": "ثلاثة أيام للجسم كله أسبوعيًا مع التمارين الأساسية.",
+    "starterPhaseName": "الأساس",
+    "starterDayA": "الجسم كله A",
+    "starterDayB": "الجسم كله B",
+    "starterDayC": "الجسم كله C",
     "noProgramTitle": "لا يوجد برنامج نشط",
     "noProgramBody": "أنشئ برنامجًا من تبويب البرنامج للبدء.",
     "goToPrograms": "الانتقال إلى البرامج",
@@ -456,6 +466,7 @@
     "restrictionModify": "{{label}} — عدّل الحمل أو المدى"
   },
   "program": {
+    "renameSession": "إعادة تسمية الجلسة",
     "title": "البرامج",
     "new": "جديد",
     "back": "البرامج",
