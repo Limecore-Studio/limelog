@@ -484,6 +484,7 @@
     "restrictExercises": "Restringir ejercicios específicos"
   },
   "log": {
+    "prBadge": "RP",
     "override": "Anular",
     "swap": "Cambiar",
     "swapAria": "Cambiar {{name}} en este entrenamiento",

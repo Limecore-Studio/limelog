@@ -484,6 +484,7 @@
     "restrictExercises": "Restreindre des exercices précis"
   },
   "log": {
+    "prBadge": "RP",
     "override": "Passer outre",
     "swap": "Remplacer",
     "swapAria": "Remplacer {{name}} pour cette séance",

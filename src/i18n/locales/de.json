@@ -475,6 +475,7 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "prBadge": "PB",
     "override": "Überschreiben",
     "swap": "Tauschen",
     "swapAria": "{{name}} für dieses Training tauschen",

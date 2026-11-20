@@ -475,6 +475,7 @@
     "restrictExercises": "Rajoita tiettyjä liikkeitä"
   },
   "log": {
+    "prBadge": "ENN",
     "override": "Kumoa",
     "swap": "Vaihda",
     "swapAria": "Vaihda {{name}} tähän treeniin",

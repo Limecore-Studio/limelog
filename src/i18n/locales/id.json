@@ -369,6 +369,7 @@
     }
   },
   "log": {
+    "prBadge": "PR",
     "override": "Tetap lakukan",
     "swap": "Ganti",
     "swapAria": "Ganti {{name}} untuk latihan ini",

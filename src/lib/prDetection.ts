@@ -23,15 +23,15 @@ import { sessionMoment } from './sessionMoment';
  *  raised "New personal record" and then failed to appear on the Est. 1RM
  *  chart, which discards the same set as unreliable. A PR ranked on an estimate
  *  the app itself declines to plot is not one worth claiming. */
-function bestSet(sets: SetLog[]): { weightKg: number; reps: number; oneRepMax: number } | null {
-  let best: { weightKg: number; reps: number; oneRepMax: number } | null = null;
+function bestSet(sets: SetLog[]): { id: string; weightKg: number; reps: number; oneRepMax: number } | null {
+  let best: { id: string; weightKg: number; reps: number; oneRepMax: number } | null = null;
   for (const s of sets) {
     if (!s.completed) continue;
     if (s.weightKg == null || s.reps == null) continue;
     const orm = estimate1RM(s.weightKg, s.reps);
     if (orm == null || orm <= 0) continue;
     if (!best || orm > best.oneRepMax) {
-      best = { weightKg: s.weightKg, reps: s.reps, oneRepMax: orm };
+      best = { id: s.id, weightKg: s.weightKg, reps: s.reps, oneRepMax: orm };
     }
   }
   return best;
@@ -140,4 +140,19 @@ export function rebuildPRs(
     added.push(...fresh);
   }
   return added;
+}
+
+/**
+ * v1.22 (limelog#148) — the set, among one exercise's sets of the workout in
+ * progress, that Finish will record as a new PR: the best completed set by
+ * estimated 1RM, when it beats `prior` by the same rule detectNewPRs uses
+ * (rounded to the stored precision, strictly greater). Null when none does.
+ * The workout page badges that row as it happens; Finish still records and
+ * celebrates it.
+ */
+export function prSetId(sets: SetLog[], prior: ExercisePR | null): string | null {
+  const best = bestSet(sets);
+  if (!best) return null;
+  const oneRepMaxKg = Math.round(best.oneRepMax * 100) / 100;
+  return prior && oneRepMaxKg <= prior.oneRepMaxKg ? null : best.id;
 }

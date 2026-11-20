@@ -475,6 +475,7 @@
     "restrictExercises": "Restrict specific exercises"
   },
   "log": {
+    "prBadge": "PR",
     "override": "Override",
     "swap": "Swap",
     "swapAria": "Swap {{name}} for this workout",

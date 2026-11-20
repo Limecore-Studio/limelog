@@ -20,7 +20,8 @@ import { convertLoad, usesBarbell } from '@/utils/plateMath';
 import { useThemeStore } from '@/store/themeStore';
 import { SwapExerciseSheet } from '@/components/SwapExerciseSheet';
 import { effectiveExerciseId } from '@/lib/exerciseSwap';
-import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc } from 'lucide-react';
+import { ChevronLeft, Plus, Trash2, X, Flag, Play, Timer, ArrowLeftRight, Disc, Trophy } from 'lucide-react';
+import { prSetId } from '@/lib/prDetection';
 import './WorkoutPage.css';
 
 const DEFAULT_REST_SECONDS = 90;
@@ -378,6 +379,8 @@ export function WorkoutPage() {
               equipment={exercise.equipment}
               lastSession={lastSession}
               pr={pr}
+              // v1.22 (limelog#148): the set that beats the record, badged now.
+              prSet={prSetId(mySets, pr)}
               targetSetsCount={se.targetSets}
               targetReps={se.targetReps}
               targetRpe={se.targetRpe}
@@ -469,6 +472,8 @@ interface ExerciseSectionProps {
   equipment?: string;
   lastSession?: LastSessionRef | null;
   pr?: ExercisePR | null;
+  /** v1.22 (limelog#148) — the set Finish will record as a new PR. */
+  prSet: string | null;
   targetSetsCount: number;
   targetReps: string;
   targetRpe?: number;
@@ -496,6 +501,7 @@ function ExerciseSection({
   equipment,
   lastSession,
   pr,
+  prSet,
   targetSetsCount,
   targetReps,
   targetRpe,
@@ -692,14 +698,21 @@ function ExerciseSection({
           {sets.map((s) => (
             <div
               key={s.id}
-              className={`ex-section__set-grid ex-section__set-row${s.completed ? ' ex-section__set-row--done' : ''}`}
+              className={`ex-section__set-grid ex-section__set-row${s.completed ? ' ex-section__set-row--done' : ''}${s.id === prSet ? ' ex-section__set-row--pr' : ''}`}
             >
               <button
                 className="ex-section__set-check"
                 onClick={() => tapDone(s)}
-                aria-label={s.completed ? t('log.setDone', { n: s.setNumber }) : t('log.markSetDone', { n: s.setNumber })}
+                aria-label={(s.completed ? t('log.setDone', { n: s.setNumber }) : t('log.markSetDone', { n: s.setNumber }))
+                  + (s.id === prSet ? `, ${t('workout.personalRecord')}` : '')}
               >
                 {s.completed ? '✓' : s.setNumber}
+                {s.id === prSet && (
+                  <span className="ex-section__pr-badge" title={t('workout.personalRecord')}>
+                    <Trophy size={9} aria-hidden="true" />
+                    {t('log.prBadge')}
+                  </span>
+                )}
               </button>
               <WeightInput
                 weightKg={s.weightKg}
