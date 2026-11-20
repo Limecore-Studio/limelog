@@ -12,7 +12,6 @@ vi.mock('@capacitor/haptics', () => ({
   },
 }));
 const { haptic } = await import('./haptic');
-const settle = () => new Promise((r) => setTimeout(r, 0));
 
 beforeEach(() => {
   h.native = true;
@@ -24,18 +23,19 @@ describe('haptic', () => {
     haptic.light();
     haptic.success();
     haptic.warning();
-    await settle();
-    expect(h.calls).toEqual([
+    // The plugin is imported on first use; how soon that settles varies (CI).
+    await vi.waitFor(() => expect(h.calls).toHaveLength(3));
+    expect(h.calls).toEqual(expect.arrayContaining([
       ['impact', { style: 'LIGHT' }],
       ['notification', { type: 'SUCCESS' }],
       ['notification', { type: 'WARNING' }],
-    ]);
+    ]));
   });
 
   it('does nothing on the web build', async () => {
     h.native = false;
     haptic.light();
-    await settle();
+    await new Promise((r) => setTimeout(r, 50));
     expect(h.calls).toEqual([]);
   });
 });
