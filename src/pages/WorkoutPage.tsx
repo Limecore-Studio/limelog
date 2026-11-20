@@ -7,6 +7,7 @@ import { useUserStore } from '@/store/userStore';
 import { formatWeight, toDisplayWeight, fromDisplayWeight } from '@/utils/helpers';
 import { playRestComplete } from '@/utils/audio';
 import { getLastSessionSets, type LastSessionRef } from '@/lib/lastSessionSets';
+import { ghostCount, ghostWeightKg } from '@/lib/ghostSets';
 import { resolveDone } from '@/lib/setCompletion';
 import type { SetLog, ExercisePR } from '@/types/logging';
 import { WeightUpModal, type QualifyingExercise } from '@/components/WeightUpModal';
@@ -448,7 +449,7 @@ interface ExerciseSectionProps {
   doneSets: number;
   allDone: boolean;
   unit: 'kg' | 'lb';
-  onLogSet: (set: Omit<SetLog, 'id' | 'sessionLogId' | 'exerciseId' | 'setNumber'>) => void;
+  onLogSet: (set: Omit<SetLog, 'id' | 'sessionLogId' | 'exerciseId' | 'setNumber'>) => SetLog;
   onUpdateSet: (setId: string, updates: Partial<SetLog>) => void;
   onDeleteSet: (setId: string) => void;
   onCompleteSet: (setId: string, completed: boolean, restSecs: number | undefined) => void;
@@ -538,6 +539,25 @@ function ExerciseSection({
     if (Object.keys(r.fill).length > 0) onUpdateSet(s.id, r.fill);
     setRepsNeeded(null);
     onCompleteSet(s.id, true, restSeconds);
+  }
+
+  // v1.22 (limelog#151) — the planned sets not logged yet, as ghost rows. Only
+  // the first is live (sets are done in order); touching it creates the set.
+  const ghosts = restricted ? 0 : ghostCount(targetSetsCount, sets.length);
+  const firstGhostWeight = ghostWeightKg(sets.length, targetWeight, lastSession?.sets);
+  function ghostEdit(fields: Partial<Pick<SetLog, 'weightKg' | 'reps' | 'rpe'>>) {
+    onLogSet({ weightKg: null, reps: null, rpe: null, completed: false, ...fields });
+  }
+  function tapGhostDone() {
+    const r = resolveDone({ reps: null, weightKg: null }, targetReps, firstGhostWeight);
+    if (!r.ok) {
+      setRepsNeeded('ghost');
+      document.getElementById('reps-ghost')?.focus();
+      return;
+    }
+    const created = onLogSet({ weightKg: r.fill.weightKg ?? null, reps: r.fill.reps ?? null, rpe: null, completed: false });
+    setRepsNeeded(null);
+    onCompleteSet(created.id, true, restSeconds);
   }
 
   function addSet() {
@@ -653,9 +673,11 @@ function ExerciseSection({
             <span />
           </div>
 
-          {sets.map((s) => (
+          {/* v1.22 (limelog#151): keyed by position, so a ghost row that becomes
+              a set keeps its inputs (and the focus, mid-typing). */}
+          {sets.map((s, i) => (
             <div
-              key={s.id}
+              key={`row-${i}`}
               className={`ex-section__set-grid ex-section__set-row${s.completed ? ' ex-section__set-row--done' : ''}`}
             >
               <button
@@ -698,6 +720,59 @@ function ExerciseSection({
               </button>
             </div>
           ))}
+          {Array.from({ length: ghosts }, (_, g) => {
+            const n = sets.length + g + 1;
+            const live = g === 0;
+            const w = live ? firstGhostWeight : ghostWeightKg(n - 1, targetWeight, lastSession?.sets);
+            return (
+              <div
+                key={`row-${n - 1}`}
+                className={`ex-section__set-grid ex-section__set-row ex-section__set-row--ghost${live ? '' : ' ex-section__set-row--later'}`}
+              >
+                <button
+                  className="ex-section__set-check"
+                  onClick={tapGhostDone}
+                  disabled={!live}
+                  aria-label={t('log.markSetDone', { n })}
+                >
+                  {n}
+                </button>
+                <WeightInput
+                  weightKg={null}
+                  unit={unit}
+                  ariaLabel={unit}
+                  disabled={!live}
+                  placeholder={w !== undefined ? String(toDisplayWeight(w, unit)) : '—'}
+                  onChange={(weightKg) => weightKg != null && ghostEdit({ weightKg })}
+                />
+                <input
+                  type="number" inputMode="numeric" min="0" step="1"
+                  id={live ? 'reps-ghost' : undefined}
+                  aria-invalid={(live && repsNeeded === 'ghost') || undefined}
+                  aria-label={t('log.colReps2')}
+                  disabled={!live}
+                  value="" placeholder={targetReps}
+                  onChange={(e) => {
+                    if (e.target.value === '') return;
+                    setRepsNeeded(null);
+                    ghostEdit({ reps: Math.max(0, Number(e.target.value)) });
+                  }}
+                />
+                <input
+                  type="number" inputMode="decimal" min="6" max="10" step="0.5"
+                  aria-label={t('log.colRpe')}
+                  disabled={!live}
+                  value="" placeholder={targetRpe !== undefined ? String(targetRpe) : '—'}
+                  onChange={(e) => e.target.value !== '' && ghostEdit({ rpe: Number(e.target.value) })}
+                />
+                {/* Same shape as a set row, so the row keeps its DOM when it
+                    becomes one; nothing to delete yet. */}
+                <button className="ex-section__set-del ex-section__set-del--ghost" disabled aria-hidden="true" tabIndex={-1}>
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            );
+          })}
 
           <div className="ex-section__actions">
             <button className="ex-section__add" onClick={addSet}>

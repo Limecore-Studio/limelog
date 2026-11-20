@@ -683,3 +683,10 @@
   font-size: 12px;
   font-style: italic;
 }
+
+/* v1.22 (limelog#151) — planned sets not logged yet. Dimmed, dashed like an
+   open check, and the later ones inert until their turn. */
+.ex-section__set-row--ghost { opacity: 0.6; }
+.ex-section__set-row--later { opacity: 0.32; }
+.ex-section__set-row--ghost input { border-style: dashed; }
+.ex-section__set-del--ghost { visibility: hidden; }

@@ -58,7 +58,9 @@ interface LogStore {
   recoverSessions: (incoming: SessionLog[]) => number;
 
   // Set logging
-  logSet: (logId: string, set: Omit<SetLog, 'id' | 'sessionLogId'>) => void;
+  /** Returns the set that was added (v1.22, limelog#151: a ghost row ticked
+   *  done completes the set it just created). */
+  logSet: (logId: string, set: Omit<SetLog, 'id' | 'sessionLogId'>) => SetLog;
   updateSet: (logId: string, setId: string, updates: Partial<SetLog>) => void;
   deleteSet: (logId: string, setId: string) => void;
   /** v1.15 Item 8 — use `toExerciseId` for one programmed slot in this
@@ -396,6 +398,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
     scheduleLivePush(logId);
+    return newSet;
   },
 
   updateSet: (logId, setId, updates) => {
