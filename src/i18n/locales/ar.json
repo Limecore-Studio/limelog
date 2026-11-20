@@ -403,6 +403,8 @@
     }
   },
   "log": {
+    "pillReturn": "العودة إلى تمرينك",
+    "pillRest": "راحة {{time}}",
     "override": "تجاوز",
     "swap": "استبدال",
     "swapAria": "استبدال {{name}} في هذا التمرين",

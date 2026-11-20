@@ -388,6 +388,8 @@
     }
   },
   "log": {
+    "pillReturn": "Voltar ao treino",
+    "pillRest": "Descanso {{time}}",
     "override": "Ignorar",
     "swap": "Trocar",
     "swapAria": "Trocar {{name}} neste treino",

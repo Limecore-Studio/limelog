@@ -147,3 +147,21 @@ export function staleUnfinishedLogs(logs: SessionLog[], now: Date): SessionLog[]
       l.sets.some((s) => s.completed),
   );
 }
+
+/**
+ * v1.22 (limelog#147) — the workout the Layout pill shows: the newest
+ * unfinished strength workout started within the last 6 hours. Older ones
+ * (begun and forgotten) stay on Today's resume cards, not on every tab.
+ */
+const PILL_WINDOW_MS = 6 * 3600 * 1000;
+
+export function activeWorkoutId(logs: SessionLog[], now: number): string | null {
+  let best: SessionLog | null = null;
+  for (const l of logs) {
+    if (l.finalizedAt || l.activityType) continue;
+    const at = new Date(l.loggedAt).getTime();
+    if (!(now - at <= PILL_WINDOW_MS && at <= now + 60_000)) continue;
+    if (!best || at > new Date(best.loggedAt).getTime()) best = l;
+  }
+  return best?.id ?? null;
+}

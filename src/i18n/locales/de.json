@@ -484,6 +484,8 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "pillReturn": "Zurück zum Training",
+    "pillRest": "Pause {{time}}",
     "override": "Überschreiben",
     "swap": "Tauschen",
     "swapAria": "{{name}} für dieses Training tauschen",

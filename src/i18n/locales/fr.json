@@ -493,6 +493,8 @@
     "restrictExercises": "Restreindre des exercices précis"
   },
   "log": {
+    "pillReturn": "Revenir à la séance",
+    "pillRest": "Repos {{time}}",
     "override": "Passer outre",
     "swap": "Remplacer",
     "swapAria": "Remplacer {{name}} pour cette séance",
