@@ -10,13 +10,15 @@ import { parseWeightInput, weightFieldValue } from '@/utils/helpers';
 //
 // v1.18.1 (LimeLog#78): moved out of WorkoutPage so the program editor's
 // target weight uses it too; that one was still entered and shown in kg.
-export function WeightInput({ weightKg, unit, placeholder, step = '0.5', ariaLabel, onChange }: {
+export function WeightInput({ weightKg, unit, placeholder, step = '0.5', ariaLabel, disabled, onChange }: {
   weightKg: number | null | undefined;
   unit: 'kg' | 'lb';
   placeholder?: string;
   step?: string;
   /** v1.22 (limelog#152): the placeholder ("—") is no name for a screen reader. */
   ariaLabel?: string;
+  /** v1.22 (limelog#151): a ghost row past the next one. */
+  disabled?: boolean;
   onChange: (weightKg: number | null) => void;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -26,6 +28,7 @@ export function WeightInput({ weightKg, unit, placeholder, step = '0.5', ariaLab
       value={draft ?? weightFieldValue(weightKg, unit)}
       placeholder={placeholder}
       aria-label={ariaLabel}
+      disabled={disabled}
       onBlur={() => setDraft(null)}
       onChange={(e) => {
         setDraft(e.target.value);
