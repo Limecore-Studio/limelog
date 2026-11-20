@@ -480,6 +480,7 @@
     "restrictExercises": "限制特定动作"
   },
   "log": {
+    "prBadge": "纪录",
     "pillReturn": "返回训练",
     "pillRest": "休息 {{time}}",
     "override": "忽略限制",

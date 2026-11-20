@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { currentPR, detectNewPRs, rebuildPRs } from './prDetection';
+import { currentPR, detectNewPRs, rebuildPRs, prSetId } from './prDetection';
 import { estimate1RM } from '@/utils/oneRepMax';
 import type { SessionLog, ExercisePR, SetLog } from '@/types/logging';
 
@@ -244,5 +244,30 @@ describe('rebuildPRs', () => {
   it('counts rows for workouts no longer on the device as a baseline', () => {
     const orphan = [{ id: 'o', exerciseId: 'squat', oneRepMaxKg: 200, sessionId: 'gone' }] as ExercisePR[];
     expect(rebuildPRs([done('a', '2026-01-01T10:00:00.000Z', 100)], orphan, name, makeId)).toEqual([]);
+  });
+});
+
+// v1.22 (limelog#148) — the set the workout badges as a PR as it happens.
+describe('prSetId', () => {
+  const prior = { id: 'p', exerciseId: 'squat', oneRepMaxKg: 116.67 } as ExercisePR; // 100 x 5
+
+  it('the best completed set when it beats the record', () => {
+    const sets = [set({ id: 'a', weightKg: 100, reps: 5 }), set({ id: 'b', weightKg: 105, reps: 5 }), set({ id: 'c', weightKg: 102.5, reps: 5 })];
+    expect(prSetId(sets, prior)).toBe('b');
+  });
+
+  it('none when only equalling it, or for a set not yet done', () => {
+    expect(prSetId([set({ id: 'a', weightKg: 100, reps: 5 })], prior)).toBeNull();
+    expect(prSetId([set({ id: 'a', weightKg: 140, reps: 5, completed: false })], prior)).toBeNull();
+  });
+
+  it('with no record yet, the best done set is one, as Finish will say', () => {
+    expect(prSetId([set({ id: 'a', weightKg: 60, reps: 8 })], null)).toBe('a');
+  });
+
+  it('agrees with detectNewPRs', () => {
+    const sets = [set({ id: 'a', weightKg: 100, reps: 4 }), set({ id: 'b', weightKg: 90, reps: 8 })];
+    const found = detectNewPRs(session(sets), [prior], name, makeId);
+    expect(prSetId(sets, prior) !== null).toBe(found.length > 0);
   });
 });

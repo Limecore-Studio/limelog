@@ -484,6 +484,7 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "prBadge": "PB",
     "pillReturn": "Zurück zum Training",
     "pillRest": "Pause {{time}}",
     "override": "Überschreiben",

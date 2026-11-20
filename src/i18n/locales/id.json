@@ -378,6 +378,7 @@
     }
   },
   "log": {
+    "prBadge": "PR",
     "pillReturn": "Kembali ke latihan",
     "pillRest": "Istirahat {{time}}",
     "override": "Tetap lakukan",

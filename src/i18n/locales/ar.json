@@ -403,6 +403,7 @@
     }
   },
   "log": {
+    "prBadge": "رقم",
     "pillReturn": "العودة إلى تمرينك",
     "pillRest": "راحة {{time}}",
     "override": "تجاوز",

@@ -388,6 +388,7 @@
     }
   },
   "log": {
+    "prBadge": "RP",
     "pillReturn": "Voltar ao treino",
     "pillRest": "Descanso {{time}}",
     "override": "Ignorar",

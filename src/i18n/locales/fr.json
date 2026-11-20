@@ -493,6 +493,7 @@
     "restrictExercises": "Restreindre des exercices précis"
   },
   "log": {
+    "prBadge": "RP",
     "pillReturn": "Revenir à la séance",
     "pillRest": "Repos {{time}}",
     "override": "Passer outre",

@@ -484,6 +484,7 @@
     "restrictExercises": "Rajoita tiettyjä liikkeitä"
   },
   "log": {
+    "prBadge": "ENN",
     "pillReturn": "Takaisin treeniin",
     "pillRest": "Lepo {{time}}",
     "override": "Kumoa",

@@ -484,6 +484,7 @@
     "restrictExercises": "Restrict specific exercises"
   },
   "log": {
+    "prBadge": "PR",
     "pillReturn": "Back to your workout",
     "pillRest": "Rest {{time}}",
     "override": "Override",

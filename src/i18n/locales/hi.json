@@ -383,6 +383,7 @@
     }
   },
   "log": {
+    "prBadge": "PR",
     "pillReturn": "अपने वर्कआउट पर लौटें",
     "pillRest": "आराम {{time}}",
     "override": "फिर भी करें",
