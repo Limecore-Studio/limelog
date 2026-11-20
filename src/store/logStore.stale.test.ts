@@ -8,7 +8,7 @@ import type { SessionLog } from '@/types/logging';
 process.env.TZ = 'UTC';
 const enqueue = vi.fn();
 vi.mock('@/store/programStore', () => ({
-  useProgramStore: { getState: () => ({ exercises: [{ id: 'sq', name: 'Squat' }], activeProgram: null }) },
+  useProgramStore: { getState: () => ({ exercises: [{ id: 'sq', name: 'Squat' }], activeProgram: null, releaseEmptyStart: () => {} }) },
 }));
 vi.mock('@/store/nexusStore', () => ({
   useNexusStore: { getState: () => ({ configured: true, syncEnabled: true, refreshPendingCount: () => {}, setLastPushAt: () => {} }) },

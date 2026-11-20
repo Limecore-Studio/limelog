@@ -173,6 +173,9 @@
     "ormCaption": "{{unit}} — 1RM estimado, o melhor por sessão"
   },
   "today": {
+    "emptyWorkout": "Começar um treino vazio",
+    "emptyWorkoutName": "Treino",
+    "emptyProgramName": "O meu treino",
     "starterTitle": "Comece a treinar hoje",
     "starterBody": "Escolha um programa de corpo inteiro pronto (três dias por semana com os exercícios principais) ou crie o seu. Pode alterar tudo depois.",
     "starterUse": "Usar o programa de corpo inteiro",
@@ -398,6 +401,8 @@
     }
   },
   "log": {
+    "addExercise": "Adicionar exercício",
+    "emptyWorkoutHint": "Adicione os exercícios que faz hoje. Ficam nesta sessão para a próxima vez.",
     "prBadge": "RP",
     "pillReturn": "Voltar ao treino",
     "pillRest": "Descanso {{time}}",
@@ -452,6 +457,7 @@
     "restrictionModify": "{{label}} — ajuste a carga ou a amplitude"
   },
   "program": {
+    "defaultPhaseName": "Base",
     "renameSession": "Mudar o nome da sessão",
     "title": "Programas",
     "new": "Novo",

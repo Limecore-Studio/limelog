@@ -9,7 +9,7 @@ import './ProgramPage.css';
 
 export function ProgramPage() {
   const { t } = useTranslation();
-  const { programs, activeProgram, createProgram, setActiveProgram, deactivateProgram } =
+  const { programs, activeProgram, createProgram, addPhase, setActiveProgram, deactivateProgram } =
     useProgramStore();
   const [showNew, setShowNew] = useState(false);
   const [viewingProgramId, setViewingProgramId] = useState<string | null>(
@@ -20,6 +20,9 @@ export function ProgramPage() {
 
   function handleCreate(name: string, description: string) {
     const p = createProgram({ name, description, status: 'archived' });
+    // v1.22 (limelog#149, M part): one default phase, so sessions can be added
+    // straight away and phases stay optional until the user wants them.
+    addPhase(p.id, { name: t('program.defaultPhaseName'), type: 'accumulation', orderIndex: 0, weekStart: 1, weekEnd: 4 });
     // v1.22 (limelog#150): the first program is the active one, so Today has
     // something to show without a trip to "Set active".
     if (!programs.some((x) => x.status === 'active')) setActiveProgram(p.id);
