@@ -78,6 +78,9 @@ export interface SessionTemplate {
    *  deletePhase's kept sessions, so History can name them and an unfinished
    *  one can still be finished, but never offered or reminded about. */
   retired?: boolean;
+  /** v1.22 (limelog#149) — made by "Start an empty workout". Removed again
+   *  when that workout is discarded, or finished, with no exercises added. */
+  fromEmptyStart?: boolean;
 }
 
 export interface SessionExercise {
@@ -124,4 +127,7 @@ export interface Program {
    *  auto-progression by elapsed weeks (deferred until program start-date
    *  tracking lands). */
   activePhaseId?: string;
+  /** v1.22 (limelog#149) — created by "Start an empty workout"; removed
+   *  again when its last session goes the same way. */
+  fromEmptyStart?: boolean;
 }

@@ -179,6 +179,9 @@
     "ormCaption": "{{unit}} — 1RM المقدّر، الأفضل في كل جلسة"
   },
   "today": {
+    "emptyWorkout": "ابدأ تمرينًا فارغًا",
+    "emptyWorkoutName": "تمرين",
+    "emptyProgramName": "تدريبي",
     "starterTitle": "ابدأ التدريب اليوم",
     "starterBody": "اختر برنامجًا جاهزًا للجسم كله (ثلاثة أيام أسبوعيًا مع التمارين الأساسية) أو أنشئ برنامجك. يمكنك تغيير كل شيء لاحقًا.",
     "starterUse": "استخدم برنامج الجسم كله",
@@ -413,6 +416,8 @@
     }
   },
   "log": {
+    "addExercise": "إضافة تمرين",
+    "emptyWorkoutHint": "أضف التمارين التي تؤديها اليوم. تبقى في هذه الجلسة للمرة القادمة.",
     "prBadge": "رقم",
     "pillReturn": "العودة إلى تمرينك",
     "pillRest": "راحة {{time}}",
@@ -467,6 +472,7 @@
     "restrictionModify": "{{label}} — عدّل الحمل أو المدى"
   },
   "program": {
+    "defaultPhaseName": "الأساس",
     "renameSession": "إعادة تسمية الجلسة",
     "title": "البرامج",
     "new": "جديد",

@@ -171,6 +171,9 @@
     "ormCaption": "{{unit}} — estimated 1RM, best per session"
   },
   "today": {
+    "emptyWorkout": "Start an empty workout",
+    "emptyWorkoutName": "Workout",
+    "emptyProgramName": "My training",
     "starterTitle": "Start training today",
     "starterBody": "Pick a ready full-body program (three days a week with the main lifts) or build your own. You can change everything later.",
     "starterUse": "Use the full-body program",
@@ -333,6 +336,7 @@
     }
   },
   "program": {
+    "defaultPhaseName": "Base",
     "renameSession": "Rename session",
     "title": "Programs",
     "new": "New",
@@ -495,6 +499,8 @@
     "restrictExercises": "Restrict specific exercises"
   },
   "log": {
+    "addExercise": "Add exercise",
+    "emptyWorkoutHint": "Add the exercises you do today. They stay in this session for next time.",
     "prBadge": "PR",
     "pillReturn": "Back to your workout",
     "pillRest": "Rest {{time}}",

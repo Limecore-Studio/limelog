@@ -171,6 +171,9 @@
     "ormCaption": "{{unit}} — geschätztes 1RM, bester Wert pro Training"
   },
   "today": {
+    "emptyWorkout": "Leeres Training starten",
+    "emptyWorkoutName": "Training",
+    "emptyProgramName": "Mein Training",
     "starterTitle": "Heute mit dem Training beginnen",
     "starterBody": "Wähle ein fertiges Ganzkörperprogramm (drei Tage pro Woche mit den Grundübungen) oder erstelle dein eigenes. Du kannst später alles ändern.",
     "starterUse": "Ganzkörperprogramm verwenden",
@@ -333,6 +336,7 @@
     }
   },
   "program": {
+    "defaultPhaseName": "Basis",
     "renameSession": "Einheit umbenennen",
     "title": "Programme",
     "new": "Neu",
@@ -495,6 +499,8 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "addExercise": "Übung hinzufügen",
+    "emptyWorkoutHint": "Füge die Übungen hinzu, die du heute machst. Sie bleiben für das nächste Mal in dieser Einheit.",
     "prBadge": "PB",
     "pillReturn": "Zurück zum Training",
     "pillRest": "Pause {{time}}",

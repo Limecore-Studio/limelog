@@ -7,7 +7,7 @@ import type { SessionLog } from '@/types/logging';
 
 const enqueue = vi.fn();
 const cancel = vi.fn();
-vi.mock('@/store/programStore', () => ({ useProgramStore: { getState: () => ({ exercises: [], activeProgram: null }) } }));
+vi.mock('@/store/programStore', () => ({ useProgramStore: { getState: () => ({ exercises: [], activeProgram: null, releaseEmptyStart: () => {} }) } }));
 vi.mock('@/store/nexusStore', () => ({
   useNexusStore: { getState: () => ({ configured: true, syncEnabled: true, refreshPendingCount: () => {}, setLastPushAt: () => {} }) },
 }));

@@ -226,6 +226,10 @@ export const useLogStore = create<LogStore>((set, get) => ({
 
     const finalizedLog = sessionLogs.find((l) => l.id === logId);
     if (!finalizedLog) return;
+    // v1.22 (limelog#149): an empty workout finished with nothing added does
+    // not leave a session behind to be offered every week (kept retired, as
+    // this workout names it in History).
+    if (finalizedLog.sessionTemplateId) useProgramStore.getState().releaseEmptyStart(finalizedLog.sessionTemplateId, true);
 
     const { exercises, activeProgram } = useProgramStore.getState();
 
@@ -307,9 +311,12 @@ export const useLogStore = create<LogStore>((set, get) => ({
 
   discardSession: (logId) => {
     cancelLivePush(logId);
+    const templateId = get().sessionLogs.find((l) => l.id === logId)?.sessionTemplateId;
     const sessionLogs = get().sessionLogs.filter((l) => l.id !== logId);
     storage.setSessionLogs(sessionLogs);
     set({ sessionLogs });
+    // v1.22 (limelog#149): an empty workout's session goes with it.
+    if (templateId) useProgramStore.getState().releaseEmptyStart(templateId, sessionLogs.some((l) => l.sessionTemplateId === templateId));
     retractSessionPRs(logId);
     // v1.7 (BUG-6) — tombstone the discard so recovery-hydrate never resurrects
     // this workout from its still-present cloud row (push-only = no cloud
