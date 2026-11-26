@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
+<resources>
+    <string name="shortcut_workout_short">训练</string>
+    <string name="shortcut_workout_long">记录今天的训练</string>
+    <string name="shortcut_body_short">身体</string>
+    <string name="shortcut_body_long">添加身体测量</string>
+</resources>

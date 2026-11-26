@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.22 (limecore#127) — launcher shortcut icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path android:fillColor="#161A1E" android:pathData="M24,0A24,24 0,1 1,23.99,0Z" />
+    <path android:fillColor="#C8F135" android:pathData="M10,20h3v8h-3zM14,16h4v16h-4zM18,22.5h12v3h-12zM30,16h4v16h-4zM35,20h3v8h-3z" />
+</vector>

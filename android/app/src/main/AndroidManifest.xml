@@ -30,6 +30,21 @@
                 <data android:scheme="com.limecore.workouttracker" android:host="auth" />
             </intent-filter>
 
+            <!-- v1.22 (limecore#127) — deep links into the app's router:
+                 com.limecore.workouttracker://open/<route> (today, progress,
+                 body, workout/<id>). Used by the launcher shortcuts, the rest
+                 notification and NCC. src/lib/deepLinks.ts accepts only those
+                 routes; a link never does more than navigate. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="com.limecore.workouttracker" android:host="open" />
+            </intent-filter>
+
+            <!-- v1.22 (limecore#127) — long-press launcher shortcuts. -->
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts" />
+
             <!-- v1.3 BUG-20 — Health Connect privacy-rationale intent (required
                  by Health Connect to surface its permissions UI). -->
             <intent-filter>

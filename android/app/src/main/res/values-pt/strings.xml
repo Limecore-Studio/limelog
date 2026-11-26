@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
+<resources>
+    <string name="shortcut_workout_short">Treino</string>
+    <string name="shortcut_workout_long">Registar o treino de hoje</string>
+    <string name="shortcut_body_short">Corpo</string>
+    <string name="shortcut_body_long">Adicionar medida corporal</string>
+</resources>
