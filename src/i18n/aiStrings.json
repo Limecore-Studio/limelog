@@ -1,0 +1,192 @@
+{
+  "en": {
+    "keyLabel": "Gemini API key",
+    "model": "Model",
+    "modelHint": "Default: {{model}}. Change it if Google retires that model.",
+    "test": "Test",
+    "testing": "Testing…",
+    "testOk": "The key works.",
+    "needKey": "Add your own Gemini key to turn AI on.",
+    "keyHelp": "Get a free key at aistudio.google.com. It is stored on this device only and sent only to Google.",
+    "terms": "Requests go from this device straight to Google, under your own Google account terms. Google’s free tier may use what you send to improve its models, and it is not offered in the EU, the UK or Switzerland.",
+    "err": {
+      "no-key": "Add your Gemini key in Profile → Settings to analyse the note.",
+      "invalid-key": "Google refused the key. Check it in Settings.",
+      "quota": "Your key’s quota is used up. Try again later.",
+      "model": "Google does not know that model. Check the model name in Settings.",
+      "network": "Could not reach Google. Check your connection.",
+      "other": "The AI request failed. Try again later."
+    }
+  },
+  "fi": {
+    "keyLabel": "Gemini API -avain",
+    "model": "Malli",
+    "modelHint": "Oletus: {{model}}. Vaihda, jos Google poistaa mallin käytöstä.",
+    "test": "Testaa",
+    "testing": "Testataan…",
+    "testOk": "Avain toimii.",
+    "needKey": "Lisää oma Gemini-avaimesi ottaaksesi tekoälyn käyttöön.",
+    "keyHelp": "Saat ilmaisen avaimen osoitteesta aistudio.google.com. Se tallennetaan vain tälle laitteelle ja lähetetään vain Googlelle.",
+    "terms": "Pyynnöt menevät tältä laitteelta suoraan Googlelle oman Google-tilisi ehdoilla. Googlen ilmaisversio voi käyttää lähettämääsi malliensa parantamiseen, eikä sitä tarjota EU:ssa, Isossa-Britanniassa tai Sveitsissä.",
+    "err": {
+      "no-key": "Lisää Gemini-avaimesi kohdassa Profiili → Asetukset, niin muistiinpano analysoidaan.",
+      "invalid-key": "Google hylkäsi avaimen. Tarkista se asetuksissa.",
+      "quota": "Avaimesi kiintiö on käytetty. Yritä myöhemmin uudelleen.",
+      "model": "Google ei tunne mallia. Tarkista mallin nimi asetuksissa.",
+      "network": "Googleen ei saatu yhteyttä. Tarkista yhteys.",
+      "other": "Tekoälypyyntö epäonnistui. Yritä myöhemmin uudelleen."
+    }
+  },
+  "fr": {
+    "keyLabel": "Clé API Gemini",
+    "model": "Modèle",
+    "modelHint": "Par défaut : {{model}}. Changez-le si Google retire ce modèle.",
+    "test": "Tester",
+    "testing": "Test en cours…",
+    "testOk": "La clé fonctionne.",
+    "needKey": "Ajoutez votre propre clé Gemini pour activer l’IA.",
+    "keyHelp": "Obtenez une clé gratuite sur aistudio.google.com. Elle est stockée uniquement sur cet appareil et envoyée uniquement à Google.",
+    "terms": "Les requêtes vont de cet appareil directement à Google, selon les conditions de votre propre compte Google. L’offre gratuite de Google peut utiliser ce que vous envoyez pour améliorer ses modèles et n’est pas proposée dans l’UE, au Royaume-Uni ni en Suisse.",
+    "err": {
+      "no-key": "Ajoutez votre clé Gemini dans Profil → Réglages pour analyser la note.",
+      "invalid-key": "Google a refusé la clé. Vérifiez-la dans Réglages.",
+      "quota": "Le quota de votre clé est épuisé. Réessayez plus tard.",
+      "model": "Google ne connaît pas ce modèle. Vérifiez son nom dans Réglages.",
+      "network": "Impossible de joindre Google. Vérifiez votre connexion.",
+      "other": "La requête IA a échoué. Réessayez plus tard."
+    }
+  },
+  "de": {
+    "keyLabel": "Gemini-API-Schlüssel",
+    "model": "Modell",
+    "modelHint": "Standard: {{model}}. Ändere es, wenn Google dieses Modell einstellt.",
+    "test": "Testen",
+    "testing": "Wird getestet…",
+    "testOk": "Der Schlüssel funktioniert.",
+    "needKey": "Füge deinen eigenen Gemini-Schlüssel hinzu, um KI einzuschalten.",
+    "keyHelp": "Einen kostenlosen Schlüssel gibt es unter aistudio.google.com. Er wird nur auf diesem Gerät gespeichert und nur an Google gesendet.",
+    "terms": "Anfragen gehen von diesem Gerät direkt an Google, zu den Bedingungen deines eigenen Google-Kontos. Googles kostenlose Stufe kann Gesendetes zur Verbesserung ihrer Modelle nutzen und wird in der EU, im Vereinigten Königreich und in der Schweiz nicht angeboten.",
+    "err": {
+      "no-key": "Füge unter Profil → Einstellungen deinen Gemini-Schlüssel hinzu, um die Notiz zu analysieren.",
+      "invalid-key": "Google hat den Schlüssel abgelehnt. Prüfe ihn in den Einstellungen.",
+      "quota": "Das Kontingent deines Schlüssels ist aufgebraucht. Versuche es später erneut.",
+      "model": "Google kennt dieses Modell nicht. Prüfe den Modellnamen in den Einstellungen.",
+      "network": "Google ist nicht erreichbar. Prüfe deine Verbindung.",
+      "other": "Die KI-Anfrage ist fehlgeschlagen. Versuche es später erneut."
+    }
+  },
+  "es": {
+    "keyLabel": "Clave de API de Gemini",
+    "model": "Modelo",
+    "modelHint": "Predeterminado: {{model}}. Cámbialo si Google retira ese modelo.",
+    "test": "Probar",
+    "testing": "Probando…",
+    "testOk": "La clave funciona.",
+    "needKey": "Añade tu propia clave de Gemini para activar la IA.",
+    "keyHelp": "Consigue una clave gratuita en aistudio.google.com. Se guarda solo en este dispositivo y solo se envía a Google.",
+    "terms": "Las solicitudes van desde este dispositivo directamente a Google, con las condiciones de tu propia cuenta de Google. El nivel gratuito de Google puede usar lo que envías para mejorar sus modelos y no se ofrece en la UE, el Reino Unido ni Suiza.",
+    "err": {
+      "no-key": "Añade tu clave de Gemini en Perfil → Ajustes para analizar la nota.",
+      "invalid-key": "Google rechazó la clave. Revísala en Ajustes.",
+      "quota": "Se agotó la cuota de tu clave. Inténtalo más tarde.",
+      "model": "Google no conoce ese modelo. Revisa el nombre del modelo en Ajustes.",
+      "network": "No se pudo conectar con Google. Revisa tu conexión.",
+      "other": "La solicitud de IA falló. Inténtalo más tarde."
+    }
+  },
+  "zh": {
+    "keyLabel": "Gemini API 密钥",
+    "model": "模型",
+    "modelHint": "默认：{{model}}。如果 Google 停用该模型，请更改。",
+    "test": "测试",
+    "testing": "正在测试…",
+    "testOk": "密钥可用。",
+    "needKey": "添加你自己的 Gemini 密钥以开启 AI。",
+    "keyHelp": "在 aistudio.google.com 免费获取密钥。密钥只保存在此设备上，只发送给 Google。",
+    "terms": "请求从此设备直接发送给 Google，适用你自己 Google 账户的条款。Google 的免费层可能会用你发送的内容改进其模型，且在欧盟、英国和瑞士不提供。",
+    "err": {
+      "no-key": "在 个人资料 → 设置 中添加 Gemini 密钥即可分析此笔记。",
+      "invalid-key": "Google 拒绝了该密钥。请在设置中检查。",
+      "quota": "你的密钥配额已用完。请稍后再试。",
+      "model": "Google 不认识该模型。请在设置中检查模型名称。",
+      "network": "无法连接到 Google。请检查网络。",
+      "other": "AI 请求失败。请稍后再试。"
+    }
+  },
+  "hi": {
+    "keyLabel": "Gemini API कुंजी",
+    "model": "मॉडल",
+    "modelHint": "डिफ़ॉल्ट: {{model}}। अगर Google यह मॉडल बंद कर दे तो इसे बदलें।",
+    "test": "जाँचें",
+    "testing": "जाँच हो रही है…",
+    "testOk": "कुंजी काम कर रही है।",
+    "needKey": "AI चालू करने के लिए अपनी Gemini कुंजी जोड़ें।",
+    "keyHelp": "aistudio.google.com से मुफ़्त कुंजी लें। यह केवल इसी डिवाइस पर रहती है और केवल Google को भेजी जाती है।",
+    "terms": "अनुरोध इस डिवाइस से सीधे Google को आपके अपने Google खाते की शर्तों के तहत जाते हैं। Google का मुफ़्त स्तर आपके भेजे गए डेटा का उपयोग अपने मॉडल सुधारने के लिए कर सकता है, और यह EU, UK या स्विट्ज़रलैंड में उपलब्ध नहीं है।",
+    "err": {
+      "no-key": "नोट का विश्लेषण करने के लिए प्रोफ़ाइल → सेटिंग्स में अपनी Gemini कुंजी जोड़ें।",
+      "invalid-key": "Google ने कुंजी अस्वीकार कर दी। सेटिंग्स में जाँचें।",
+      "quota": "आपकी कुंजी का कोटा ख़त्म हो गया। बाद में फिर कोशिश करें।",
+      "model": "Google यह मॉडल नहीं पहचानता। सेटिंग्स में मॉडल का नाम जाँचें।",
+      "network": "Google तक नहीं पहुँच सके। अपना कनेक्शन जाँचें।",
+      "other": "AI अनुरोध विफल रहा। बाद में फिर कोशिश करें।"
+    }
+  },
+  "pt": {
+    "keyLabel": "Chave de API do Gemini",
+    "model": "Modelo",
+    "modelHint": "Predefinição: {{model}}. Altere-o se a Google retirar esse modelo.",
+    "test": "Testar",
+    "testing": "A testar…",
+    "testOk": "A chave funciona.",
+    "needKey": "Adicione a sua própria chave do Gemini para ativar a IA.",
+    "keyHelp": "Obtenha uma chave gratuita em aistudio.google.com. Fica guardada apenas neste dispositivo e só é enviada à Google.",
+    "terms": "Os pedidos vão deste dispositivo diretamente para a Google, nos termos da sua própria conta Google. O nível gratuito da Google pode usar o que envia para melhorar os seus modelos e não está disponível na UE, no Reino Unido nem na Suíça.",
+    "err": {
+      "no-key": "Adicione a sua chave do Gemini em Perfil → Definições para analisar a nota.",
+      "invalid-key": "A Google recusou a chave. Verifique-a nas Definições.",
+      "quota": "A quota da sua chave esgotou. Tente mais tarde.",
+      "model": "A Google não conhece esse modelo. Verifique o nome do modelo nas Definições.",
+      "network": "Não foi possível contactar a Google. Verifique a ligação.",
+      "other": "O pedido de IA falhou. Tente mais tarde."
+    }
+  },
+  "id": {
+    "keyLabel": "Kunci API Gemini",
+    "model": "Model",
+    "modelHint": "Bawaan: {{model}}. Ubah jika Google menghentikan model itu.",
+    "test": "Uji",
+    "testing": "Menguji…",
+    "testOk": "Kunci berfungsi.",
+    "needKey": "Tambahkan kunci Gemini milikmu untuk menyalakan AI.",
+    "keyHelp": "Dapatkan kunci gratis di aistudio.google.com. Kunci hanya disimpan di perangkat ini dan hanya dikirim ke Google.",
+    "terms": "Permintaan dikirim dari perangkat ini langsung ke Google, dengan ketentuan akun Google-mu sendiri. Tingkat gratis Google dapat memakai apa yang kamu kirim untuk menyempurnakan modelnya, dan tidak tersedia di UE, Inggris, atau Swiss.",
+    "err": {
+      "no-key": "Tambahkan kunci Gemini di Profil → Pengaturan untuk menganalisis catatan.",
+      "invalid-key": "Google menolak kunci. Periksa di Pengaturan.",
+      "quota": "Kuota kuncimu habis. Coba lagi nanti.",
+      "model": "Google tidak mengenali model itu. Periksa nama model di Pengaturan.",
+      "network": "Tidak bisa menghubungi Google. Periksa koneksimu.",
+      "other": "Permintaan AI gagal. Coba lagi nanti."
+    }
+  },
+  "ar": {
+    "keyLabel": "مفتاح Gemini API",
+    "model": "النموذج",
+    "modelHint": "الافتراضي: {{model}}. غيّره إذا أوقفت Google هذا النموذج.",
+    "test": "اختبار",
+    "testing": "جارٍ الاختبار…",
+    "testOk": "المفتاح يعمل.",
+    "needKey": "أضف مفتاح Gemini الخاص بك لتشغيل الذكاء الاصطناعي.",
+    "keyHelp": "احصل على مفتاح مجاني من aistudio.google.com. يُحفظ على هذا الجهاز فقط ولا يُرسل إلا إلى Google.",
+    "terms": "تذهب الطلبات من هذا الجهاز مباشرة إلى Google وفق شروط حسابك في Google. قد تستخدم الخطة المجانية من Google ما ترسله لتحسين نماذجها، وهي غير متاحة في الاتحاد الأوروبي والمملكة المتحدة وسويسرا.",
+    "err": {
+      "no-key": "أضف مفتاح Gemini في الملف الشخصي ← الإعدادات لتحليل الملاحظة.",
+      "invalid-key": "رفضت Google المفتاح. تحقق منه في الإعدادات.",
+      "quota": "نفدت حصة مفتاحك. حاول لاحقًا.",
+      "model": "لا تعرف Google هذا النموذج. تحقق من اسم النموذج في الإعدادات.",
+      "network": "تعذّر الوصول إلى Google. تحقق من اتصالك.",
+      "other": "فشل طلب الذكاء الاصطناعي. حاول لاحقًا."
+    }
+  }
+}

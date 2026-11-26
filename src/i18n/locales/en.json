@@ -227,7 +227,6 @@
     "aiOff": "Off",
     "aiFeaturesOnSub": "AI debrief on — the note you type after a workout is sent to Google Gemini.",
     "aiFeaturesOffSub": "AI debrief off — nothing is sent to Google. Rate fatigue with the dots above.",
-    "aiTrainingNote": "Google runs this on their free tier, which means what you send may be used to train their future models. Leave it off if that is not for you.",
     "privacyPolicy": "Privacy policy",
     "yourData": "Your data",
     "yourDataNote": "Take a copy of everything, or erase it. One account covers LimeLog, Nexus Command Center and StudyDesk.",

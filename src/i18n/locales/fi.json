@@ -227,7 +227,6 @@
     "aiOff": "Pois",
     "aiFeaturesOnSub": "Tekoälykooste päällä — treenin jälkeen kirjoittamasi muistiinpano lähetetään Google Geminille.",
     "aiFeaturesOffSub": "Tekoälykooste pois — Googlelle ei lähetetä mitään. Arvioi väsymys yllä olevilla pisteillä.",
-    "aiTrainingNote": "Google ajaa tämän ilmaisella tasolla, joten lähettämääsi voidaan käyttää heidän tulevien mallien kouluttamiseen. Jätä pois päältä, jos se ei sovi sinulle.",
     "privacyPolicy": "Tietosuojaseloste",
     "yourData": "Omat tietosi",
     "yourDataNote": "Ota kopio kaikesta tai poista se. Yksi tili kattaa Nexus Command Centerin, LimeLogin ja StudyDeskin.",

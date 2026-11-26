@@ -231,7 +231,6 @@
     "aiOff": "Désactivé",
     "aiFeaturesOnSub": "Bilan IA activé — la note que vous écrivez après la séance est envoyée à Google Gemini.",
     "aiFeaturesOffSub": "Bilan IA désactivé — rien n'est envoyé à Google. Évaluez la fatigue avec les points ci-dessus.",
-    "aiTrainingNote": "Google l'exécute sur son offre gratuite : ce que vous envoyez peut servir à entraîner ses futurs modèles. Laissez désactivé si cela ne vous convient pas.",
     "privacyPolicy": "Politique de confidentialité",
     "yourData": "Vos données",
     "yourDataNote": "Emportez une copie de tout, ou effacez-le. Un seul compte couvre LimeLog, Nexus Command Center et StudyDesk.",
