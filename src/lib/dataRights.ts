@@ -49,17 +49,154 @@ export const SERVER_ONLY_TABLES = ['feedback', 'client_errors'] as const;
 // user_id included. Same list as NCC's and StudyDesk's.
 export const FEEDBACK_EXPORT_COLUMNS = 'id, app, app_version, category, rating, message, status, shipped_in, created_at';
 
+// v1.22 (limecore#88) — one account spans NCC, StudyDesk and LimeLog, and the
+// privacy policy says "Export my data" from any of them covers all of them.
+// The export held only feedback and error reports from the server; it now
+// reads every user-owned table of the suite as the signed-in user, so RLS
+// decides what comes back. Same list and readers as NCC's (nexus-command-
+// center#317) so the three exports agree.
+interface ServerTable {
+  table: string;
+  /** Default `*`. Only these columns are granted on some tables. */
+  columns?: string;
+  /** Which column names the user: `user_id` (default), `id` (profiles), or
+   *  none, when RLS alone decides (audit_log, feedback). */
+  owner?: 'user_id' | 'id' | 'none';
+  /** Tables without an `id` column cannot use the id-keyed pager; they are
+   *  read in ranges ordered by these columns. */
+  orderBy?: string[];
+}
+
+export const SERVER_TABLES: readonly ServerTable[] = [
+  // Account
+  { table: 'profiles', owner: 'id' },
+  { table: 'user_preferences', orderBy: ['user_id'] },
+  { table: 'supporter_entitlements', orderBy: ['user_id'] },
+  // Only these columns are granted; the verification code itself is not.
+  { table: 'kofi_alt_emails', columns: 'email, verified_at, code_expires_at, last_sent_at, user_id', orderBy: ['email'] },
+  { table: 'app_opens', orderBy: ['opened_on', 'app'] },
+  { table: 'audit_log', owner: 'none' },
+  { table: 'feedback', columns: FEEDBACK_EXPORT_COLUMNS, owner: 'none' },
+  { table: 'client_errors' },
+  // Nexus Command Center
+  { table: 'transactions' },
+  { table: 'budget_categories' },
+  { table: 'budget_category_shares', orderBy: ['user_id'] },
+  { table: 'manual_assets' },
+  { table: 'portfolio_holdings' },
+  { table: 'portfolio_lots' },
+  { table: 'stock_sales' },
+  { table: 'portfolio_cash_entries' },
+  { table: 'watchlist_items' },
+  { table: 'recurring_rules' },
+  { table: 'goals' },
+  { table: 'tasks' },
+  { table: 'task_shares', orderBy: ['user_id'] },
+  { table: 'habits' },
+  { table: 'habit_completions' },
+  { table: 'braindump_entries' },
+  { table: 'work_quality_logs' },
+  // StudyDesk
+  { table: 'subjects' },
+  { table: 'grades' },
+  { table: 'study_sessions' },
+  { table: 'assignments' },
+  { table: 'assignment_attachments' },
+  { table: 'exams' },
+  { table: 'study_actions' },
+  { table: 'notebook_entries' },
+  { table: 'notebook_attachments' },
+  { table: 'academic_terms' },
+  { table: 'timetable_entries' },
+  { table: 'lesson_attendance' },
+  { table: 'planned_sessions' },
+  { table: 'readings' },
+  { table: 'progress_counters' },
+  { table: 'progress_counter_days' },
+  { table: 'commitments' },
+  { table: 'focus_timers', orderBy: ['user_id'] },
+  // LimeLog
+  { table: 'workout_sessions' },
+  { table: 'workout_sets' },
+  { table: 'exercise_prs' },
+  { table: 'body_metrics' },
+];
+
+const RANGE = 1000;
+
+/** Reads a table without an `id` column in ordered ranges. */
+async function readRanged(t: ServerTable, userId: string): Promise<unknown[]> {
+  const rows: unknown[] = [];
+  for (let from = 0; ; from += RANGE) {
+    let q = supabase.from(t.table).select(t.columns ?? '*').eq('user_id', userId);
+    for (const col of t.orderBy ?? []) q = q.order(col, { ascending: true });
+    const { data, error } = await q.range(from, from + RANGE - 1);
+    if (error) throw error;
+    rows.push(...(data ?? []));
+    if (!data || data.length < RANGE) return rows;
+  }
+}
+
+async function readTable(t: ServerTable, userId: string): Promise<unknown[]> {
+  if (t.orderBy) return readRanged(t, userId);
+  const owner = t.owner ?? 'user_id';
+  const { data, error } = await selectAll(supabase, t.table, {
+    ...(t.columns ? { columns: t.columns } : {}),
+    ...(owner === 'none' ? {} : { filter: (q) => q.eq(owner, userId) }),
+  });
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function serverOnlyData(userId: string): Promise<Record<string, unknown[] | { error: string }>> {
   const out: Record<string, unknown[] | { error: string }> = {};
-  for (const table of SERVER_ONLY_TABLES) {
+  for (const t of SERVER_TABLES) {
     try {
-      const { data, error } =
-        table === 'feedback'
-          ? await selectAll(supabase, table, { columns: FEEDBACK_EXPORT_COLUMNS })
-          : await selectAll(supabase, table, { filter: (q) => q.eq('user_id', userId) });
-      out[table] = error ? { error: error.message } : (data ?? []);
+      out[t.table] = await readTable(t, userId);
     } catch (e) {
-      out[table] = { error: (e as Error).message };
+      out[t.table] = { error: (e as Error).message ?? String(e) };
+    }
+  }
+  return out;
+}
+
+/** v1.22 (limecore#88) — the user's uploaded files, by bucket: path, size and
+ *  date of each object under their own folder (every storage policy scopes a
+ *  user to `<user_id>/`). A listing, not the files: StudyDesk owns them. */
+export const STORAGE_BUCKETS = ['avatars', 'notebook', 'assignment-attachments'] as const;
+
+interface StorageEntry { path: string; size: number | null; createdAt: string | null; contentType: string | null }
+
+async function listFolder(bucket: string, prefix: string, out: StorageEntry[], depth = 0): Promise<void> {
+  if (depth > 4) return;
+  for (let offset = 0; ; offset += RANGE) {
+    const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: RANGE, offset });
+    if (error) throw error;
+    for (const o of data ?? []) {
+      const path = `${prefix}/${o.name}`;
+      // A folder has no id and no metadata; recurse into it.
+      if (!o.id) await listFolder(bucket, path, out, depth + 1);
+      else
+        out.push({
+          path,
+          size: (o.metadata as { size?: number } | null)?.size ?? null,
+          createdAt: o.created_at ?? null,
+          contentType: (o.metadata as { mimetype?: string } | null)?.mimetype ?? null,
+        });
+    }
+    if (!data || data.length < RANGE) return;
+  }
+}
+
+export async function serverFiles(userId: string): Promise<Record<string, StorageEntry[] | { error: string }>> {
+  const out: Record<string, StorageEntry[] | { error: string }> = {};
+  for (const bucket of STORAGE_BUCKETS) {
+    try {
+      const entries: StorageEntry[] = [];
+      await listFolder(bucket, userId, entries);
+      out[bucket] = entries;
+    } catch (e) {
+      out[bucket] = { error: (e as Error).message };
     }
   }
   return out;
@@ -74,6 +211,15 @@ export async function serverOnlyData(userId: string): Promise<Record<string, unk
  * machine-readable" — JSON qualifies, and unlike CSV it carries the nested set
  * structure without inventing a flattening the user then has to undo.
  */
+function readLocalJson(key: string, fallback: unknown): unknown {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function buildExport(
   user: { id: string; email?: string } | null,
 ): Promise<ExportPayload> {
@@ -113,11 +259,18 @@ export async function buildExport(
       exercisePRs: exercisePRs.length,
       workoutTemplates: workoutTemplates.length,
       progressPhotos: photoDates.length,
+      bodyMetrics: (readLocalJson('limelog-body-metrics', []) as unknown[]).length,
     },
     notes: {
       progressPhotos: 'Photos are stored only on this device and are never '
         + 'uploaded. Only the dates they were taken are listed here. To keep the '
         + 'images, save a copy of each from Body > Progress photos.',
+      server: 'Everything the account holds on the server, across NCC, StudyDesk '
+        + 'and LimeLog, as read with your sign-in. A table that could not be read '
+        + 'says so instead of being left out.',
+      files: 'Files you uploaded (avatar, StudyDesk notebook and assignment '
+        + 'attachments), listed by path and size. The files themselves are '
+        + 'downloadable in StudyDesk.',
     },
     data: {
       profile,
@@ -129,8 +282,12 @@ export async function buildExport(
       stallFlags,
       exercisePRs,
       progressPhotoDates: photoDates,
+      // v1.22 (limecore#88): the body log (weight, measurements and the
+      // smart-scale fields) and its settings, as held on this device.
+      bodyMetrics: readLocalJson('limelog-body-metrics', []),
+      bodyMetricsPrefs: readLocalJson('limelog-body-metrics-prefs', null),
     },
-    ...(user && isNexusConfigured ? { server: await serverOnlyData(user.id) } : {}),
+    ...(user && isNexusConfigured ? { server: await serverOnlyData(user.id), files: await serverFiles(user.id) } : {}),
   };
 }
 
