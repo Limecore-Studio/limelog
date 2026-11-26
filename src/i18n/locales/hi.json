@@ -396,6 +396,9 @@
     }
   },
   "log": {
+    "restNotifTitle": "आराम · {{name}}",
+    "restNotifSkip": "छोड़ें",
+    "restNotifPlus30": "+30 से.",
     "addExercise": "व्यायाम जोड़ें",
     "emptyWorkoutHint": "आज किए जाने वाले व्यायाम जोड़ें। वे अगली बार के लिए इस सत्र में बने रहेंगे।",
     "prBadge": "PR",

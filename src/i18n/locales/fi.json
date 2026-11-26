@@ -499,6 +499,9 @@
     "restrictExercises": "Rajoita tiettyjä liikkeitä"
   },
   "log": {
+    "restNotifTitle": "Lepo · {{name}}",
+    "restNotifSkip": "Ohita",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Lisää liike",
     "emptyWorkoutHint": "Lisää tänään tekemäsi liikkeet. Ne jäävät tähän treeniin seuraavaa kertaa varten.",
     "prBadge": "ENN",

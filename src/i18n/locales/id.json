@@ -391,6 +391,9 @@
     }
   },
   "log": {
+    "restNotifTitle": "Istirahat · {{name}}",
+    "restNotifSkip": "Lewati",
+    "restNotifPlus30": "+30 dtk",
     "addExercise": "Tambah latihan",
     "emptyWorkoutHint": "Tambahkan latihan yang Anda lakukan hari ini. Latihan itu tetap ada di sesi ini untuk lain kali.",
     "prBadge": "PR",

@@ -499,6 +499,9 @@
     "restrictExercises": "Restrict specific exercises"
   },
   "log": {
+    "restNotifTitle": "Rest · {{name}}",
+    "restNotifSkip": "Skip",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Add exercise",
     "emptyWorkoutHint": "Add the exercises you do today. They stay in this session for next time.",
     "prBadge": "PR",

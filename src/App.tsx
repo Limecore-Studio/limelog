@@ -109,6 +109,10 @@ const liveSync = createLiveSync({
  * a no-op if the listener fires before navigation is ready — Capacitor
  * replays the deferred event after `load()`, so the route lands either way.
  */
+// v1.22 (limecore#127): Skip / +30 s on the rest notification, including a
+// tap that launched the app. Native only; the module loads on demand.
+if (Capacitor.isNativePlatform()) void import('@/lib/restNotification').then((m) => m.initRestActions());
+
 function NotificationActionBridge() {
   const navigate = useNavigate();
   useEffect(() => {

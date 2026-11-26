@@ -508,6 +508,9 @@
     "restrictExercises": "Restringir ejercicios específicos"
   },
   "log": {
+    "restNotifTitle": "Descanso · {{name}}",
+    "restNotifSkip": "Saltar",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Añadir ejercicio",
     "emptyWorkoutHint": "Añade los ejercicios que haces hoy. Se quedan en esta sesión para la próxima vez.",
     "prBadge": "RP",

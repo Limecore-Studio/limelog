@@ -401,6 +401,9 @@
     }
   },
   "log": {
+    "restNotifTitle": "Descanso · {{name}}",
+    "restNotifSkip": "Saltar",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Adicionar exercício",
     "emptyWorkoutHint": "Adicione os exercícios que faz hoje. Ficam nesta sessão para a próxima vez.",
     "prBadge": "RP",

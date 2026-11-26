@@ -4,4 +4,6 @@
     <string name="title_activity_main">LimeLog</string>
     <string name="package_name">com.limecore.workouttracker</string>
     <string name="custom_url_scheme">com.limecore.workouttracker</string>
+    <!-- v1.22 (limecore#127) — the rest-timer notification channel. -->
+    <string name="rest_channel_name">Rest timer</string>
 </resources>
