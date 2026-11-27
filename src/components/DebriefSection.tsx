@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import './DebriefSection.css';
 import { useLogStore } from '@/store/logStore';
@@ -6,6 +6,8 @@ import { analyseDebrief, type DebriefResult } from '@/lib/aiDebrief';
 import type { AiError } from '@/lib/aiProvider';
 import '@/i18n/aiStrings'; // ai.* (loaded on demand)
 import type { SessionMood } from '@/types/logging';
+import { healthConsent, requestHealthAsk, subscribeHealthConsent } from '@/lib/healthConsent';
+import '@/i18n/healthStrings'; // healthConsent.* (loaded on demand)
 
 // v1.4 — optional post-workout AI debrief. Sits in the finish block beside the
 // FatigueRating dots (which stay as the always-available fallback). The user
@@ -32,9 +34,17 @@ export function DebriefSection({ logId }: { logId: string }) {
   const [failed, setFailed] = useState(false);
   const [aiError, setAiError] = useState<AiError | null>(null);
 
+  // v1.22 (limecore#91) — the note can carry pain, which is health data: it
+  // goes to AI only with the health-data consent. Unasked, Analyse asks.
+  const consent = useSyncExternalStore(subscribeHealthConsent, () => healthConsent());
+
   async function analyse() {
     const trimmed = text.trim();
     if (!trimmed || analysing) return;
+    if (consent !== 'granted') {
+      if (consent === 'unasked') requestHealthAsk();
+      return;
+    }
     setAnalysing(true);
     setFailed(false);
     setAiError(null);
@@ -114,6 +124,12 @@ export function DebriefSection({ logId }: { logId: string }) {
       )}
 
       {result?.noteSummary && <div className="debrief__summary">{result.noteSummary}</div>}
+
+      {consent !== 'granted' && !result && (
+        <div className="debrief__failed" role="status">
+          {consent === 'unasked' ? t('healthConsent.debriefNeeds') : t('healthConsent.debriefRefused')}
+        </div>
+      )}
 
       {failed && (
         <div className="debrief__failed" role="status">

@@ -4,12 +4,14 @@ import { join } from 'node:path';
 import enBase from './locales/en.json';
 import pw from './passwordStrings.json';
 import consent from './consentStrings.json';
+import health from './healthStrings.json';
 import ai from './aiStrings.json';
 
 // limecore#73 — the auth.pw* strings load on demand (i18n/passwordStrings.ts).
 // v1.21.1 (limecore#87) — and the consent.* strings (i18n/consentStrings.ts).
 // v1.22 (limecore#122) — and the ai.* strings (i18n/aiStrings.ts).
-const en = { ...enBase, auth: { ...enBase.auth, ...pw.en }, consent: consent.en, ai: ai.en };
+// v1.22 (limecore#91) — and the healthConsent.* strings (i18n/healthStrings.ts).
+const en = { ...enBase, auth: { ...enBase.auth, ...pw.en }, consent: consent.en, ai: ai.en, healthConsent: health.en };
 
 // v1.17 (limecore#12) — every literal key passed to `t()` must exist in
 // en.json. A missing key has no fallback: i18next prints the key itself, in
@@ -93,5 +95,12 @@ describe('i18n keys', () => {
     const langs = Object.keys(ai);
     expect(langs.sort()).toEqual(readdirSync(join(__dirname, 'locales')).map((f) => f.replace('.json', '')).sort());
     for (const l of langs) expect(flat((ai as Record<string, object>)[l]), l).toEqual(flat(ai.en));
+  });
+
+  // v1.22 (limecore#91): the same for the health-data consent strings.
+  it('the health strings exist in every language', () => {
+    const langs = Object.keys(health);
+    expect(langs.sort()).toEqual(readdirSync(join(__dirname, 'locales')).map((f) => f.replace('.json', '')).sort());
+    for (const l of langs) expect(Object.keys((health as Record<string, object>)[l]).sort(), l).toEqual(Object.keys(health.en).sort());
   });
 });

@@ -15,6 +15,7 @@ import { supabase, isNexusConfigured } from './supabase';
 import type { SessionLog } from '@/types/logging';
 import { sessionMoment, localParts } from '@/lib/sessionMoment';
 import type { Exercise, SessionTemplate } from '@/types/program';
+import { healthAllowed, HEALTH_BODY_COLUMNS, HEALTH_SESSION_COLUMNS } from './healthConsent';
 
 interface NexusSetPayload {
   exercise: string;
@@ -191,11 +192,18 @@ export async function pushWorkoutToNexus(workout: NexusWorkoutPayload, forUserId
       distance_meters: workout.distanceMeters ?? null,
       date: workout.date,
       notes: workout.notes ?? null,
-      ai_debrief_raw: workout.aiDebriefRaw ?? null,
       ai_rpe: workout.aiRpe ?? null,
-      ai_pain_flags: workout.aiPainFlags ?? null,
       ai_mood: workout.aiMood ?? null,
-      ai_note_summary: workout.aiNoteSummary ?? null,
+      // v1.22 (limecore#91) — the debrief's pain content only with consent.
+      // Left out otherwise, so a row already on the server keeps what it has
+      // until the person answers (a withdrawal clears it: clearHealthData).
+      ...(healthAllowed()
+        ? {
+            ai_debrief_raw: workout.aiDebriefRaw ?? null,
+            ai_pain_flags: workout.aiPainFlags ?? null,
+            ai_note_summary: workout.aiNoteSummary ?? null,
+          }
+        : {}),
       // The moment the workout was saved, not the moment it was sent — a
       // session saved offline and pushed hours later must not beat an edit
       // made in between on another device (limecore#27, registry P6).
@@ -324,6 +332,9 @@ export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload, forUserId
   set('muscle_mass_kg', p.muscleMassKg);
   set('body_age', p.bodyAge);
   set('notes', p.notes);
+  // v1.22 (limecore#91) — the body-composition readings only with consent;
+  // at send time, so items queued before this version are covered too.
+  if (!healthAllowed()) for (const c of HEALTH_BODY_COLUMNS) delete fields[c];
 
   let { data, error } = await supabase
     .from('body_metrics')
@@ -350,6 +361,58 @@ export async function pushBodyMetricToNexus(p: NexusBodyMetricPayload, forUserId
     .from('body_metrics')
     .upsert({ id: p.id, user_id: user.id, date: p.date, ...fields }, { onConflict: 'user_id,date', ignoreDuplicates: true });
   if (insertError) throw insertError;
+}
+
+/** v1.22 (limecore#91) — consent withdrawn: the health columns of this
+ *  account's rows are set to null on the server. Only rows that hold any, so
+ *  the rest keep their stamps. The rows themselves (weight, girths, the
+ *  workout) stay, and the device keeps its own copy. */
+export async function clearHealthDataInNexus(forUserId: string): Promise<void> {
+  if (!isNexusConfigured) throw new Error('Nexus not configured');
+  const user = await requireSessionUser(forUserId);
+  const now = new Date().toISOString();
+  const nulls = (cols: readonly string[]) => Object.fromEntries(cols.map((c) => [c, null]));
+  const any = (cols: readonly string[]) => cols.map((c) => `${c}.not.is.null`).join(',');
+  const body = await supabase
+    .from('body_metrics')
+    .update({ ...nulls(HEALTH_BODY_COLUMNS), updated_at: now })
+    .eq('user_id', user.id)
+    .or(any(HEALTH_BODY_COLUMNS));
+  // Before the scale migration the columns do not exist: nothing to clear.
+  if (body.error && body.error.code !== 'PGRST204' && body.error.code !== '42703') throw body.error;
+  const sessions = await supabase
+    .from('workout_sessions')
+    .update({ ...nulls(HEALTH_SESSION_COLUMNS), updated_at: now })
+    .eq('user_id', user.id)
+    .or(any(HEALTH_SESSION_COLUMNS));
+  if (sessions.error) throw sessions.error;
+}
+
+/** v1.22 (limecore#91) — consent given: a debrief recorded before it goes up
+ *  on its own, into the workout's row (an update; a workout not on the server
+ *  yet carries it when it is pushed). Skipped if consent is gone by the time
+ *  it is sent. */
+export interface NexusSessionDebriefPayload {
+  sessionId: string;
+  aiDebriefRaw: string | null;
+  aiPainFlags: string[] | null;
+  aiNoteSummary: string | null;
+}
+export async function pushSessionDebriefToNexus(p: NexusSessionDebriefPayload, forUserId: string): Promise<void> {
+  if (!isNexusConfigured) throw new Error('Nexus not configured');
+  const user = await requireSessionUser(forUserId);
+  if (!healthAllowed()) return;
+  const { error } = await supabase
+    .from('workout_sessions')
+    .update({
+      ai_debrief_raw: p.aiDebriefRaw,
+      ai_pain_flags: p.aiPainFlags,
+      ai_note_summary: p.aiNoteSummary,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', user.id)
+    .eq('id', p.sessionId);
+  if (error) throw error;
 }
 
 /** v1.18.1 (LimeLog#76): by day, as the row may carry another device's id

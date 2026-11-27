@@ -11,6 +11,7 @@ import { NexusSyncCard } from '@/components/NexusSyncCard';
 import { FeedbackCard } from '@/components/FeedbackCard';
 import { ThemeCard } from '@/components/ThemeCard';
 import { AiKeySettings } from '@/components/AiKeySettings';
+import { HealthConsentField } from '@/components/HealthConsentField';
 import { ShieldAlert } from 'lucide-react';
 import { useConfirm } from '@/components/confirmContext';
 import { downloadExport, deleteAccount, wipeAllLocalData } from '@/lib/dataRights';
@@ -280,6 +281,8 @@ export function ProfilePage() {
             <AiKeySettings />
             {/* v1.16 (limecore#16) — off by default, accounts only; the note is
                 the consent text the privacy policy (NCC#50) relies on. */}
+            {/* v1.22 (limecore#91) — health data needs its own yes. */}
+            <HealthConsentField />
             <ErrorReportsField />
             <AppOpensField />
             <a
