@@ -28,6 +28,7 @@ import { OptionalChunk } from '@/components/OptionalChunk';
 import { useDataReady, showsSignIn } from '@/lib/dataReady';
 import { DataHold } from '@/components/DataHold';
 import { useConfirm } from '@/components/confirmContext';
+import { initDeepLinks, onDeepLink } from '@/lib/deepLinks';
 
 // v1.17 (limecore#13): every page a launch does not open on is its own chunk,
 // loaded the first time it is visited. Today (the index route) and the
@@ -51,6 +52,7 @@ const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m)
 const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
 // v1.21.1 (limecore#87): the opt-in question for the app-open record and the update check.
+const HealthConsentPrompt = lazy(() => import('@/components/HealthConsentPrompt').then((m) => ({ default: m.HealthConsentPrompt })));
 const ConsentPrompt = lazy(() => import('@/components/ConsentPrompt').then((m) => ({ default: m.ConsentPrompt })));
 // v1.22 (limecore#95): the guest-data question, loaded only when it is asked.
 const GuestDataPrompt = lazy(() => import('@/components/GuestDataPrompt').then((m) => ({ default: m.GuestDataPrompt })));
@@ -100,6 +102,21 @@ const liveSync = createLiveSync({
   load: () => import('@/lib/liveEngine'),
   onPushed,
 });
+
+/** v1.22 (limecore#127) — deep links (launcher shortcuts, the rest-timer
+ *  notification, NCC) navigate once the router is up; one that came while the
+ *  sign-in screen showed waits for it (lib/deepLinks.ts). */
+function DeepLinkBridge() {
+  const navigate = useNavigate();
+  useEffect(() => onDeepLink((route) => navigate(route)), [navigate]);
+  return null;
+}
+
+initDeepLinks();
+
+// v1.22 (limecore#127): Skip / +30 s on the rest notification, including a
+// tap that launched the app. Native only; the module loads on demand.
+if (Capacitor.isNativePlatform()) void import('@/lib/restNotification').then((m) => m.initRestActions());
 
 /**
  * Subscribes to action-button taps on workout reminders and routes the user
@@ -418,6 +435,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <NotificationActionBridge />
+      <DeepLinkBridge />
       {/* Pages are lazy chunks (limecore#13). This boundary covers the
           fullscreen workout view; Layout has its own around <Outlet /> so the
           bottom nav stays put while a page loads. */}
@@ -449,6 +467,10 @@ export default function App() {
       </OptionalChunk>
       <OptionalChunk>
         <ConsentPrompt />
+      </OptionalChunk>
+      {/* v1.22 (limecore#91) — the health-data consent, asked once. */}
+      <OptionalChunk>
+        <HealthConsentPrompt />
       </OptionalChunk>
       {guestAsking && (
         <OptionalChunk>

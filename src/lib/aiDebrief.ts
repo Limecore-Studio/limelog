@@ -1,14 +1,15 @@
 // Post-workout AI debrief — v1.4.
 //
 // Takes a free-text note the user types after a session and extracts structured
-// quality data (RPE, pain flags, mood, a clean summary) via the shared
-// `ai-generate` Supabase Edge Function (cloud Gemini — on-device Nano is
-// unavailable on the S24; see the AI-1 registry blocker). Auth-gated: the
-// function requires the user's Nexus JWT, so the debrief only works when signed
-// in to sync. Always degrades to null on any failure — the FatigueRating dots
-// remain the always-available fallback.
+// quality data (RPE, pain flags, mood, a clean summary) with Gemini.
+// v1.22 (limecore#122): on the user's own key, straight from the device
+// (aiProvider.ts). It used to go through the `ai-generate` function on
+// Limecore's key, which also meant the pain notes passed through Limecore to a
+// free tier (limecore#91). No account is needed any more, so guests have it
+// too. A failure says why (no key, invalid key, quota, model, network); the
+// FatigueRating dots remain the always-available fallback.
 
-import { supabase, isNexusConfigured } from './supabase';
+import { generate, type AiError } from './aiProvider';
 import { useUserStore } from '@/store/userStore';
 import type { SessionMood } from '@/types/logging';
 
@@ -33,26 +34,21 @@ function buildPrompt(userText: string): string {
 Note: "${userText.slice(0, 400).replace(/"/g, "'")}"`;
 }
 
-/** Analyse a free-text debrief note. Returns structured fields, or null on any
- *  failure (not signed in, offline, blocked, unparseable). */
-export async function analyseDebrief(userText: string): Promise<DebriefResult | null> {
-  if (!isNexusConfigured) return null;
+export type DebriefOutcome = { result: DebriefResult } | { error: AiError };
+
+/** Analyse a free-text debrief note. Returns the structured fields, or why it
+ *  failed; null when AI is off or the note is empty (nothing was sent). */
+export async function analyseDebrief(userText: string): Promise<DebriefOutcome | null> {
   // The opt-in gate, checked here as well as at the call site: this is the one
   // place the note leaves the device, so a future caller cannot skip the
   // user's choice by forgetting to check the flag.
   if (!useUserStore.getState().profile.aiEnabled) return null;
   const text = userText.trim();
   if (!text) return null;
-  try {
-    const { data, error } = await supabase.functions.invoke<{ text?: string; error?: string }>(
-      'ai-generate',
-      { body: { prompt: buildPrompt(text), json: true, maxTokens: 256, temperature: 0.2 } },
-    );
-    if (error || !data?.text) return null;
-    return parseDebrief(data.text);
-  } catch {
-    return null;
-  }
+  const res = await generate({ prompt: buildPrompt(text), json: true, maxTokens: 256, temperature: 0.2 });
+  if (!res.ok) return { error: res.error };
+  const result = parseDebrief(res.text);
+  return result ? { result } : { error: 'other' };
 }
 
 function parseDebrief(raw: string): DebriefResult | null {

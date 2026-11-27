@@ -53,6 +53,13 @@
     "personalRecord": "Ennätys"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Centeriä ei ole asennettu tai siihen ei saatu yhteyttä.",
+      "noSession": "Kirjaudu ensin Nexus Command Centeriin ja yritä sitten uudelleen.",
+      "failed": "Nexus-kirjautuminen epäonnistui. Kirjaudu tavalliseen tapaan.",
+      "offline": "Nexus-kirjautuminen vaatii verkkoyhteyden.",
+      "timedOut": "Nexus-kirjautuminen aikakatkaistiin. Tarkista yhteys ja yritä uudelleen."
+    },
     "tagline": "JAKSOTETTU VOIMA · KESKITY",
     "titleGetStarted": "Aloitetaan",
     "titleSignInEmail": "Kirjaudu sähköpostilla",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "Jos jatkat sillä, tiedot poistetaan tältä laitteelta. Kirjaudu uudelleen alkuperäiselle tilille, niin ne säilyvät.",
     "nexusOtherConfirm": "Vaihda tili",
     "notConfigured": "Supabasea ei ole määritetty — kirjautuminen ei ole käytettävissä. Valitse Jatka vieraana käyttääksesi sovellusta paikallisesti.",
-    "errNexus": "Nexus-istuntoa ei voitu periä.",
     "errInvalidCredentials": "Väärä sähköposti tai salasana.",
     "errAlreadyRegistered": "Tälle sähköpostille on jo tili. Kokeile kirjautua sisään.",
     "errWeakPassword": "Valitse vahvempi salasana.",
@@ -227,7 +233,6 @@
     "aiOff": "Pois",
     "aiFeaturesOnSub": "Tekoälykooste päällä — treenin jälkeen kirjoittamasi muistiinpano lähetetään Google Geminille.",
     "aiFeaturesOffSub": "Tekoälykooste pois — Googlelle ei lähetetä mitään. Arvioi väsymys yllä olevilla pisteillä.",
-    "aiTrainingNote": "Google ajaa tämän ilmaisella tasolla, joten lähettämääsi voidaan käyttää heidän tulevien mallien kouluttamiseen. Jätä pois päältä, jos se ei sovi sinulle.",
     "privacyPolicy": "Tietosuojaseloste",
     "yourData": "Omat tietosi",
     "yourDataNote": "Ota kopio kaikesta tai poista se. Yksi tili kattaa Nexus Command Centerin, LimeLogin ja StudyDeskin.",
@@ -499,6 +504,9 @@
     "restrictExercises": "Rajoita tiettyjä liikkeitä"
   },
   "log": {
+    "restNotifTitle": "Lepo · {{name}}",
+    "restNotifSkip": "Ohita",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Lisää liike",
     "emptyWorkoutHint": "Lisää tänään tekemäsi liikkeet. Ne jäävät tähän treeniin seuraavaa kertaa varten.",
     "prBadge": "ENN",

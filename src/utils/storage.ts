@@ -64,6 +64,22 @@ function get<T>(key: string): T | null {
   }
 }
 
+/** v1.22 (limelog#127) — tells the user a write did not persist when the
+ *  cause is a full storage. For writers that must not throw (the outbox, the
+ *  body log); set() below uses it and then throws. */
+export function reportWriteFailure(key: string, e: unknown): void {
+  console.error('[storage] write failed for', key, e);
+  const quota =
+    e instanceof DOMException &&
+    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
+  if (!quota) return;
+  try {
+    alert(i18n.t('common.storageFull'));
+  } catch {
+    /* alert unavailable (non-UI context) — the console.error above still fires */
+  }
+}
+
 function set<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
@@ -73,22 +89,12 @@ function set<T>(key: string, value: T): void {
     // once quota is hit, an unguarded setItem throws synchronously and — since
     // store actions call storage.set() BEFORE their Zustand set() — aborts the
     // whole action, so "Finish workout" would silently lose the session.
-    console.error('[storage] write failed for', key, e);
-    const quota =
-      e instanceof DOMException &&
-      (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED' || e.code === 22);
-    if (quota) {
-      // Surface it so the user learns their data didn't persist (rather than
-      // discovering a lost workout later). Progress photos are the usual
-      // culprit — deleting some frees room for logs.
-      // v1.18.1 (LimeLog#77) — outside React, so through the i18n instance
-      // itself, as notifications.ts and helpers.ts do.
-      try {
-        alert(i18n.t('common.storageFull'));
-      } catch {
-        /* alert unavailable (non-UI context) — the console.error above still fires */
-      }
-    }
+    // Surfaced so the user learns their data didn't persist (rather than
+    // discovering a lost workout later). Progress photos are the usual
+    // culprit — deleting some frees room for logs.
+    // v1.18.1 (LimeLog#77) — outside React, so through the i18n instance
+    // itself, as notifications.ts and helpers.ts do.
+    reportWriteFailure(key, e);
     throw e;
   }
 }

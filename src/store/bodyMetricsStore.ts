@@ -11,10 +11,12 @@
 //      states; nothing here blocks on the network.
 
 import { create } from 'zustand';
+import { reportWriteFailure } from '@/utils/storage';
 import type { BodyMetric, BodyMetricsPrefs } from '@/types/bodyMetrics';
 import { DEFAULT_PREFS } from '@/types/bodyMetrics';
 import { enqueue } from '@/lib/outbox';
 import { syncAllowed } from '@/lib/syncSetting';
+import { healthConsent, requestHealthAsk, HEALTH_BODY_FIELDS } from '@/lib/healthConsent';
 
 const STORAGE_KEY = 'limelog-body-metrics';
 const PREFS_KEY = 'limelog-body-metrics-prefs';
@@ -57,7 +59,9 @@ function saveToStorage(rows: BodyMetric[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
   } catch (e) {
-    console.error('[bodyMetrics] save failed:', e);
+    // v1.22 (limelog#127) — told, not silent: the weigh-in shows now but is
+    // gone after a restart.
+    reportWriteFailure(STORAGE_KEY, e);
   }
 }
 
@@ -145,6 +149,10 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
     // v1.22 (limecore#95) — queued only when sync is on, as workouts are. It
     // used to queue every save, so a guest's or a sync-off user's readings
     // went up with the next account to sign in or the next time sync was on.
+    // v1.22 (limecore#91) — a body-composition reading synced for the first
+    // time asks the health-data question; until it is answered the push
+    // leaves those fields out (nexusSync.ts).
+    if (syncAllowed() && healthConsent() === 'unasked' && HEALTH_BODY_FIELDS.some((f) => merged[f] !== undefined)) requestHealthAsk();
     if (syncAllowed()) enqueue('upsert_body_metric', {
       id: merged.id,
       date: merged.date,

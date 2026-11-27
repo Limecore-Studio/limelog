@@ -29,6 +29,7 @@ import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics
 import { useUserStore, defaultProfile } from '@/store/userStore';
 import { parkAccountData, restoreParked, PRS_KEY, PROFILE_KEY } from '@/lib/parkedData';
 import type { GuestHeld } from '@/lib/accountOwner';
+import { setErrorReportsEnabled } from './errorReports';
 
 // useProgramStore is intentionally NOT wiped — programs / exercises /
 // workout templates are tool configuration, not history, and a global
@@ -60,6 +61,15 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   // everything else: leaving it would hand the next signed-in account on a
   // shared device someone else's paid perk.
   step(clearEntitlement());
+  // v1.22 (limecore#122) — the user's own Gemini key belongs to whoever is
+  // signed in: it does not carry over to a guest or the next account (the
+  // AI switch then reads as off, as the settings lock it without a key).
+  // Loaded on demand, so the provider stays out of the startup bundle.
+  void import('./aiProvider').then((m) => m.clearAiKey()).catch(() => {});
+  // v1.22 (limecore#99) — the error-report switch is the signed-in person's
+  // consent, not the device's: it goes off with them, so the next account
+  // (or a guest who signs in) is not reported on without having opted in.
+  setErrorReportsEnabled(false);
   // v1.22 (limelog#127 item 7) — programs stay (device configuration, see
   // above), but their notes and best records are the person's: they go.
   try {

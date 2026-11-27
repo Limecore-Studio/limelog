@@ -42,6 +42,10 @@ export const PARKED_KEY = 'limelog.parked';
 export const PRS_KEY = 'wt_exercise_prs';
 export const PROFILE_KEY = 'wt_profile';
 export const MAX_SLOTS = 5;
+/** v1.22 (limecore#99) — a slot not taken back within this long is dropped:
+ *  a signed-out account's records and profile do not stay on a lent or sold
+ *  device for ever. */
+export const SLOT_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 
 export interface ParkedSlot {
   prs: ExercisePR[];
@@ -60,9 +64,23 @@ function readJson<T>(key: string): T | null {
   }
 }
 
-function readParked(): Parked {
+function readParked(now = Date.now()): Parked {
   const p = readJson<Parked>(PARKED_KEY);
-  return p && typeof p === 'object' && !Array.isArray(p) ? p : {};
+  if (!p || typeof p !== 'object' || Array.isArray(p)) return {};
+  const live = Object.fromEntries(
+    Object.entries(p).filter(([, slot]) => {
+      const at = Date.parse(String(slot?.parkedAt));
+      return Number.isFinite(at) && now - at <= SLOT_MAX_AGE_MS;
+    }),
+  );
+  if (Object.keys(live).length !== Object.keys(p).length) {
+    try {
+      writeParked(live);
+    } catch {
+      /* dropped from what is read; the write is tried again next time */
+    }
+  }
+  return live;
 }
 
 /** Writes the slots, the newest MAX_SLOTS only. Throws when storage refuses. */

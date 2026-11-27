@@ -1,6 +1,7 @@
 // The running rest timer, persisted with its absolute end time (v1.7, BUG-9:
 // see WorkoutPage). Moved here in v1.22 (limelog#147) so the workout pill in
 // Layout reads the same record the workout page writes.
+import { Capacitor } from '@capacitor/core';
 
 export interface RestState {
   /** Absolute epoch ms when the rest ends. */
@@ -14,6 +15,14 @@ export interface PersistedRest extends RestState {
 }
 
 export const ACTIVE_REST_KEY = 'wt_active_rest';
+
+// v1.22 (limecore#127 item 4) — every change to the rest goes through here,
+// so the ongoing notification (restNotification.ts, native only, loaded on
+// demand) follows start, adjust, skip, finish, discard and the end.
+function notify(rest: PersistedRest | null): void {
+  if (!Capacitor.isNativePlatform()) return;
+  void import('./restNotification').then((m) => (rest ? m.showRest(rest) : m.hideRest()));
+}
 
 export function loadActiveRest(): PersistedRest | null {
   try {
@@ -32,6 +41,7 @@ export function saveActiveRest(r: RestState, logId: string): void {
   } catch {
     /* non-fatal — the in-memory timer still works this session */
   }
+  notify({ ...r, logId });
 }
 
 export function clearActiveRest(): void {
@@ -40,6 +50,7 @@ export function clearActiveRest(): void {
   } catch {
     /* ignore */
   }
+  notify(null);
 }
 
 /** "m:ss", or "h:mm:ss" from an hour. */

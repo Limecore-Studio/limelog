@@ -125,3 +125,18 @@ describe('tokenUserId', () => {
     expect(tokenUserId('x')).toBeNull();
   });
 });
+
+// v1.22 (limecore#113) — reasons are codes; the screen shows a translated
+// string, never the plugin's or the server's own text.
+describe('nexusErrorKey', () => {
+  it('maps each reason code to an auth.nexusErr key', async () => {
+    const { nexusErrorKey } = await import('./suiteSso');
+    expect(nexusErrorKey('not-android')).toBe('auth.nexusErr.unavailable');
+    expect(nexusErrorKey('unavailable')).toBe('auth.nexusErr.unavailable');
+    expect(nexusErrorKey('no-session')).toBe('auth.nexusErr.noSession');
+    expect(nexusErrorKey('offline')).toBe('auth.nexusErr.offline');
+    expect(nexusErrorKey('timeout')).toBe('auth.nexusErr.timedOut');
+    expect(nexusErrorKey('malformed')).toBe('auth.nexusErr.failed');
+    expect(nexusErrorKey(undefined)).toBe('auth.nexusErr.failed');
+  });
+});

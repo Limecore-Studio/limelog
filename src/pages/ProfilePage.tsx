@@ -10,6 +10,8 @@ import { ExerciseLibrary } from '@/components/ExerciseLibrary';
 import { NexusSyncCard } from '@/components/NexusSyncCard';
 import { FeedbackCard } from '@/components/FeedbackCard';
 import { ThemeCard } from '@/components/ThemeCard';
+import { AiKeySettings } from '@/components/AiKeySettings';
+import { HealthConsentField } from '@/components/HealthConsentField';
 import { ShieldAlert } from 'lucide-react';
 import { useConfirm } from '@/components/confirmContext';
 import { downloadExport, deleteAccount, wipeAllLocalData } from '@/lib/dataRights';
@@ -85,7 +87,7 @@ function ErrorReportsField() {
 }
 
 export function ProfilePage() {
-  const { profile, setName, setUnit, setAiEnabled, resolveRestriction, removeRestriction, updateDeloadThresholds } = useUserStore();
+  const { profile, setName, setUnit, resolveRestriction, removeRestriction, updateDeloadThresholds } = useUserStore();
   const { t, i18n } = useTranslation();
   const confirm = useConfirm();
   const currentLang = (i18n.language || 'en').split('-')[0] as Lang;
@@ -272,32 +274,15 @@ export function ProfilePage() {
           <FeedbackCard />
 
           {/* Privacy & AI. Off by default — the debrief sends the note you type
-              to Google Gemini, so it stays dark until asked for. */}
+              to Google Gemini, so it stays dark until asked for. v1.22
+              (limecore#122): on the user's own key, which turns it on. */}
           <Card padding="md">
             <span className="settings-field__label">{t('settings.privacy')}</span>
-            <div className="settings-field settings-field--mt">
-              <span className="settings-field__sublabel">
-                {profile.aiEnabled ? t('settings.aiFeaturesOnSub') : t('settings.aiFeaturesOffSub')}
-              </span>
-              <div className="settings-toggle">
-                {([false, true] as const).map((on) => (
-                  <button
-                    key={String(on)}
-                    className={`settings-toggle__btn${!!profile.aiEnabled === on ? ' settings-toggle__btn--active' : ''}`}
-                    onClick={() => setAiEnabled(on)}
-                    aria-pressed={!!profile.aiEnabled === on}
-                  >
-                    {on ? t('settings.aiOn') : t('settings.aiOff')}
-                  </button>
-                ))}
-              </div>
-            </div>
-            {/* Free-tier disclosure — informed consent belongs at the switch. */}
-            <div className="settings-field__sublabel settings-ai-note">
-              {t('settings.aiTrainingNote')}
-            </div>
+            <AiKeySettings />
             {/* v1.16 (limecore#16) — off by default, accounts only; the note is
                 the consent text the privacy policy (NCC#50) relies on. */}
+            {/* v1.22 (limecore#91) — health data needs its own yes. */}
+            <HealthConsentField />
             <ErrorReportsField />
             <AppOpensField />
             <a

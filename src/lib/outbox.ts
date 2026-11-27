@@ -31,6 +31,8 @@
 import {
   pushWorkoutToNexus,
   pushBodyMetricToNexus,
+  clearHealthDataInNexus,
+  pushSessionDebriefToNexus,
   deleteBodyMetricFromNexus,
   pushExercisePRToNexus,
   deleteExercisePRFromNexus,
@@ -43,9 +45,11 @@ import {
   type NexusExercisePRPayload,
   type NexusFeedbackPayload,
   type NexusAppOpenPayload,
+  type NexusSessionDebriefPayload,
 } from './nexusSync';
 import { supabase, isNexusConfigured } from './supabase';
 import { readOwner } from './accountOwner';
+import { reportWriteFailure } from '@/utils/storage';
 
 const STORAGE_KEY = 'limelog-outbox';
 const META_KEY = 'limelog-outbox-meta';
@@ -70,7 +74,11 @@ export type OutboxKind =
   // v1.12 Item 0 - retention. Queued rather than pushed directly because a
   // cold start can foreground before the Nexus session has been adopted, and
   // RLS rejects the write with no session; offline is the same story.
-  | 'record_app_open';
+  | 'record_app_open'
+  // v1.22 (limecore#91) — health-data consent: withdrawn (erase the health
+  // columns on the server), and given (a debrief recorded before it).
+  | 'clear_health_data'
+  | 'upsert_session_debrief';
 
 interface OutboxItem<K extends OutboxKind = OutboxKind> {
   id: string;
@@ -91,6 +99,8 @@ interface KindPayload {
   delete_exercise_pr: { id: string };
   submit_feedback: NexusFeedbackPayload;
   record_app_open: NexusAppOpenPayload;
+  clear_health_data: Record<string, never>;
+  upsert_session_debrief: NexusSessionDebriefPayload;
 }
 
 interface OutboxMeta {
@@ -128,8 +138,10 @@ function saveItems(items: OutboxItem[]): void {
   } catch (e) {
     // Quota-exceeded is unrecoverable for the outbox — log and continue.
     // The next mutation will overwrite + try again with whatever fits.
-     
-    console.error('[outbox] storage write failed:', e);
+    // v1.22 (limelog#127) — and the user is told: a finished workout whose
+    // push could not be queued otherwise never synced, with the pending
+    // count showing 0.
+    reportWriteFailure(STORAGE_KEY, e);
   }
   cachedStatus = null;
 }
@@ -320,6 +332,15 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
       // drain send it under the new account. Nor does a push that found
       // another account signed in count as a failed attempt.
       if (readOwner() !== user.id || failure instanceof AccountChangedError) break;
+      // v1.22 (limelog#127) — a CHECK violation (23514) fails the same way on
+      // every retry and held up everything queued behind it. Dropped, and the
+      // error stays in Settings' sync status.
+      if ((failure as { code?: string } | null)?.code === '23514') {
+        console.error('[outbox] dropping item the server refuses (23514):', item.kind);
+        saveItems(loadItems().filter((i) => i.id !== item.id));
+        saveMeta({ ...loadMeta(), lastError: (failure as { message?: string }).message ?? '23514', lastErrorAt: new Date().toISOString() });
+        continue;
+      }
       if (failure === null) {
         // Success — remove THIS item from the queue as it is now, not from the
         // snapshot read before the push: anything enqueued during the await
@@ -513,4 +534,6 @@ const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K], forUserId: string)
   delete_exercise_pr: (p, uid) => deleteExercisePRFromNexus(p.id, uid),
   submit_feedback: (p, uid) => pushFeedbackToNexus(p, uid),
   record_app_open: (p, uid) => pushAppOpenToNexus(p, uid),
+  clear_health_data: (_p, uid) => clearHealthDataInNexus(uid),
+  upsert_session_debrief: (p, uid) => pushSessionDebriefToNexus(p, uid),
 };

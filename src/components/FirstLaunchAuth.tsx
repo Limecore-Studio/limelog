@@ -18,7 +18,7 @@ import { Button, Card } from '@/components/ui';
 import { useNexusStore } from '@/store/nexusStore';
 import { supabase } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
-import { openNexus } from '@/lib/suiteSso';
+import { openNexus, nexusErrorKey } from '@/lib/suiteSso';
 import { askNexusSwitch } from '@/components/nexusSwitchAsk';
 import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
@@ -27,6 +27,15 @@ import { PasswordChecklist } from '@/components/PasswordChecklist';
 import { useConfirm } from '@/components/confirmContext';
 import { useLogStore } from '@/store/logStore';
 import './FirstLaunchAuth.css';
+
+/** v1.22 (limecore#99) — the held prompt is shown to whoever holds the
+ *  device, so the previous owner's address is masked: enough for the owner
+ *  to recognise it, not to read it. `emil@example.com` → `e•••@example.com`. */
+function maskEmail(email: string): string {
+  const at = email.indexOf('@');
+  if (at < 1) return '•••';
+  return `${email[0]}•••${email.slice(at)}`;
+}
 
 // AUTH-2 — confirmation-code bounds, ported from StudyDesk's AuthGate.
 //
@@ -108,7 +117,7 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
       setNexusStale(result.reason === 'nexus-stale');
       if (!result.ok) {
         if (result.reason !== 'nexus-stale' && result.reason !== 'cancelled') {
-          setError(result.reason ?? t('auth.errNexus'));
+          setError(t(nexusErrorKey(result.reason)));
         }
         setBusy(false);
         return;
@@ -238,7 +247,7 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
     // v1.18.1 (LimeLog#94) — a clear that failed rejects with what to show.
     const entered = await continueAsGuest(async (held) => {
       const parts = [
-        held.email ? t('auth.guestHeldEmail', { email: held.email }) : t('auth.guestHeldAccount'),
+        held.email ? t('auth.guestHeldEmail', { email: maskEmail(held.email) }) : t('auth.guestHeldAccount'),
         t('auth.guestHeldRemove'),
       ];
       if (held.unsynced > 0) parts.push(t('sync.signOutUnsynced', { count: held.unsynced }));
