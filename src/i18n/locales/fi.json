@@ -53,6 +53,13 @@
     "personalRecord": "Ennätys"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Centeriä ei ole asennettu tai siihen ei saatu yhteyttä.",
+      "noSession": "Kirjaudu ensin Nexus Command Centeriin ja yritä sitten uudelleen.",
+      "failed": "Nexus-kirjautuminen epäonnistui. Kirjaudu tavalliseen tapaan.",
+      "offline": "Nexus-kirjautuminen vaatii verkkoyhteyden.",
+      "timedOut": "Nexus-kirjautuminen aikakatkaistiin. Tarkista yhteys ja yritä uudelleen."
+    },
     "tagline": "JAKSOTETTU VOIMA · KESKITY",
     "titleGetStarted": "Aloitetaan",
     "titleSignInEmail": "Kirjaudu sähköpostilla",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "Jos jatkat sillä, tiedot poistetaan tältä laitteelta. Kirjaudu uudelleen alkuperäiselle tilille, niin ne säilyvät.",
     "nexusOtherConfirm": "Vaihda tili",
     "notConfigured": "Supabasea ei ole määritetty — kirjautuminen ei ole käytettävissä. Valitse Jatka vieraana käyttääksesi sovellusta paikallisesti.",
-    "errNexus": "Nexus-istuntoa ei voitu periä.",
     "errInvalidCredentials": "Väärä sähköposti tai salasana.",
     "errAlreadyRegistered": "Tälle sähköpostille on jo tili. Kokeile kirjautua sisään.",
     "errWeakPassword": "Valitse vahvempi salasana.",

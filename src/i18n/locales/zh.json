@@ -53,6 +53,13 @@
     "personalRecord": "个人纪录"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "未安装 Nexus Command Center，或无法连接。",
+      "noSession": "请先登录 Nexus Command Center，然后重试。",
+      "failed": "Nexus 登录失败。请正常登录。",
+      "offline": "通过 Nexus 登录需要网络连接。",
+      "timedOut": "通过 Nexus 登录超时。请检查网络后重试。"
+    },
     "tagline": "周期化力量训练 · 专注",
     "titleGetStarted": "开始使用",
     "titleSignInEmail": "使用邮箱登录",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "继续使用该账户会从此设备上删除这些数据。重新登录原账户即可保留。",
     "nexusOtherConfirm": "切换账户",
     "notConfigured": "Supabase 未配置，无法登录。点击“以访客身份继续”即可在本地使用应用。",
-    "errNexus": "无法继承 Nexus 会话。",
     "errInvalidCredentials": "邮箱或密码不正确。",
     "errAlreadyRegistered": "该邮箱已注册。请尝试登录。",
     "errWeakPassword": "请选择更强的密码。",

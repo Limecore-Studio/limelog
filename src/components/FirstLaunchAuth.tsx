@@ -18,7 +18,7 @@ import { Button, Card } from '@/components/ui';
 import { useNexusStore } from '@/store/nexusStore';
 import { supabase } from '@/lib/supabase';
 import { withCaptcha } from '@/lib/captcha';
-import { openNexus } from '@/lib/suiteSso';
+import { openNexus, nexusErrorKey } from '@/lib/suiteSso';
 import { askNexusSwitch } from '@/components/nexusSwitchAsk';
 import { setGuestMode } from '@/lib/guestMode';
 import { translateAuthError } from '@/lib/authErrors';
@@ -108,7 +108,7 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
       setNexusStale(result.reason === 'nexus-stale');
       if (!result.ok) {
         if (result.reason !== 'nexus-stale' && result.reason !== 'cancelled') {
-          setError(result.reason ?? t('auth.errNexus'));
+          setError(t(nexusErrorKey(result.reason)));
         }
         setBusy(false);
         return;

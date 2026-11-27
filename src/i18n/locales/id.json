@@ -20,6 +20,13 @@
     "ok": "OK"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Center tidak terpasang, atau tidak dapat dihubungi.",
+      "noSession": "Masuk ke Nexus Command Center terlebih dahulu, lalu coba lagi.",
+      "failed": "Masuk lewat Nexus gagal. Masuk dengan cara biasa.",
+      "offline": "Masuk lewat Nexus memerlukan koneksi jaringan.",
+      "timedOut": "Masuk lewat Nexus kehabisan waktu. Periksa koneksi lalu coba lagi."
+    },
     "tagline": "KEKUATAN TERPERIODISASI · FOKUS",
     "titleGetStarted": "Mulai",
     "titleSignInEmail": "Masuk dengan email",
@@ -50,7 +57,6 @@
     "nexusOtherRemove": "Jika kamu lanjut dengan akun itu, data tersebut akan dihapus dari perangkat ini. Masuk lagi ke akun semula untuk menyimpannya.",
     "nexusOtherConfirm": "Ganti akun",
     "notConfigured": "Supabase belum dikonfigurasi — proses masuk tidak tersedia. Ketuk Lanjutkan sebagai tamu untuk memakai aplikasi secara lokal.",
-    "errNexus": "Tidak dapat mewarisi sesi Nexus.",
     "errInvalidCredentials": "Email atau kata sandi salah.",
     "errAlreadyRegistered": "Email itu sudah punya akun. Coba masuk saja.",
     "errWeakPassword": "Pilih kata sandi yang lebih kuat.",
