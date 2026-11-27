@@ -1,12 +1,12 @@
 import { lazy, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useProgramStore } from '@/store/programStore';
 import { useLogStore } from '@/store/logStore';
 import { useUserStore } from '@/store/userStore';
 import type { SessionTemplate } from '@/types/program';
 import { getDayOfWeek, formatWeight, formatDate } from '@/utils/helpers';
-import { sessionsForDay, resolvePhase, deloadTargetReps, todaysLog, resumableLogs } from '@/lib/todaySessions';
+import { sessionsForDay, resolvePhase, deloadTargetReps, todaysLog, resumableLogs, activeWorkoutId } from '@/lib/todaySessions';
 import { bestEstimateForExercise, missedRepRatio } from '@/utils/oneRepMax';
 import { EmptyState, Button, Badge } from '@/components/ui';
 import { Dumbbell, AlertTriangle, CheckCircle2, TrendingUp, ChevronRight, Footprints } from 'lucide-react';
@@ -47,6 +47,33 @@ export function TodayPage() {
   useEffect(() => {
     finishStaleWorkouts();
   }, [finishStaleWorkouts]);
+
+  // v1.22 (limecore#127) — the "Log today's workout" launcher shortcut
+  // (open/today?start=1): the workout already open, else today's first session
+  // not done yet, started; with nothing for today it stays here, where the
+  // empty state offers a program or an empty workout.
+  const [params, setParams] = useSearchParams();
+  const wantsStart = params.get('start') === '1';
+  useEffect(() => {
+    if (!wantsStart) return;
+    setParams({}, { replace: true });
+    const state = useLogStore.getState();
+    const open = activeWorkoutId(state.sessionLogs, Date.now());
+    if (open) {
+      navigate(`/workout/${open}`);
+      return;
+    }
+    const at = new Date();
+    for (const s of todaySessions) {
+      const existing = todaysLog(state.sessionLogs, s.id, at);
+      if (existing?.finalizedAt) continue;
+      const log = existing ?? (activeProgram ? state.startSession(s.id, activeProgram.id) : null);
+      if (log) navigate(`/workout/${log.id}`);
+      return;
+    }
+    // todaySessions and activeProgram are read once, at the moment of the tap.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantsStart]);
 
   const now = new Date();
   const today = getDayOfWeek();

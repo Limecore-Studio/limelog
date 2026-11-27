@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
+<resources>
+    <string name="shortcut_workout_short">Latihan</string>
+    <string name="shortcut_workout_long">Catat latihan hari ini</string>
+    <string name="shortcut_body_short">Tubuh</string>
+    <string name="shortcut_body_long">Tambah ukuran tubuh</string>
+</resources>

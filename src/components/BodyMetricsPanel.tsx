@@ -13,6 +13,7 @@
 // confronted with six empty inputs.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PHOTO_DATE_KEY } from '@/lib/restoredResult';
 import { useTranslation } from 'react-i18next';
 import { Capacitor } from '@capacitor/core';
@@ -113,6 +114,19 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
   const [scaleErr, setScaleErr] = useState<ScaleKey | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [photosNonce, setPhotosNonce] = useState(0); // re-renders gallery
+  // v1.22 (limecore#127) — the "Add body measurement" launcher shortcut
+  // (open/body?add=1) lands on the entry form, weight field focused.
+  const weightRef = useRef<HTMLInputElement | null>(null);
+  const [params, setParams] = useSearchParams();
+  const wantsAdd = params.get('add') === '1';
+  useEffect(() => {
+    if (!wantsAdd) return;
+    setParams({}, { replace: true });
+    const el = weightRef.current;
+    if (!el) return;
+    el.scrollIntoView({ block: 'center' });
+    el.focus();
+  }, [wantsAdd, setParams]);
   // v1.22 (limelog#125) — a photo saved from a restored camera result
   // (App.tsx) while this panel is open shows up at once.
   useEffect(() => {
@@ -440,6 +454,7 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
               inputMode="decimal"
               step="0.1"
               placeholder={isImperial ? '180.0' : '82.5'}
+              ref={weightRef}
               value={form.weight}
               onChange={(e) => setForm((f) => ({ ...f, weight: e.target.value }))}
             />
