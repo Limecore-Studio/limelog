@@ -224,7 +224,6 @@
     "aiOff": "关闭",
     "aiFeaturesOnSub": "AI 复盘已开启 — 训练后填写的笔记会发送至 Google Gemini。",
     "aiFeaturesOffSub": "AI 复盘已关闭 — 不会向 Google 发送任何内容。请用上方的圆点评估疲劳度。",
-    "aiTrainingNote": "Google 通过免费方案运行此功能，因此你发送的内容可能被用于训练其未来的模型。若不能接受，请保持关闭。",
     "privacyPolicy": "隐私政策",
     "yourData": "你的数据",
     "yourDataNote": "带走一份完整副本，或将其抹除。一个账户涵盖 Nexus Command Center、LimeLog 和 StudyDesk。",

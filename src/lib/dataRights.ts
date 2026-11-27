@@ -432,6 +432,9 @@ export async function deleteAccount({
   // every slot too (`limelog.parked`); this does not depend on it either.
   const clearAll = async (userId?: string) => {
     await clearLocal();
+    // v1.22 (limecore#122) — the user's own Gemini key and model name, kept
+    // in Preferences where the prefix wipe does not reach.
+    await import('./aiProvider').then((m) => Promise.all([m.clearAiKey(), m.setAiModel('')])).catch(() => {});
     if (userId) forgetParked(userId);
     clearOwner();
     // The caller reloads next (ProfilePage); the Preferences clear has to

@@ -223,7 +223,6 @@
     "aiOff": "Nonaktif",
     "aiFeaturesOnSub": "Rangkuman AI aktif — catatan yang Anda tulis setelah latihan dikirim ke Google Gemini.",
     "aiFeaturesOffSub": "Rangkuman AI nonaktif — tidak ada yang dikirim ke Google. Nilai kelelahan dengan titik di atas.",
-    "aiTrainingNote": "Google menjalankannya di tingkat gratis, jadi apa yang Anda kirim dapat dipakai untuk melatih model mereka berikutnya. Biarkan nonaktif jika itu tidak cocok bagi Anda.",
     "privacyPolicy": "Kebijakan privasi",
     "yourData": "Data Anda",
     "yourDataNote": "Ambil salinan semuanya, atau hapus. Satu akun mencakup LimeLog, Nexus Command Center, dan StudyDesk.",

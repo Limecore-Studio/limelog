@@ -231,7 +231,6 @@
     "aiOff": "No",
     "aiFeaturesOnSub": "Resumen con IA activado: la nota que escribes tras entrenar se envía a Google Gemini.",
     "aiFeaturesOffSub": "Resumen con IA desactivado: no se envía nada a Google. Valora la fatiga con los puntos de arriba.",
-    "aiTrainingNote": "Google lo ejecuta en su nivel gratuito, así que lo que envíes puede usarse para entrenar sus futuros modelos. Déjalo desactivado si no te convence.",
     "privacyPolicy": "Política de privacidad",
     "yourData": "Tus datos",
     "yourDataNote": "Llévate una copia de todo o bórralo. Una sola cuenta cubre LimeLog, Nexus Command Center y StudyDesk.",
