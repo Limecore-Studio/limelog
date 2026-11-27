@@ -25,6 +25,7 @@ import { Button, Card } from '@/components/ui';
 import { Camera, Download, Trash2 } from 'lucide-react';
 import { useConfirm } from '@/components/confirmContext';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
+import type { BodyMetric } from '@/types/bodyMetrics';
 import {
   formatLength,
   formatWeight,
@@ -108,6 +109,12 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
   const updatePrefs = useBodyMetricsStore((s) => s.updatePrefs);
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  // v1.22 (limelog#127) — the entry loaded for editing, as stored and as its
+  // fields showed it: a field left as shown keeps the stored value, so an
+  // imperial edit does not round the weight through lb on every save.
+  const [loaded, setLoaded] = useState<{ row: BodyMetric; form: FormState } | null>(null);
+  // v1.22 (limelog#127) — a weight or girth outside the server's range.
+  const [fieldErr, setFieldErr] = useState<{ name: string; max: number } | null>(null);
   const [photoNotice, setPhotoNotice] = useState<string | null>(null);
   // v1.19 (LL#104) — which scale field is out of range, if any.
   const [scaleErr, setScaleErr] = useState<ScaleKey | null>(null);
@@ -153,6 +160,14 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
     return isImperial ? inToCm(n) : n;
   }
 
+  // v1.22 (limelog#127) — the server's limits (body_metrics CHECKs): a value
+  // past them saved here and then failed every push, holding up the queue.
+  const LIMITS = { weightKg: 500, chestCm: 300, waistCm: 300, hipsCm: 300, armsCm: 200, legsCm: 200 } as const;
+  type Basic = keyof typeof LIMITS;
+  const FIELD: Record<Basic, 'weight' | 'chest' | 'waist' | 'hips' | 'arms' | 'legs'> = {
+    weightKg: 'weight', chestCm: 'chest', waistCm: 'waist', hipsCm: 'hips', armsCm: 'arms', legsCm: 'legs',
+  };
+
   function handleSave() {
     // v1.19 (LL#104) — only what the scale showed is stored; an empty field
     // is skipped, and an out-of-range one stops the save and says which.
@@ -165,17 +180,32 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
       }
     }
     setScaleErr(null);
+    // A field still showing what was loaded keeps the stored value.
+    const same = loaded && loaded.row.date === form.date ? loaded : null;
+    const keep = (k: Basic, parsed: number | undefined) =>
+      same && form[FIELD[k]] === same.form[FIELD[k]] ? same.row[k] : parsed;
     const payload = {
       ...scale,
       date: form.date,
-      weightKg: parseWeightInputToKg(form.weight),
-      chestCm: prefs.trackChest ? parseLengthInputToCm(form.chest) : undefined,
-      waistCm: prefs.trackWaist ? parseLengthInputToCm(form.waist) : undefined,
-      hipsCm: prefs.trackHips ? parseLengthInputToCm(form.hips) : undefined,
-      armsCm: prefs.trackArms ? parseLengthInputToCm(form.arms) : undefined,
-      legsCm: prefs.trackLegs ? parseLengthInputToCm(form.legs) : undefined,
+      weightKg: keep('weightKg', parseWeightInputToKg(form.weight)),
+      chestCm: prefs.trackChest ? keep('chestCm', parseLengthInputToCm(form.chest)) : undefined,
+      waistCm: prefs.trackWaist ? keep('waistCm', parseLengthInputToCm(form.waist)) : undefined,
+      hipsCm: prefs.trackHips ? keep('hipsCm', parseLengthInputToCm(form.hips)) : undefined,
+      armsCm: prefs.trackArms ? keep('armsCm', parseLengthInputToCm(form.arms)) : undefined,
+      legsCm: prefs.trackLegs ? keep('legsCm', parseLengthInputToCm(form.legs)) : undefined,
       notes: form.notes.trim() || undefined,
     };
+    for (const k of Object.keys(LIMITS) as Basic[]) {
+      const v = payload[k];
+      if (v != null && v >= LIMITS[k]) {
+        const max = k === 'weightKg'
+          ? (isImperial ? Math.floor(kgToLb(LIMITS[k])) : LIMITS[k])
+          : (isImperial ? Math.floor(cmToIn(LIMITS[k])) : LIMITS[k]);
+        setFieldErr({ name: t(`body.${FIELD[k]}`), max });
+        return;
+      }
+    }
+    setFieldErr(null);
     // Suppress if nothing actually filled in.
     const filled =
       payload.weightKg != null ||
@@ -189,12 +219,14 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
     if (!filled) return;
     addOrUpdate(payload);
     setForm(EMPTY_FORM);
+    setLoaded(null);
   }
 
   function loadEntryIntoForm(date: string) {
     const row = metrics.find((m) => m.date === date);
     if (!row) return;
-    setForm({
+    setFieldErr(null);
+    const next: FormState = {
       date: row.date,
       weight: row.weightKg != null
         ? String(isImperial ? kgToLb(row.weightKg).toFixed(1) : row.weightKg)
@@ -216,7 +248,9 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
         : '',
       scale: Object.fromEntries(SCALE_METRICS.map((m) => [m.key, scaleToInput(m, row[m.key], unit)])) as Record<ScaleKey, string>,
       notes: row.notes ?? '',
-    });
+    };
+    setForm(next);
+    setLoaded({ row, form: next });
   }
 
   // v1.2.1 — native capture via @capacitor/camera.
@@ -514,6 +548,11 @@ export function BodyMetricsPanel({ showTrend = true }: { showTrend?: boolean } =
                 return <p className="body-metrics-error body-metrics-form__field--full" role="alert">{t('body.scale.outOfRange', { name: t(m.labelKey), min: scaleToInput(m, m.min, unit), max: scaleToInput(m, m.max, unit) })}</p>;
               })()}
             </>
+          )}
+          {fieldErr && (
+            <p className="body-metrics-error body-metrics-form__field--full" role="alert">
+              {t('body.scale.outOfRange', { name: fieldErr.name, min: 0, max: fieldErr.max })}
+            </p>
           )}
           <label className="body-metrics-form__field body-metrics-form__field--full">
             <span>{t('body.notes')}</span>
