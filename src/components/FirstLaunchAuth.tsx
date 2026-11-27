@@ -28,6 +28,15 @@ import { useConfirm } from '@/components/confirmContext';
 import { useLogStore } from '@/store/logStore';
 import './FirstLaunchAuth.css';
 
+/** v1.22 (limecore#99) — the held prompt is shown to whoever holds the
+ *  device, so the previous owner's address is masked: enough for the owner
+ *  to recognise it, not to read it. `emil@example.com` → `e•••@example.com`. */
+function maskEmail(email: string): string {
+  const at = email.indexOf('@');
+  if (at < 1) return '•••';
+  return `${email[0]}•••${email.slice(at)}`;
+}
+
 // AUTH-2 — confirmation-code bounds, ported from StudyDesk's AuthGate.
 //
 // Supabase's Mailer OTP Length is a project setting with a documented 6-10
@@ -238,7 +247,7 @@ export function FirstLaunchAuth({ onContinue }: FirstLaunchAuthProps) {
     // v1.18.1 (LimeLog#94) — a clear that failed rejects with what to show.
     const entered = await continueAsGuest(async (held) => {
       const parts = [
-        held.email ? t('auth.guestHeldEmail', { email: held.email }) : t('auth.guestHeldAccount'),
+        held.email ? t('auth.guestHeldEmail', { email: maskEmail(held.email) }) : t('auth.guestHeldAccount'),
         t('auth.guestHeldRemove'),
       ];
       if (held.unsynced > 0) parts.push(t('sync.signOutUnsynced', { count: held.unsynced }));

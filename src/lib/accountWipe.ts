@@ -26,6 +26,7 @@ import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics
 import { useUserStore, defaultProfile } from '@/store/userStore';
 import { parkAccountData, restoreParked, PRS_KEY, PROFILE_KEY } from '@/lib/parkedData';
 import type { GuestHeld } from '@/lib/accountOwner';
+import { setErrorReportsEnabled } from './errorReports';
 
 // useProgramStore is intentionally NOT wiped — programs / exercises /
 // workout templates are tool configuration, not history, and a global
@@ -61,6 +62,10 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   // AI switch then reads as off, as the settings lock it without a key).
   // Loaded on demand, so the provider stays out of the startup bundle.
   void import('./aiProvider').then((m) => m.clearAiKey()).catch(() => {});
+  // v1.22 (limecore#99) — the error-report switch is the signed-in person's
+  // consent, not the device's: it goes off with them, so the next account
+  // (or a guest who signs in) is not reported on without having opted in.
+  setErrorReportsEnabled(false);
   // v1.2.1 — AUDIT-LL-FSG-2: the personal-data stores, so the next signed-in
   // account on a shared device doesn't inherit the previous one's workout
   // history, bodyweight log, or progress photos in the UI. Cloud-side data
