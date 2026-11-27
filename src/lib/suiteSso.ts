@@ -104,7 +104,7 @@ export async function openNexus(): Promise<boolean> {
 // v1.19 - LL#64: offline fails fast. A request that never reached the
 // function says nothing about the backend, only that there is no network.
 const offline = (e: unknown) => e instanceof FunctionsFetchError || e instanceof TypeError;
-const OFFLINE: InheritResult = { ok: false, reason: 'Nexus sign-in needs a network connection.' };
+const OFFLINE: InheritResult = { ok: false, reason: 'offline' };
 // v1.19 (LimeLog#67 review): the time limit below also ends in a fetch
 // error, and on a slow but working network "needs a network connection" was
 // the wrong thing to say. The abort shows as an AbortError/TimeoutError on the
@@ -114,10 +114,10 @@ const timedOut = (e: unknown) => {
   const name = (inner as { name?: string } | null)?.name;
   return name === 'AbortError' || name === 'TimeoutError';
 };
-const TIMED_OUT: InheritResult = { ok: false, reason: 'Nexus sign-in timed out. Check the connection and try again.' };
+const TIMED_OUT: InheritResult = { ok: false, reason: 'timeout' };
 const failFast = (e: unknown): InheritResult =>
   timedOut(e) && typeof navigator !== 'undefined' && navigator.onLine !== false ? TIMED_OUT : OFFLINE;
-const FAILED: InheritResult = { ok: false, reason: 'Nexus sign-in failed. Sign in another way.' };
+const FAILED: InheritResult = { ok: false, reason: 'failed' };
 
 async function adoptSession(bundle: { access_token: string; email?: string }): Promise<InheritResult> {
   try {
@@ -176,27 +176,41 @@ async function adoptSession(bundle: { access_token: string; email?: string }): P
  *  startup passes this device's data owner, so a different account signed in
  *  to NCC is never adopted silently and the account-switch wipe never runs
  *  without the user choosing it; the sign-in screen can still pick it. */
+/** v1.22 (limecore#113) — every failure is a reason CODE, never a sentence:
+ *  the codes map to translated `auth.nexusErr.*` strings here, and the raw
+ *  plugin or server text goes to the log, not the screen. Same codes and
+ *  strings as StudyDesk#314, plus LimeLog's offline and timeout. */
+export function nexusErrorKey(reason: string | undefined): string {
+  if (reason === 'not-android' || reason === 'unavailable') return 'auth.nexusErr.unavailable';
+  if (reason === 'no-session') return 'auth.nexusErr.noSession';
+  if (reason === 'offline') return 'auth.nexusErr.offline';
+  if (reason === 'timeout') return 'auth.nexusErr.timedOut';
+  return 'auth.nexusErr.failed';
+}
+
 export async function inheritFromNexus({ onlyUserId }: { onlyUserId?: string | null } = {}): Promise<InheritResult> {
   if (!Capacitor.isNativePlatform()) {
-    return { ok: false, reason: 'Cross-app sign-in is only available on Android.' };
+    return { ok: false, reason: 'not-android' };
   }
   let queryResult: Awaited<ReturnType<SuiteSsoPluginAndroid['getNexusSession']>>;
   try {
     queryResult = await SuiteSso.getNexusSession();
   } catch (e) {
-    return { ok: false, reason: 'SSO plugin unavailable: ' + (e as Error).message };
+    console.warn('[sso] plugin unavailable:', (e as Error).message);
+    return { ok: false, reason: 'unavailable' };
   }
   if (!queryResult.available) {
-    return { ok: false, reason: queryResult.reason ?? 'No Nexus session available.' };
+    if (queryResult.reason) console.warn('[sso] no Nexus session:', queryResult.reason);
+    return { ok: false, reason: 'no-session' };
   }
   let bundle: { access_token?: string; expires_at?: number; email?: string };
   try {
     bundle = JSON.parse(queryResult.bundleJson ?? '{}');
   } catch {
-    return { ok: false, reason: 'Nexus returned a malformed session bundle.' };
+    return { ok: false, reason: 'malformed' };
   }
   if (!bundle.access_token) {
-    return { ok: false, reason: 'Nexus session missing required tokens.' };
+    return { ok: false, reason: 'malformed' };
   }
   if (onlyUserId && tokenUserId(bundle.access_token) !== onlyUserId) {
     // v1.21.1 (LimeLog#138) — with NCC's address, so the switch can be named.

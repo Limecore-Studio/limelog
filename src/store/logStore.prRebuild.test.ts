@@ -8,10 +8,10 @@ import type { SessionLog } from '@/types/logging';
 process.env.TZ = 'UTC';
 const enqueue = vi.fn();
 vi.mock('@/store/programStore', () => ({
-  useProgramStore: { getState: () => ({ exercises: [{ id: 'sq', name: 'Squat' }], activeProgram: null, releaseEmptyStart: () => {} }) },
+  useProgramStore: { getState: () => ({ exercises: [{ id: 'sq', name: 'Squat' }], activeProgram: null, programs: [], releaseEmptyStart: () => {} }) },
 }));
 vi.mock('@/store/nexusStore', () => ({
-  useNexusStore: { getState: () => ({ configured: true, syncEnabled: true, refreshPendingCount: () => {}, setLastPushAt: () => {} }) },
+  useNexusStore: { getState: () => ({ configured: true, syncEnabled: true, userId: 'u1', refreshPendingCount: () => {}, setLastPushAt: () => {} }) },
 }));
 vi.mock('@/lib/nexusSync', () => ({ mapSessionLogToNexus: (log: SessionLog) => ({ sessionId: log.id }) }));
 vi.mock('@/lib/outbox', () => ({ enqueue: (...a: unknown[]) => enqueue(...a), cancel: () => 0 }));

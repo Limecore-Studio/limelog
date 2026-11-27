@@ -53,6 +53,13 @@
     "personalRecord": "Personal record"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Center is not installed, or could not be reached.",
+      "noSession": "Sign in to Nexus Command Center first, then try again.",
+      "failed": "Nexus sign-in failed. Sign in normally.",
+      "offline": "Nexus sign-in needs a network connection.",
+      "timedOut": "Nexus sign-in timed out. Check the connection and try again."
+    },
     "tagline": "PERIODIZED STRENGTH · LOCK IN",
     "titleGetStarted": "Get started",
     "titleSignInEmail": "Sign in with email",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "Continuing with it removes that data from this device. Sign in to the original account again to keep it.",
     "nexusOtherConfirm": "Switch account",
     "notConfigured": "Supabase not configured — sign-in unavailable. Tap Continue as guest to use the app locally.",
-    "errNexus": "Could not inherit Nexus session.",
     "errInvalidCredentials": "Incorrect email or password.",
     "errAlreadyRegistered": "That email already has an account. Try signing in instead.",
     "errWeakPassword": "Choose a stronger password.",
@@ -227,7 +233,6 @@
     "aiOff": "Off",
     "aiFeaturesOnSub": "AI debrief on — the note you type after a workout is sent to Google Gemini.",
     "aiFeaturesOffSub": "AI debrief off — nothing is sent to Google. Rate fatigue with the dots above.",
-    "aiTrainingNote": "Google runs this on their free tier, which means what you send may be used to train their future models. Leave it off if that is not for you.",
     "privacyPolicy": "Privacy policy",
     "yourData": "Your data",
     "yourDataNote": "Take a copy of everything, or erase it. One account covers LimeLog, Nexus Command Center and StudyDesk.",
@@ -499,6 +504,9 @@
     "restrictExercises": "Restrict specific exercises"
   },
   "log": {
+    "restNotifTitle": "Rest · {{name}}",
+    "restNotifSkip": "Skip",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Add exercise",
     "emptyWorkoutHint": "Add the exercises you do today. They stay in this session for next time.",
     "prBadge": "PR",

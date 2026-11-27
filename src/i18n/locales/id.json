@@ -20,6 +20,13 @@
     "ok": "OK"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Center tidak terpasang, atau tidak dapat dihubungi.",
+      "noSession": "Masuk ke Nexus Command Center terlebih dahulu, lalu coba lagi.",
+      "failed": "Masuk lewat Nexus gagal. Masuk dengan cara biasa.",
+      "offline": "Masuk lewat Nexus memerlukan koneksi jaringan.",
+      "timedOut": "Masuk lewat Nexus kehabisan waktu. Periksa koneksi lalu coba lagi."
+    },
     "tagline": "KEKUATAN TERPERIODISASI · FOKUS",
     "titleGetStarted": "Mulai",
     "titleSignInEmail": "Masuk dengan email",
@@ -50,7 +57,6 @@
     "nexusOtherRemove": "Jika kamu lanjut dengan akun itu, data tersebut akan dihapus dari perangkat ini. Masuk lagi ke akun semula untuk menyimpannya.",
     "nexusOtherConfirm": "Ganti akun",
     "notConfigured": "Supabase belum dikonfigurasi — proses masuk tidak tersedia. Ketuk Lanjutkan sebagai tamu untuk memakai aplikasi secara lokal.",
-    "errNexus": "Tidak dapat mewarisi sesi Nexus.",
     "errInvalidCredentials": "Email atau kata sandi salah.",
     "errAlreadyRegistered": "Email itu sudah punya akun. Coba masuk saja.",
     "errWeakPassword": "Pilih kata sandi yang lebih kuat.",
@@ -223,7 +229,6 @@
     "aiOff": "Nonaktif",
     "aiFeaturesOnSub": "Rangkuman AI aktif — catatan yang Anda tulis setelah latihan dikirim ke Google Gemini.",
     "aiFeaturesOffSub": "Rangkuman AI nonaktif — tidak ada yang dikirim ke Google. Nilai kelelahan dengan titik di atas.",
-    "aiTrainingNote": "Google menjalankannya di tingkat gratis, jadi apa yang Anda kirim dapat dipakai untuk melatih model mereka berikutnya. Biarkan nonaktif jika itu tidak cocok bagi Anda.",
     "privacyPolicy": "Kebijakan privasi",
     "yourData": "Data Anda",
     "yourDataNote": "Ambil salinan semuanya, atau hapus. Satu akun mencakup LimeLog, Nexus Command Center, dan StudyDesk.",
@@ -391,6 +396,9 @@
     }
   },
   "log": {
+    "restNotifTitle": "Istirahat · {{name}}",
+    "restNotifSkip": "Lewati",
+    "restNotifPlus30": "+30 dtk",
     "addExercise": "Tambah latihan",
     "emptyWorkoutHint": "Tambahkan latihan yang Anda lakukan hari ini. Latihan itu tetap ada di sesi ini untuk lain kali.",
     "prBadge": "PR",
