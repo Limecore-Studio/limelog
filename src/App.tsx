@@ -51,6 +51,7 @@ const OnboardingFlow = lazy(() => import('@/components/OnboardingFlow').then((m)
 const PRCelebrationModal = lazy(() => import('@/components/PRCelebrationModal').then((m) => ({ default: m.PRCelebrationModal })));
 const ReferralPrompt = lazy(() => import('@/components/ReferralPrompt').then((m) => ({ default: m.ReferralPrompt })));
 // v1.21.1 (limecore#87): the opt-in question for the app-open record and the update check.
+const HealthConsentPrompt = lazy(() => import('@/components/HealthConsentPrompt').then((m) => ({ default: m.HealthConsentPrompt })));
 const ConsentPrompt = lazy(() => import('@/components/ConsentPrompt').then((m) => ({ default: m.ConsentPrompt })));
 // v1.22 (limecore#95): the guest-data question, loaded only when it is asked.
 const GuestDataPrompt = lazy(() => import('@/components/GuestDataPrompt').then((m) => ({ default: m.GuestDataPrompt })));
@@ -449,6 +450,10 @@ export default function App() {
       </OptionalChunk>
       <OptionalChunk>
         <ConsentPrompt />
+      </OptionalChunk>
+      {/* v1.22 (limecore#91) — the health-data consent, asked once. */}
+      <OptionalChunk>
+        <HealthConsentPrompt />
       </OptionalChunk>
       {guestAsking && (
         <OptionalChunk>

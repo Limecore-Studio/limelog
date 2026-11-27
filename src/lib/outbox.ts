@@ -31,6 +31,8 @@
 import {
   pushWorkoutToNexus,
   pushBodyMetricToNexus,
+  clearHealthDataInNexus,
+  pushSessionDebriefToNexus,
   deleteBodyMetricFromNexus,
   pushExercisePRToNexus,
   deleteExercisePRFromNexus,
@@ -43,6 +45,7 @@ import {
   type NexusExercisePRPayload,
   type NexusFeedbackPayload,
   type NexusAppOpenPayload,
+  type NexusSessionDebriefPayload,
 } from './nexusSync';
 import { supabase, isNexusConfigured } from './supabase';
 import { readOwner } from './accountOwner';
@@ -70,7 +73,11 @@ export type OutboxKind =
   // v1.12 Item 0 - retention. Queued rather than pushed directly because a
   // cold start can foreground before the Nexus session has been adopted, and
   // RLS rejects the write with no session; offline is the same story.
-  | 'record_app_open';
+  | 'record_app_open'
+  // v1.22 (limecore#91) — health-data consent: withdrawn (erase the health
+  // columns on the server), and given (a debrief recorded before it).
+  | 'clear_health_data'
+  | 'upsert_session_debrief';
 
 interface OutboxItem<K extends OutboxKind = OutboxKind> {
   id: string;
@@ -91,6 +98,8 @@ interface KindPayload {
   delete_exercise_pr: { id: string };
   submit_feedback: NexusFeedbackPayload;
   record_app_open: NexusAppOpenPayload;
+  clear_health_data: Record<string, never>;
+  upsert_session_debrief: NexusSessionDebriefPayload;
 }
 
 interface OutboxMeta {
@@ -513,4 +522,6 @@ const KIND_DISPATCH: { [K in OutboxKind]: (p: KindPayload[K], forUserId: string)
   delete_exercise_pr: (p, uid) => deleteExercisePRFromNexus(p.id, uid),
   submit_feedback: (p, uid) => pushFeedbackToNexus(p, uid),
   record_app_open: (p, uid) => pushAppOpenToNexus(p, uid),
+  clear_health_data: (_p, uid) => clearHealthDataInNexus(uid),
+  upsert_session_debrief: (p, uid) => pushSessionDebriefToNexus(p, uid),
 };
