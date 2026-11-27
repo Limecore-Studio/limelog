@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- v1.22 (limecore#127) — native strings. -->
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
 <resources>
+    <string name="shortcut_workout_short">Kirjaa treeni</string>
+    <string name="shortcut_workout_long">Kirjaa tämän päivän treeni</string>
+    <string name="shortcut_body_short">Keho</string>
+    <string name="shortcut_body_long">Lisää kehon mittaus</string>
     <string name="rest_channel_name">Lepoajastin</string>
 </resources>

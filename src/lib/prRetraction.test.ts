@@ -89,7 +89,7 @@ beforeEach(() => {
   // v1.18.1 (LimeLog#88): drain only runs for the account the local data belongs to.
   localStorage.setItem('limelog.dataOwner', USER);
   holder.client = makeClient();
-  useNexusStore.setState({ configured: true, syncEnabled: true });
+  useNexusStore.setState({ configured: true, syncEnabled: true, userId: USER });
   useLogStore.setState({
     sessionLogs: [workout([], { finalizedAt: '2026-09-25T11:00:00Z' })],
     // The phantom: a 1000 kg typo finished, then undone to fix it.
@@ -138,8 +138,18 @@ describe('discarding a workout', () => {
     expect(queued()).toContainEqual(['delete_workout_session', { id: LOG }]);
   });
 
-  it('with sync off, still drops them locally and queues nothing', () => {
-    useNexusStore.setState({ configured: true, syncEnabled: false });
+  // v1.22 (limelog#127): signed in, the retraction and the tombstone are
+  // queued with sync off too — they undo what may already be upstream.
+  it('with sync off, signed in, still queues the retraction and tombstone', () => {
+    useNexusStore.setState({ configured: true, syncEnabled: false, userId: USER });
+    useLogStore.getState().discardSession(LOG);
+    expect(useLogStore.getState().exercisePRs.map((p) => p.id)).toEqual(['real']);
+    expect(queued()).toContainEqual(['delete_exercise_pr', { id: 'phantom' }]);
+    expect(queued()).toContainEqual(['delete_workout_session', { id: LOG }]);
+  });
+
+  it('signed out, drops them locally and queues nothing', () => {
+    useNexusStore.setState({ configured: true, syncEnabled: false, userId: null });
     useLogStore.getState().discardSession(LOG);
     expect(useLogStore.getState().exercisePRs.map((p) => p.id)).toEqual(['real']);
     expect(queued()).toEqual([]);

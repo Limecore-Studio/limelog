@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- v1.22 (limecore#127) — native strings. -->
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
 <resources>
+    <string name="shortcut_workout_short">वर्कआउट</string>
+    <string name="shortcut_workout_long">आज का वर्कआउट दर्ज करें</string>
+    <string name="shortcut_body_short">शरीर</string>
+    <string name="shortcut_body_long">शरीर का माप जोड़ें</string>
     <string name="rest_channel_name">आराम टाइमर</string>
 </resources>

@@ -11,6 +11,7 @@
 //      states; nothing here blocks on the network.
 
 import { create } from 'zustand';
+import { reportWriteFailure } from '@/utils/storage';
 import type { BodyMetric, BodyMetricsPrefs } from '@/types/bodyMetrics';
 import { DEFAULT_PREFS } from '@/types/bodyMetrics';
 import { enqueue } from '@/lib/outbox';
@@ -57,7 +58,9 @@ function saveToStorage(rows: BodyMetric[]): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rows));
   } catch (e) {
-    console.error('[bodyMetrics] save failed:', e);
+    // v1.22 (limelog#127) — told, not silent: the weigh-in shows now but is
+    // gone after a restart.
+    reportWriteFailure(STORAGE_KEY, e);
   }
 }
 

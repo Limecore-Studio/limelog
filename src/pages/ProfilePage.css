@@ -142,6 +142,22 @@
   margin-top: 12px;
   line-height: 1.5;
 }
+/* v1.22 (limecore#122) — the user's own Gemini key. */
+.settings-ai-key {
+  margin-top: 8px;
+}
+.settings-ai-key__masked {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.settings-ai-test {
+  margin-top: 10px;
+}
+.settings-ai-warn {
+  color: var(--warning, #f5a524);
+}
 
 /* Your data card — export / delete buttons (GDPR Art. 17 / 20). */
 .settings-data-btn {

@@ -46,6 +46,7 @@ import {
 } from './nexusSync';
 import { supabase, isNexusConfigured } from './supabase';
 import { readOwner } from './accountOwner';
+import { reportWriteFailure } from '@/utils/storage';
 
 const STORAGE_KEY = 'limelog-outbox';
 const META_KEY = 'limelog-outbox-meta';
@@ -128,8 +129,10 @@ function saveItems(items: OutboxItem[]): void {
   } catch (e) {
     // Quota-exceeded is unrecoverable for the outbox — log and continue.
     // The next mutation will overwrite + try again with whatever fits.
-     
-    console.error('[outbox] storage write failed:', e);
+    // v1.22 (limelog#127) — and the user is told: a finished workout whose
+    // push could not be queued otherwise never synced, with the pending
+    // count showing 0.
+    reportWriteFailure(STORAGE_KEY, e);
   }
   cachedStatus = null;
 }
@@ -320,6 +323,15 @@ export async function drain(): Promise<{ sent: number; remaining: number }> {
       // drain send it under the new account. Nor does a push that found
       // another account signed in count as a failed attempt.
       if (readOwner() !== user.id || failure instanceof AccountChangedError) break;
+      // v1.22 (limelog#127) — a CHECK violation (23514) fails the same way on
+      // every retry and held up everything queued behind it. Dropped, and the
+      // error stays in Settings' sync status.
+      if ((failure as { code?: string } | null)?.code === '23514') {
+        console.error('[outbox] dropping item the server refuses (23514):', item.kind);
+        saveItems(loadItems().filter((i) => i.id !== item.id));
+        saveMeta({ ...loadMeta(), lastError: (failure as { message?: string }).message ?? '23514', lastErrorAt: new Date().toISOString() });
+        continue;
+      }
       if (failure === null) {
         // Success — remove THIS item from the queue as it is now, not from the
         // snapshot read before the push: anything enqueued during the await

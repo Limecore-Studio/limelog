@@ -56,6 +56,11 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   // everything else: leaving it would hand the next signed-in account on a
   // shared device someone else's paid perk.
   step(clearEntitlement());
+  // v1.22 (limecore#122) — the user's own Gemini key belongs to whoever is
+  // signed in: it does not carry over to a guest or the next account (the
+  // AI switch then reads as off, as the settings lock it without a key).
+  // Loaded on demand, so the provider stays out of the startup bundle.
+  void import('./aiProvider').then((m) => m.clearAiKey()).catch(() => {});
   // v1.2.1 — AUDIT-LL-FSG-2: the personal-data stores, so the next signed-in
   // account on a shared device doesn't inherit the previous one's workout
   // history, bodyweight log, or progress photos in the UI. Cloud-side data

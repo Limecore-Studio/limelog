@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- v1.22 (limecore#127) — native strings. -->
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
 <resources>
+    <string name="shortcut_workout_short">Training</string>
+    <string name="shortcut_workout_long">Heutiges Training erfassen</string>
+    <string name="shortcut_body_short">Körper</string>
+    <string name="shortcut_body_long">Körpermessung hinzufügen</string>
     <string name="rest_channel_name">Pausentimer</string>
 </resources>

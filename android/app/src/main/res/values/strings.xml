@@ -4,6 +4,11 @@
     <string name="title_activity_main">LimeLog</string>
     <string name="package_name">com.limecore.workouttracker</string>
     <string name="custom_url_scheme">com.limecore.workouttracker</string>
+    <!-- v1.22 (limecore#127) — launcher shortcut labels (translated in values-*). -->
+    <string name="shortcut_workout_short">Log workout</string>
+    <string name="shortcut_workout_long">Log today\'s workout</string>
+    <string name="shortcut_body_short">Body</string>
+    <string name="shortcut_body_long">Add body measurement</string>
     <!-- v1.22 (limecore#127) — the rest-timer notification channel. -->
     <string name="rest_channel_name">Rest timer</string>
 </resources>
