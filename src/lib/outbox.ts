@@ -46,6 +46,7 @@ import {
 } from './nexusSync';
 import { supabase, isNexusConfigured } from './supabase';
 import { readOwner } from './accountOwner';
+import { reportWriteFailure } from '@/utils/storage';
 
 const STORAGE_KEY = 'limelog-outbox';
 const META_KEY = 'limelog-outbox-meta';
@@ -128,8 +129,10 @@ function saveItems(items: OutboxItem[]): void {
   } catch (e) {
     // Quota-exceeded is unrecoverable for the outbox — log and continue.
     // The next mutation will overwrite + try again with whatever fits.
-     
-    console.error('[outbox] storage write failed:', e);
+    // v1.22 (limelog#127) — and the user is told: a finished workout whose
+    // push could not be queued otherwise never synced, with the pending
+    // count showing 0.
+    reportWriteFailure(STORAGE_KEY, e);
   }
   cachedStatus = null;
 }
