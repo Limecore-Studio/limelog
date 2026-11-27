@@ -5,7 +5,9 @@ import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { useLogStore } from '@/store/logStore';
 import { syncAllowed } from '@/lib/syncSetting';
 import { healthConsent, healthOwner, HEALTH_ASK_EVENT, HEALTH_BODY_FIELDS } from '@/lib/healthConsent';
-import { grantHealthConsent, refuseHealthConsent } from '@/lib/healthConsentActions';
+import { grantHealthConsent, refuseHealthConsent, requeueHealthData } from '@/lib/healthConsentActions';
+import { readHealthConsentFromCloud } from '@/lib/healthConsentCloud';
+import { healthAllowed } from '@/lib/healthConsent';
 import '@/i18n/healthStrings';
 import './ReferralPrompt.css';
 import './ConsentPrompt.css';
@@ -31,14 +33,25 @@ export function HealthConsentPrompt() {
   const [owner, setOwner] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    // Signed in, the account's answer comes first (limecore#135): a yes or a
+    // withdrawal given on another device applies here, and is not asked again.
+    const settle = async (): Promise<boolean> => {
+      if (!userId || healthConsent() !== 'unasked') return healthConsent() === 'unasked';
+      const had = await readHealthConsentFromCloud();
+      if (had && healthAllowed()) requeueHealthData();
+      return !cancelled && healthConsent() === 'unasked';
+    };
     const timer = setTimeout(() => {
-      if (userId && syncAllowed() && healthConsent() === 'unasked' && holdsHealthData()) setOwner(healthOwner());
+      if (!userId || !syncAllowed() || !holdsHealthData()) return;
+      void settle().then((ask) => ask && setOwner(healthOwner()));
     }, DELAY_MS);
     const onAsk = () => {
-      if (healthConsent() === 'unasked') setOwner(healthOwner());
+      void settle().then((ask) => ask && setOwner(healthOwner()));
     };
     window.addEventListener(HEALTH_ASK_EVENT, onAsk);
     return () => {
+      cancelled = true;
       clearTimeout(timer);
       window.removeEventListener(HEALTH_ASK_EVENT, onAsk);
     };

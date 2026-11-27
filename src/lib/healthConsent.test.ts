@@ -13,6 +13,8 @@ vi.mock('./outbox', () => ({
     return before - q.items.length;
   },
 }));
+const cloud = vi.hoisted(() => ({ writes: [] as [boolean, string][] }));
+vi.mock('./healthConsentCloud', () => ({ writeHealthConsentToCloud: async (g: boolean, at: string) => void cloud.writes.push([g, at]) }));
 vi.mock('./syncSetting', () => ({ syncAllowed: () => q.sync }));
 vi.mock('./accountOwner', () => ({ readOwner: () => q.owner }));
 vi.mock('@/store/bodyMetricsStore', () => ({
@@ -45,6 +47,7 @@ const actions = await import('./healthConsentActions');
 beforeEach(() => {
   localStorage.clear();
   q.items = [];
+  cloud.writes = [];
   q.sync = true;
   q.owner = 'u1';
 });
@@ -83,6 +86,8 @@ describe('health consent', () => {
     actions.withdrawHealthConsent();
     expect(hc.healthConsent()).toBe('refused');
     expect(q.items.map((i) => i.kind)).toEqual(['upsert_body_metric', 'clear_health_data']);
+    // limecore#135: both recorded on the account, the yes and the withdrawal.
+    expect(cloud.writes.map(([g]) => g)).toEqual([true, false]);
   });
 
   it('a guest withdrawing has nothing on the server to erase', () => {

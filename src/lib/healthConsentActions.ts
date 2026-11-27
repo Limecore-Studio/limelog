@@ -3,13 +3,21 @@
 import { enqueue, cancel } from './outbox';
 import { syncAllowed } from './syncSetting';
 import { readOwner } from './accountOwner';
-import { setHealthConsent, HEALTH_BODY_FIELDS } from './healthConsent';
+import { setHealthConsent, readHealthConsent, HEALTH_BODY_FIELDS } from './healthConsent';
+import { writeHealthConsentToCloud } from './healthConsentCloud';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { useLogStore } from '@/store/logStore';
 
-/** Yes: recorded with its time, and what was kept back is queued now. */
+/** Yes: recorded with its time (on the device, and on the account when signed
+ *  in: healthConsentCloud.ts), and what was kept back is queued now. */
 export function grantHealthConsent(): void {
   setHealthConsent(true);
+  void writeHealthConsentToCloud(true, readHealthConsent()?.at ?? new Date().toISOString());
+  requeueHealthData();
+}
+
+/** Queues the readings and debriefs held back while there was no consent. */
+export function requeueHealthData(): void {
   cancel('clear_health_data', () => true);
   if (!syncAllowed()) return;
   for (const m of useBodyMetricsStore.getState().metrics) {
@@ -57,5 +65,6 @@ export function refuseHealthConsent(): void {
  *  account even with sync switched off: erasing is not syncing. */
 export function withdrawHealthConsent(): void {
   refuseHealthConsent();
+  void writeHealthConsentToCloud(false, readHealthConsent()?.at ?? new Date().toISOString());
   if (readOwner()) enqueue('clear_health_data', {});
 }
