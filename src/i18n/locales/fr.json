@@ -53,6 +53,13 @@
     "personalRecord": "Record personnel"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Center n’est pas installé ou est injoignable.",
+      "noSession": "Connectez-vous d’abord à Nexus Command Center, puis réessayez.",
+      "failed": "La connexion via Nexus a échoué. Connectez-vous normalement.",
+      "offline": "La connexion via Nexus nécessite une connexion réseau.",
+      "timedOut": "La connexion via Nexus a expiré. Vérifiez la connexion et réessayez."
+    },
     "tagline": "FORCE PÉRIODISÉE · CONCENTRATION",
     "titleGetStarted": "Commencer",
     "titleSignInEmail": "Se connecter par e-mail",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "Si vous continuez avec ce compte, ces données seront supprimées de cet appareil. Reconnectez-vous au compte d'origine pour les conserver.",
     "nexusOtherConfirm": "Changer de compte",
     "notConfigured": "Supabase non configuré — connexion indisponible. Touchez Continuer en invité pour utiliser l'app en local.",
-    "errNexus": "Impossible d'hériter de la session Nexus.",
     "errInvalidCredentials": "E-mail ou mot de passe incorrect.",
     "errAlreadyRegistered": "Un compte existe déjà pour cet e-mail. Essayez de vous connecter.",
     "errWeakPassword": "Choisissez un mot de passe plus fort.",
@@ -231,7 +237,6 @@
     "aiOff": "Désactivé",
     "aiFeaturesOnSub": "Bilan IA activé — la note que vous écrivez après la séance est envoyée à Google Gemini.",
     "aiFeaturesOffSub": "Bilan IA désactivé — rien n'est envoyé à Google. Évaluez la fatigue avec les points ci-dessus.",
-    "aiTrainingNote": "Google l'exécute sur son offre gratuite : ce que vous envoyez peut servir à entraîner ses futurs modèles. Laissez désactivé si cela ne vous convient pas.",
     "privacyPolicy": "Politique de confidentialité",
     "yourData": "Vos données",
     "yourDataNote": "Emportez une copie de tout, ou effacez-le. Un seul compte couvre LimeLog, Nexus Command Center et StudyDesk.",
@@ -508,6 +513,9 @@
     "restrictExercises": "Restreindre des exercices précis"
   },
   "log": {
+    "restNotifTitle": "Repos · {{name}}",
+    "restNotifSkip": "Passer",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Ajouter un exercice",
     "emptyWorkoutHint": "Ajoutez les exercices du jour. Ils restent dans cette séance pour la prochaine fois.",
     "prBadge": "RP",

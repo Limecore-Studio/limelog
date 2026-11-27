@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useNexusStore } from '@/store/nexusStore';
-import { openNexus } from '@/lib/suiteSso';
+import { openNexus, nexusErrorKey } from '@/lib/suiteSso';
 import { askNexusSwitch } from '@/components/nexusSwitchAsk';
 import { Button, Card, Badge } from '@/components/ui';
 import { Cloud, CloudOff } from 'lucide-react';
@@ -107,7 +107,7 @@ export function NexusSyncCard() {
       const result = await continueWithNexus((held) => askNexusSwitch(held, { t, confirm, syncEnabled }));
       setNexusStale(result.reason === 'nexus-stale');
       if (!result.ok && result.reason !== 'nexus-stale' && result.reason !== 'cancelled') {
-        setLocalError(result.reason || t('auth.errNexus'));
+        setLocalError(t(nexusErrorKey(result.reason)));
       }
       // On success, nexusStore.init's auth listener takes over.
     } catch (err) {

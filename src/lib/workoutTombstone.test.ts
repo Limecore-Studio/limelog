@@ -87,7 +87,7 @@ afterEach(() => {
 
 describe('discarding a workout', () => {
   it('queues a cloud tombstone when sync is on', () => {
-    useNexusStore.setState({ configured: true, syncEnabled: true });
+    useNexusStore.setState({ configured: true, syncEnabled: true, userId: 'u1' });
     useLogStore.getState().discardSession(LOG);
     const queued = JSON.parse(localStorage.getItem('limelog-outbox') ?? '[]');
     expect(queued.map((i: { kind: string; payload: unknown }) => [i.kind, i.payload])).toEqual([
@@ -95,15 +95,23 @@ describe('discarding a workout', () => {
     ]);
   });
 
-  it('queues nothing when sync is off, and still keeps the local tombstone', () => {
-    useNexusStore.setState({ configured: true, syncEnabled: false });
+  // v1.22 (limelog#127): signed in, the tombstone goes with sync off too (a
+  // workout pushed before sync was turned off stayed live upstream).
+  it('signed in with sync off, still queues the tombstone', () => {
+    useNexusStore.setState({ configured: true, syncEnabled: false, userId: 'u1' });
+    useLogStore.getState().discardSession(LOG);
+    expect(JSON.parse(localStorage.getItem('limelog-outbox') ?? '[]').map((i: { kind: string }) => i.kind)).toEqual(['delete_workout_session']);
+  });
+
+  it('signed out, queues nothing, and still keeps the local tombstone', () => {
+    useNexusStore.setState({ configured: true, syncEnabled: false, userId: null });
     useLogStore.getState().discardSession(LOG);
     expect(JSON.parse(localStorage.getItem('limelog-outbox') ?? '[]')).toEqual([]);
     expect(useLogStore.getState().sessionLogs).toEqual([]);
   });
 
   it('the queued delete writes a tombstone and never a DELETE', async () => {
-    useNexusStore.setState({ configured: true, syncEnabled: true });
+    useNexusStore.setState({ configured: true, syncEnabled: true, userId: 'u1' });
     useLogStore.getState().discardSession(LOG);
     vi.stubGlobal('navigator', { onLine: true });
     await outbox.drain();

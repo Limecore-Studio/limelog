@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- v1.22 (limecore#127) — static launcher shortcuts (long-press the icon).
+     Each opens a deep link that src/lib/deepLinks.ts routes; signed out, the
+     sign-in shows first and the target opens after it. Labels: values*/strings.xml. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="log_workout"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_workout"
+        android:shortcutShortLabel="@string/shortcut_workout_short"
+        android:shortcutLongLabel="@string/shortcut_workout_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.limecore.workouttracker"
+            android:targetClass="com.limecore.workouttracker.MainActivity"
+            android:data="com.limecore.workouttracker://open/today?start=1" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="add_body_metric"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_body"
+        android:shortcutShortLabel="@string/shortcut_body_short"
+        android:shortcutLongLabel="@string/shortcut_body_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.limecore.workouttracker"
+            android:targetClass="com.limecore.workouttracker.MainActivity"
+            android:data="com.limecore.workouttracker://open/body?add=1" />
+    </shortcut>
+</shortcuts>

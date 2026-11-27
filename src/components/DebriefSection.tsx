@@ -2,17 +2,19 @@ import { useState, useSyncExternalStore } from 'react';
 import { useTranslation } from 'react-i18next';
 import './DebriefSection.css';
 import { useLogStore } from '@/store/logStore';
-import { useNexusStore } from '@/store/nexusStore';
 import { analyseDebrief, type DebriefResult } from '@/lib/aiDebrief';
+import type { AiError } from '@/lib/aiProvider';
+import '@/i18n/aiStrings'; // ai.* (loaded on demand)
 import type { SessionMood } from '@/types/logging';
 import { healthConsent, requestHealthAsk, subscribeHealthConsent } from '@/lib/healthConsent';
 import '@/i18n/healthStrings'; // healthConsent.* (loaded on demand)
 
 // v1.4 — optional post-workout AI debrief. Sits in the finish block beside the
 // FatigueRating dots (which stay as the always-available fallback). The user
-// types a free-text note; "Analyse" sends it to the cloud Gemini proxy, which
-// returns structured RPE / pain flags / mood. Stored on the session and pushed
-// to Nexus. Only shown when signed in to sync (the AI call is auth-gated).
+// types a free-text note; "Analyse" sends it to Gemini, which returns
+// structured RPE / pain flags / mood. Stored on the session and pushed to Nexus.
+// v1.22 (limecore#122): on the user's own key, from the device, so it no
+// longer needs sync; a failure says why, when the user can fix it.
 
 const MOOD_EMOJI: Record<SessionMood, string> = {
   great: '😄',
@@ -25,21 +27,16 @@ const MOOD_EMOJI: Record<SessionMood, string> = {
 export function DebriefSection({ logId }: { logId: string }) {
   const { t } = useTranslation();
   const setSessionDebrief = useLogStore((s) => s.setSessionDebrief);
-  const configured = useNexusStore((s) => s.configured);
-  const syncEnabled = useNexusStore((s) => s.syncEnabled);
 
   const [text, setText] = useState('');
   const [analysing, setAnalysing] = useState(false);
   const [result, setResult] = useState<DebriefResult | null>(null);
   const [failed, setFailed] = useState(false);
+  const [aiError, setAiError] = useState<AiError | null>(null);
 
-  // The AI call needs an authenticated Nexus session. If sync isn't on, the
-  // debrief simply doesn't appear — FatigueRating still covers the basics.
   // v1.22 (limecore#91) — the note can carry pain, which is health data: it
   // goes to AI only with the health-data consent. Unasked, Analyse asks.
   const consent = useSyncExternalStore(subscribeHealthConsent, () => healthConsent());
-
-  if (!configured || !syncEnabled) return null;
 
   async function analyse() {
     const trimmed = text.trim();
@@ -50,7 +47,10 @@ export function DebriefSection({ logId }: { logId: string }) {
     }
     setAnalysing(true);
     setFailed(false);
-    const res = await analyseDebrief(trimmed);
+    setAiError(null);
+    const out = await analyseDebrief(trimmed);
+    const res = out && 'result' in out ? out.result : null;
+    if (out && 'error' in out) setAiError(out.error);
     if (res) {
       setResult(res);
       setSessionDebrief(logId, {
@@ -89,6 +89,7 @@ export function DebriefSection({ logId }: { logId: string }) {
             // Editing after an analysis invalidates the previous result.
             setResult(null);
             setFailed(false);
+            setAiError(null);
           }
         }}
         rows={2}
@@ -131,7 +132,10 @@ export function DebriefSection({ logId }: { logId: string }) {
       )}
 
       {failed && (
-        <div className="debrief__failed">{t('debrief.failed')}</div>
+        <div className="debrief__failed" role="status">
+          {aiError && aiError !== 'other' ? `${t(`ai.err.${aiError}`)} ` : ''}
+          {t('debrief.failed')}
+        </div>
       )}
     </div>
   );

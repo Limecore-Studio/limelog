@@ -54,8 +54,9 @@ function pushInProgress(logId: string): void {
   if (!log.sets.some((s) => s.completed)) return;
   const nexus = useNexusStore.getState();
   if (!nexus.configured || !nexus.syncEnabled) return;
-  const { exercises, activeProgram } = useProgramStore.getState();
-  const session = activeProgram?.sessions.find((s) => s.id === log.sessionTemplateId);
+  // v1.22 (limelog#127) — from any program (see finalizeSession).
+  const { exercises, programs } = useProgramStore.getState();
+  const session = programs.flatMap((p) => p.sessions).find((s) => s.id === log.sessionTemplateId);
   cancelQueued('upsert_workout_session', (p) => p.sessionId === logId);
   enqueue('upsert_workout_session', mapSessionLogToNexus(log, session, exercises));
   nexus.refreshPendingCount();

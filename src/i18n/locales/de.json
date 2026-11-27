@@ -53,6 +53,13 @@
     "personalRecord": "Persönlicher Rekord"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Center ist nicht installiert oder nicht erreichbar.",
+      "noSession": "Melde dich zuerst bei Nexus Command Center an und versuche es dann erneut.",
+      "failed": "Anmeldung über Nexus fehlgeschlagen. Melde dich normal an.",
+      "offline": "Die Anmeldung über Nexus braucht eine Netzwerkverbindung.",
+      "timedOut": "Die Anmeldung über Nexus hat zu lange gedauert. Prüfe die Verbindung und versuche es erneut."
+    },
     "tagline": "PERIODISIERTE KRAFT · FOKUS",
     "titleGetStarted": "Loslegen",
     "titleSignInEmail": "Mit E-Mail anmelden",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "Wenn du damit fortfährst, werden diese Daten von diesem Gerät entfernt. Melde dich wieder beim ursprünglichen Konto an, um sie zu behalten.",
     "nexusOtherConfirm": "Konto wechseln",
     "notConfigured": "Supabase nicht konfiguriert — Anmeldung nicht verfügbar. Tippe auf Als Gast fortfahren, um die App lokal zu nutzen.",
-    "errNexus": "Nexus-Sitzung konnte nicht übernommen werden.",
     "errInvalidCredentials": "E-Mail oder Passwort ist falsch.",
     "errAlreadyRegistered": "Für diese E-Mail existiert bereits ein Konto. Versuche dich anzumelden.",
     "errWeakPassword": "Wähle ein stärkeres Passwort.",
@@ -227,7 +233,6 @@
     "aiOff": "Aus",
     "aiFeaturesOnSub": "KI-Nachbesprechung an — die Notiz nach dem Training wird an Google Gemini gesendet.",
     "aiFeaturesOffSub": "KI-Nachbesprechung aus — es wird nichts an Google gesendet. Bewerte die Ermüdung oben mit den Punkten.",
-    "aiTrainingNote": "Google betreibt das über den kostenlosen Tarif — was du sendest, kann zum Training künftiger Modelle verwendet werden. Lass es aus, wenn das nichts für dich ist.",
     "privacyPolicy": "Datenschutzerklärung",
     "yourData": "Deine Daten",
     "yourDataNote": "Nimm eine Kopie von allem mit oder lösche es. Ein Konto gilt für LimeLog, Nexus Command Center und StudyDesk.",
@@ -499,6 +504,9 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "restNotifTitle": "Pause · {{name}}",
+    "restNotifSkip": "Überspringen",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Übung hinzufügen",
     "emptyWorkoutHint": "Füge die Übungen hinzu, die du heute machst. Sie bleiben für das nächste Mal in dieser Einheit.",
     "prBadge": "PB",

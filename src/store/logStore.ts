@@ -106,9 +106,10 @@ function retractSessionPRs(logId: string): void {
   // An insert still queued is dropped whatever the sync setting.
   const ids = new Set(gone.map((p) => p.id));
   outboxCancel('upsert_exercise_pr', (p) => ids.has(p.id));
-  // Same gate as the push in finalizeSession and the discard tombstone.
+  // v1.22 (limelog#127) — signed in, whatever the sync setting, as for the
+  // discard tombstone: a retraction undoes what may already be upstream.
   const nexus = useNexusStore.getState();
-  if (!nexus.configured || !nexus.syncEnabled) return;
+  if (!nexus.configured || !nexus.userId) return;
   for (const pr of gone) outboxEnqueue('delete_exercise_pr', { id: pr.id });
   nexus.refreshPendingCount();
 }
@@ -231,7 +232,7 @@ export const useLogStore = create<LogStore>((set, get) => ({
     // this workout names it in History).
     if (finalizedLog.sessionTemplateId) useProgramStore.getState().releaseEmptyStart(finalizedLog.sessionTemplateId, true);
 
-    const { exercises, activeProgram } = useProgramStore.getState();
+    const { exercises, programs } = useProgramStore.getState();
 
     // v1.6 — Personal Records. Detection is local-first and runs regardless of
     // cloud config: a PR is a PR even offline / signed-out. The celebration
@@ -254,7 +255,9 @@ export const useLogStore = create<LogStore>((set, get) => ({
     const nexus = useNexusStore.getState();
     if (!nexus.configured || !nexus.syncEnabled) return;
 
-    const session = activeProgram?.sessions.find((s) => s.id === finalizedLog.sessionTemplateId);
+    // v1.22 (limelog#127) — from any program, as WorkoutPage does: a workout
+    // resumed after its program was switched or archived went up as 'workout'.
+    const session = programs.flatMap((p) => p.sessions).find((s) => s.id === finalizedLog.sessionTemplateId);
     const payload = mapSessionLogToNexus(finalizedLog, session, exercises);
 
     // v1.2 — route through outbox.enqueue instead of pushOrQueue. The
@@ -331,8 +334,10 @@ export const useLogStore = create<LogStore>((set, get) => ({
     // on any other device's recovery. There is no telling here whether this
     // log ever reached the cloud (Undo clears finalizedAt), so the tombstone
     // is always sent; for a workout that was never pushed it matches no row.
+    // v1.22 (limelog#127) — signed in, whatever the sync setting: a workout
+    // pushed before sync was turned off stayed live upstream otherwise.
     const nexus = useNexusStore.getState();
-    if (nexus.configured && nexus.syncEnabled) {
+    if (nexus.configured && nexus.userId) {
       // v1.20 — an in-progress push still queued would only be deleted again.
       outboxCancel('upsert_workout_session', (p) => p.sessionId === logId);
       outboxEnqueue('delete_workout_session', { id: logId });

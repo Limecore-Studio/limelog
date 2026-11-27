@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- v1.22 (limecore#127) — launcher shortcut labels. -->
+<resources>
+    <string name="shortcut_workout_short">تمرين</string>
+    <string name="shortcut_workout_long">سجّل تمرين اليوم</string>
+    <string name="shortcut_body_short">الجسم</string>
+    <string name="shortcut_body_long">أضف قياسًا للجسم</string>
+    <string name="rest_channel_name">مؤقت الراحة</string>
+</resources>

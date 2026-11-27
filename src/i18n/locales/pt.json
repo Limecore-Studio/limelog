@@ -20,6 +20,13 @@
     "ok": "OK"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "O Nexus Command Center não está instalado ou não foi possível contactá-lo.",
+      "noSession": "Inicie sessão no Nexus Command Center primeiro e tente novamente.",
+      "failed": "O início de sessão pelo Nexus falhou. Inicie sessão normalmente.",
+      "offline": "O início de sessão pelo Nexus precisa de ligação à rede.",
+      "timedOut": "O início de sessão pelo Nexus excedeu o tempo. Verifique a ligação e tente novamente."
+    },
     "tagline": "FORÇA PERIODIZADA · FOCO",
     "titleGetStarted": "Começar",
     "titleSignInEmail": "Entrar com e-mail",
@@ -50,7 +57,6 @@
     "nexusOtherRemove": "Se você continuar com ela, esses dados serão removidos deste dispositivo. Entre novamente na conta original para mantê-los.",
     "nexusOtherConfirm": "Mudar de conta",
     "notConfigured": "Supabase não configurado — login indisponível. Toque em Continuar como convidado para usar o app localmente.",
-    "errNexus": "Não foi possível herdar a sessão do Nexus.",
     "errInvalidCredentials": "E-mail ou senha incorretos.",
     "errAlreadyRegistered": "Já existe uma conta com esse e-mail. Tente entrar.",
     "errWeakPassword": "Escolha uma senha mais forte.",
@@ -231,7 +237,6 @@
     "aiOff": "Desligado",
     "aiFeaturesOnSub": "Resumo com IA ligado — a nota que você escreve após o treino é enviada ao Google Gemini.",
     "aiFeaturesOffSub": "Resumo com IA desligado — nada é enviado ao Google. Avalie a fadiga com os pontos acima.",
-    "aiTrainingNote": "O Google executa isso no nível gratuito, então o que você envia pode ser usado para treinar os modelos futuros deles. Deixe desligado se não for para você.",
     "privacyPolicy": "Política de privacidade",
     "yourData": "Seus dados",
     "yourDataNote": "Leve uma cópia de tudo ou apague. Uma conta cobre o Nexus Command Center, o LimeLog e o StudyDesk.",
@@ -401,6 +406,9 @@
     }
   },
   "log": {
+    "restNotifTitle": "Descanso · {{name}}",
+    "restNotifSkip": "Saltar",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Adicionar exercício",
     "emptyWorkoutHint": "Adicione os exercícios que faz hoje. Ficam nesta sessão para a próxima vez.",
     "prBadge": "RP",
