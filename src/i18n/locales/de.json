@@ -53,6 +53,13 @@
     "personalRecord": "Persönlicher Rekord"
   },
   "auth": {
+    "nexusErr": {
+      "unavailable": "Nexus Command Center ist nicht installiert oder nicht erreichbar.",
+      "noSession": "Melde dich zuerst bei Nexus Command Center an und versuche es dann erneut.",
+      "failed": "Anmeldung über Nexus fehlgeschlagen. Melde dich normal an.",
+      "offline": "Die Anmeldung über Nexus braucht eine Netzwerkverbindung.",
+      "timedOut": "Die Anmeldung über Nexus hat zu lange gedauert. Prüfe die Verbindung und versuche es erneut."
+    },
     "tagline": "PERIODISIERTE KRAFT · FOKUS",
     "titleGetStarted": "Loslegen",
     "titleSignInEmail": "Mit E-Mail anmelden",
@@ -83,7 +90,6 @@
     "nexusOtherRemove": "Wenn du damit fortfährst, werden diese Daten von diesem Gerät entfernt. Melde dich wieder beim ursprünglichen Konto an, um sie zu behalten.",
     "nexusOtherConfirm": "Konto wechseln",
     "notConfigured": "Supabase nicht konfiguriert — Anmeldung nicht verfügbar. Tippe auf Als Gast fortfahren, um die App lokal zu nutzen.",
-    "errNexus": "Nexus-Sitzung konnte nicht übernommen werden.",
     "errInvalidCredentials": "E-Mail oder Passwort ist falsch.",
     "errAlreadyRegistered": "Für diese E-Mail existiert bereits ein Konto. Versuche dich anzumelden.",
     "errWeakPassword": "Wähle ein stärkeres Passwort.",
