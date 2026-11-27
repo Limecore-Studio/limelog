@@ -84,6 +84,19 @@ export function WorkoutPage() {
   // v1.22 (limelog#149, M part): the Add exercise sheet.
   const [adding, setAdding] = useState(false);
 
+  // v1.22 (limecore#127): Skip / +30 s on the rest notification change the
+  // stored rest; adopt it.
+  useEffect(() => {
+    const reread = () => {
+      const saved = loadActiveRest();
+      setRest(saved && saved.logId === logId && saved.endsAt > Date.now()
+        ? { endsAt: saved.endsAt, total: saved.total, exerciseName: saved.exerciseName }
+        : null);
+    };
+    window.addEventListener('limelog:rest-changed', reread);
+    return () => window.removeEventListener('limelog:rest-changed', reread);
+  }, [logId]);
+
   // Rehydrate a still-running rest on mount (covers process-death + resume, and
   // a plain remount). Only adopt it if it belongs to THIS workout and hasn't
   // already elapsed; otherwise clear the stale record.

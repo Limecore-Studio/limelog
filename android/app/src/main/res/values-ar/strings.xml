@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">سجّل تمرين اليوم</string>
     <string name="shortcut_body_short">الجسم</string>
     <string name="shortcut_body_long">أضف قياسًا للجسم</string>
+    <string name="rest_channel_name">مؤقت الراحة</string>
 </resources>

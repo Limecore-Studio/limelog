@@ -421,6 +421,9 @@
     }
   },
   "log": {
+    "restNotifTitle": "راحة · {{name}}",
+    "restNotifSkip": "تخطٍّ",
+    "restNotifPlus30": "+30 ث",
     "addExercise": "إضافة تمرين",
     "emptyWorkoutHint": "أضف التمارين التي تؤديها اليوم. تبقى في هذه الجلسة للمرة القادمة.",
     "prBadge": "رقم",

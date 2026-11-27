@@ -500,6 +500,9 @@
     "restrictExercises": "限制特定动作"
   },
   "log": {
+    "restNotifTitle": "休息 · {{name}}",
+    "restNotifSkip": "跳过",
+    "restNotifPlus30": "+30 秒",
     "addExercise": "添加动作",
     "emptyWorkoutHint": "添加你今天要做的动作。它们会保留在这次训练课中，供下次使用。",
     "prBadge": "纪录",

@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">Catat latihan hari ini</string>
     <string name="shortcut_body_short">Tubuh</string>
     <string name="shortcut_body_long">Tambah ukuran tubuh</string>
+    <string name="rest_channel_name">Pengatur waktu istirahat</string>
 </resources>

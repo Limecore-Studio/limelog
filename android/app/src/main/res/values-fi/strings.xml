@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">Kirjaa tämän päivän treeni</string>
     <string name="shortcut_body_short">Keho</string>
     <string name="shortcut_body_long">Lisää kehon mittaus</string>
+    <string name="rest_channel_name">Lepoajastin</string>
 </resources>

@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">Heutiges Training erfassen</string>
     <string name="shortcut_body_short">Körper</string>
     <string name="shortcut_body_long">Körpermessung hinzufügen</string>
+    <string name="rest_channel_name">Pausentimer</string>
 </resources>

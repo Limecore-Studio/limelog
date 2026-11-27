@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">Enregistrer la séance du jour</string>
     <string name="shortcut_body_short">Corps</string>
     <string name="shortcut_body_long">Ajouter une mesure corporelle</string>
+    <string name="rest_channel_name">Minuteur de repos</string>
 </resources>

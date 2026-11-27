@@ -102,14 +102,6 @@ const liveSync = createLiveSync({
   onPushed,
 });
 
-/**
- * Subscribes to action-button taps on workout reminders and routes the user
- * to /today (where the "Start session" button is). Lives inside <BrowserRouter>
- * so useNavigate() works; a bare module-level listener would have no router
- * context when the app cold-starts from a notification tap. The handler is
- * a no-op if the listener fires before navigation is ready — Capacitor
- * replays the deferred event after `load()`, so the route lands either way.
- */
 /** v1.22 (limecore#127) — deep links (launcher shortcuts, the rest-timer
  *  notification, NCC) navigate once the router is up; one that came while the
  *  sign-in screen showed waits for it (lib/deepLinks.ts). */
@@ -121,6 +113,18 @@ function DeepLinkBridge() {
 
 initDeepLinks();
 
+// v1.22 (limecore#127): Skip / +30 s on the rest notification, including a
+// tap that launched the app. Native only; the module loads on demand.
+if (Capacitor.isNativePlatform()) void import('@/lib/restNotification').then((m) => m.initRestActions());
+
+/**
+ * Subscribes to action-button taps on workout reminders and routes the user
+ * to /today (where the "Start session" button is). Lives inside <BrowserRouter>
+ * so useNavigate() works; a bare module-level listener would have no router
+ * context when the app cold-starts from a notification tap. The handler is
+ * a no-op if the listener fires before navigation is ready — Capacitor
+ * replays the deferred event after `load()`, so the route lands either way.
+ */
 function NotificationActionBridge() {
   const navigate = useNavigate();
   useEffect(() => {

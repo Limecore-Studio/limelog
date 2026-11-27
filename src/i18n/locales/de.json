@@ -504,6 +504,9 @@
     "restrictExercises": "Bestimmte Übungen einschränken"
   },
   "log": {
+    "restNotifTitle": "Pause · {{name}}",
+    "restNotifSkip": "Überspringen",
+    "restNotifPlus30": "+30 s",
     "addExercise": "Übung hinzufügen",
     "emptyWorkoutHint": "Füge die Übungen hinzu, die du heute machst. Sie bleiben für das nächste Mal in dieser Einheit.",
     "prBadge": "PB",

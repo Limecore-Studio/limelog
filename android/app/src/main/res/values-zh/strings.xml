@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">记录今天的训练</string>
     <string name="shortcut_body_short">身体</string>
     <string name="shortcut_body_long">添加身体测量</string>
+    <string name="rest_channel_name">休息计时器</string>
 </resources>

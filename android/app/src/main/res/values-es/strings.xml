@@ -5,4 +5,5 @@
     <string name="shortcut_workout_long">Registrar el entrenamiento de hoy</string>
     <string name="shortcut_body_short">Cuerpo</string>
     <string name="shortcut_body_long">Añadir medida corporal</string>
+    <string name="rest_channel_name">Temporizador de descanso</string>
 </resources>
