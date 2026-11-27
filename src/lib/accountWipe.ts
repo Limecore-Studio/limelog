@@ -20,7 +20,10 @@ const forgetLastAppOpen = (): boolean => {
     return false;
   }
 };
+import { storage } from '@/utils/storage';
 import { useLogStore } from '@/store/logStore';
+import { useProgramStore } from '@/store/programStore';
+import { stripProgram, stripExercise, stripTemplate } from '@/lib/programPersonal';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { DEFAULT_PREFS as DEFAULT_BODY_METRICS_PREFS } from '@/types/bodyMetrics';
 import { useUserStore, defaultProfile } from '@/store/userStore';
@@ -30,8 +33,9 @@ import type { GuestHeld } from '@/lib/accountOwner';
 // useProgramStore is intentionally NOT wiped — programs / exercises /
 // workout templates are tool configuration, not history, and a global
 // wipe would clobber the user's custom builtin overrides + force a
-// re-seed of BUILTIN_EXERCISES that would lose their tweaks. The
-// per-user scope of programs is tracked as a v1.3 design item.
+// re-seed of BUILTIN_EXERCISES that would lose their tweaks. Their notes and
+// best records are stripped below (v1.22); parking them per account is
+// deferred to the owner (limelog#127 item 7).
 //
 // v1.18.1 (LimeLog#88) — returns whether every step succeeded. Each step still
 // runs when one before it fails (sign-out clears as much as it can), but an
@@ -56,6 +60,29 @@ export function wipeAccountLocalData(parkFor: string | null): boolean {
   // everything else: leaving it would hand the next signed-in account on a
   // shared device someone else's paid perk.
   step(clearEntitlement());
+  // v1.22 (limelog#127 item 7) — programs stay (device configuration, see
+  // above), but their notes and best records are the person's: they go.
+  try {
+    // What is stored, and only where something changes: an unchanged key is
+    // not rewritten (the library may be held in memory only, seeded on demand).
+    const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+    const sp = storage.getPrograms(), se = storage.getExercises(), st = storage.getWorkoutTemplates();
+    const programs = sp.map(stripProgram), exercises = se.map(stripExercise), templates = st.map(stripTemplate);
+    if (!same(sp, programs)) storage.setPrograms(programs);
+    if (!same(se, exercises)) storage.setExercises(exercises);
+    if (!same(st, templates)) storage.setWorkoutTemplates(templates);
+    const ps = useProgramStore.getState();
+    const livePrograms = ps.programs.map(stripProgram);
+    useProgramStore.setState({
+      programs: livePrograms,
+      exercises: ps.exercises.map(stripExercise),
+      workoutTemplates: ps.workoutTemplates.map(stripTemplate),
+      activeProgram: livePrograms.find((p) => p.status === 'active') ?? null,
+    });
+  } catch (e) {
+    ok = false;
+    console.warn('[nexus] program notes/records strip failed:', e);
+  }
   // v1.2.1 — AUDIT-LL-FSG-2: the personal-data stores, so the next signed-in
   // account on a shared device doesn't inherit the previous one's workout
   // history, bodyweight log, or progress photos in the UI. Cloud-side data
