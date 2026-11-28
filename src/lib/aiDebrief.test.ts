@@ -8,7 +8,7 @@ vi.mock('./aiProvider', () => ({ generate: gen.fn }));
 const profile = vi.hoisted(() => ({ aiEnabled: true }));
 vi.mock('@/store/userStore', () => ({ useUserStore: { getState: () => ({ profile }) } }));
 
-const { analyseDebrief } = await import('./aiDebrief');
+const { analyseDebrief, parseDebrief } = await import('./aiDebrief');
 
 beforeEach(() => {
   gen.fn.mockReset();
@@ -27,7 +27,7 @@ describe('analyseDebrief', () => {
     expect(await analyseDebrief('hard session, knee sore')).toEqual({
       result: { rpe: 8, painFlags: ['knee'], mood: 'good', noteSummary: 'Hard, knee sore.' },
     });
-    expect(gen.fn.mock.calls[0][0]).toMatchObject({ json: true, maxTokens: 256 });
+    expect(gen.fn.mock.calls[0][0]).toMatchObject({ json: true, maxTokens: 1024 });
   });
 
   it('passes the reason on', async () => {
@@ -35,5 +35,39 @@ describe('analyseDebrief', () => {
     expect(await analyseDebrief('x')).toEqual({ error: 'no-key' });
     gen.fn.mockResolvedValue({ ok: true, text: 'not json' });
     expect(await analyseDebrief('x')).toEqual({ error: 'other' });
+  });
+});
+
+// limecore#122 device pass: with a real key the owner's debrief showed no
+// pain or mood chips. These are the shapes Gemini 3.x actually returns.
+describe('parseDebrief with realistic model output', () => {
+  const want = { rpe: 8, painFlags: ['left knee'], mood: 'good', noteSummary: 'Hard squats, knee sore.' };
+
+  it('plain JSON', () => {
+    expect(parseDebrief('{"rpe":8,"painFlags":["left knee"],"mood":"good","noteSummary":"Hard squats, knee sore."}')).toEqual(want);
+  });
+
+  it('```json fences and a sentence around them', () => {
+    expect(parseDebrief('Here is the data:\n```json\n{\n  "rpe": 8,\n  "painFlags": ["left knee"],\n  "mood": "good",\n  "noteSummary": "Hard squats, knee sore."\n}\n```')).toEqual(want);
+  });
+
+  it('snake_case keys, a capitalised mood and RPE as a string', () => {
+    expect(parseDebrief('{"rpe":"8/10","pain_flags":["left knee"],"Mood":"Good","note_summary":"Hard squats, knee sore."}')).toEqual(want);
+  });
+
+  it('pain as one string, mood as a synonym', () => {
+    expect(parseDebrief('{"rpe":7,"pain":"left knee, lower back","mood":"okay","summary":"x"}')).toEqual({
+      rpe: 7, painFlags: ['left knee', 'lower back'], mood: 'neutral', noteSummary: 'x',
+    });
+  });
+
+  it('pain as objects, the object inside an array, and "none" dropped', () => {
+    expect(parseDebrief('[{"rpe":6,"painFlags":[{"bodyPart":"shoulder"},"none"],"mood":"tired"}]')).toEqual({
+      rpe: 6, painFlags: ['shoulder'], mood: 'bad', noteSummary: '',
+    });
+  });
+
+  it('a cut-off answer is a failure, not empty chips', () => {
+    expect(parseDebrief('{"rpe":8,"painFlags":["left kn')).toBeNull();
   });
 });
