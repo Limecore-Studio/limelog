@@ -100,14 +100,45 @@ public class SaveFilePlugin extends Plugin {
         }
         // "wt": truncate, so picking an existing file replaces it rather than
         // leaving the tail of a longer old export behind.
-        try (OutputStream os = getContext().getContentResolver().openOutputStream(uri, "wt")) {
-            if (os == null) throw new java.io.IOException("could not open the chosen file");
-            os.write(pendingBase64 ? Base64.decode(data, Base64.DEFAULT) : data.getBytes(StandardCharsets.UTF_8));
-            os.flush();
-            out.put("saved", true);
-            call.resolve(out);
-        } catch (Exception e) {
-            call.reject("Could not write the file: " + e.getMessage());
-        }
+        //
+        // v1.22 (as StudyDesk#320) — the picker has already created an EMPTY
+        // file. The text is streamed in 64 KB chunks (no second full copy via
+        // getBytes), off the main thread (an export can be several MB and a
+        // cloud provider's stream may block), and ANY failure, OutOfMemoryError
+        // included (an Error, which catch (Exception) let kill the write
+        // silently), removes that empty file and rejects, so the app says the
+        // export failed instead of leaving a blank file behind.
+        final boolean base64 = pendingBase64;
+        new Thread(() -> {
+            boolean ok = false;
+            try (OutputStream os = getContext().getContentResolver().openOutputStream(uri, "wt")) {
+                if (os == null) throw new java.io.IOException("could not open the chosen file");
+                if (base64) {
+                    os.write(Base64.decode(data, Base64.DEFAULT));
+                } else {
+                    java.io.Writer w = new java.io.BufferedWriter(new java.io.OutputStreamWriter(os, StandardCharsets.UTF_8), 64 * 1024);
+                    int step = 64 * 1024;
+                    for (int i = 0; i < data.length(); i += step) {
+                        w.write(data, i, Math.min(step, data.length() - i));
+                    }
+                    w.flush();
+                }
+                os.flush();
+                ok = true;
+            } catch (Throwable e) {
+                ok = false;
+            }
+            if (ok) {
+                out.put("saved", true);
+                call.resolve(out);
+            } else {
+                try {
+                    DocumentsContract.deleteDocument(getContext().getContentResolver(), uri);
+                } catch (Throwable ignored) {
+                    // Best effort: some providers do not support delete.
+                }
+                call.reject("Could not write the file.");
+            }
+        }).start();
     }
 }
