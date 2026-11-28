@@ -4,7 +4,7 @@ import { useNexusStore } from '@/store/nexusStore';
 import { useBodyMetricsStore } from '@/store/bodyMetricsStore';
 import { useLogStore } from '@/store/logStore';
 import { syncAllowed } from '@/lib/syncSetting';
-import { healthConsent, healthOwner, HEALTH_ASK_EVENT, HEALTH_BODY_FIELDS } from '@/lib/healthConsent';
+import { healthConsent, healthOwner, healthQuestionOpen, HEALTH_ASK_EVENT, HEALTH_BODY_FIELDS } from '@/lib/healthConsent';
 import { grantHealthConsent, refuseHealthConsent, requeueHealthData } from '@/lib/healthConsentActions';
 import { readHealthConsentFromCloud } from '@/lib/healthConsentCloud';
 import { healthAllowed } from '@/lib/healthConsent';
@@ -30,6 +30,13 @@ function holdsHealthData(): boolean {
 export function HealthConsentPrompt() {
   const { t } = useTranslation();
   const userId = useNexusStore((s) => s.userId);
+  // v1.22 (S24 pass) — signed in, the answer that counts is the account's,
+  // which needs the account to have taken the device's data up (the owner
+  // record). Until then healthOwner() falls back to the guest, so a guest's
+  // "Keep on this device" read as the account's answer while the "guest
+  // data" question was still open, and the account was never asked. The
+  // checks below wait for the owner, and run again when that question ends.
+  const guestDataAsk = useNexusStore((s) => s.guestDataAsk);
   const [owner, setOwner] = useState<string | null>(null);
 
   useEffect(() => {
@@ -37,7 +44,8 @@ export function HealthConsentPrompt() {
     // Signed in, the account's answer comes first (limecore#135): a yes or a
     // withdrawal given on another device applies here, and is not asked again.
     const settle = async (): Promise<boolean> => {
-      if (!userId || healthConsent() !== 'unasked') return healthConsent() === 'unasked';
+      if (!healthQuestionOpen(userId)) return false;
+      if (!userId) return true;
       const had = await readHealthConsentFromCloud();
       if (had && healthAllowed()) requeueHealthData();
       return !cancelled && healthConsent() === 'unasked';
@@ -55,7 +63,7 @@ export function HealthConsentPrompt() {
       clearTimeout(timer);
       window.removeEventListener(HEALTH_ASK_EVENT, onAsk);
     };
-  }, [userId]);
+  }, [userId, guestDataAsk]);
 
   if (!owner || owner !== healthOwner()) return null;
 

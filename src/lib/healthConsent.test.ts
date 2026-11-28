@@ -67,6 +67,20 @@ describe('health consent', () => {
     expect(hc.healthConsent('guest')).toBe('unasked');
   });
 
+  // S24 pass: a guest's "Keep on this device" must never stand in for the
+  // account's answer, including while the guest-data question is still open
+  // (signed in, but no owner recorded yet).
+  it("a guest's answer is not the account's", () => {
+    q.owner = null;
+    hc.setHealthConsent(false); // as a guest
+    expect(hc.healthConsent('guest')).toBe('refused');
+    expect(hc.healthQuestionOpen(null)).toBe(false); // the guest answered
+    expect(hc.healthQuestionOpen('u1')).toBe(false); // signed in, not taken up: wait
+    q.owner = 'u1'; // taken up
+    expect(hc.healthConsent()).toBe('unasked');
+    expect(hc.healthQuestionOpen('u1')).toBe(true); // the account is asked
+  });
+
   it('a yes queues the kept-back readings and debriefs', () => {
     actions.grantHealthConsent();
     expect(hc.healthAllowed()).toBe(true);

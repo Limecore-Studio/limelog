@@ -55,6 +55,16 @@ export function healthAllowed(owner = healthOwner()): boolean {
   return healthConsent(owner) === 'granted';
 }
 
+/** v1.22 (S24 pass) — may the question be asked now, and is it still open?
+ *  Signed in (`sessionUser`), the answer is the account's, so it waits until
+ *  the account has taken the device's data up (the owner record): before
+ *  that healthOwner() is the guest, and a guest's answer must not stand in
+ *  for the account's. A guest is asked under the guest's own record. */
+export function healthQuestionOpen(sessionUser: string | null): boolean {
+  if (sessionUser && readOwner() !== sessionUser) return false;
+  return healthConsent() === 'unasked';
+}
+
 export function setHealthConsent(granted: boolean, owner = healthOwner(), now = new Date()): void {
   try {
     localStorage.setItem(PREFIX + owner, JSON.stringify({ granted, at: now.toISOString() }));
