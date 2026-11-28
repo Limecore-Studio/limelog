@@ -68,6 +68,12 @@ describe('generationConfig', () => {
     });
   });
 
+  it('a schema is sent with JSON only', () => {
+    const schema = { type: 'OBJECT' };
+    expect(generationConfig('gemini-3.5-flash-lite', 1024, 0.2, true, schema).responseSchema).toBe(schema);
+    expect(generationConfig('gemini-3.5-flash-lite', 1024, 0.2, false, schema).responseSchema).toBeUndefined();
+  });
+
   it('the default is a model new keys can use (not 2.5)', () => {
     expect(DEFAULT_AI_MODEL).not.toMatch(/^gemini-2\./);
   });

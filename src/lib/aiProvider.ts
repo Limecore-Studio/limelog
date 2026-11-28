@@ -87,11 +87,14 @@ export function classifyAiError(status: number, message: string): AiError {
  *  there, and sending thinkingBudget too is a 400); 2.x: the old settings.
  *  Thinking counts against maxOutputTokens, so it stays at the minimum or a
  *  small cap returns only a few words. Exported for the tests. */
-export function generationConfig(model: string, maxTokens: number, temperature: number, json: boolean): Record<string, unknown> {
+export function generationConfig(model: string, maxTokens: number, temperature: number, json: boolean, schema?: Record<string, unknown>): Record<string, unknown> {
   const config: Record<string, unknown> = /^gemini-2\./.test(model)
     ? { temperature, maxOutputTokens: maxTokens, thinkingConfig: { thinkingBudget: 0 } }
     : { maxOutputTokens: maxTokens, thinkingConfig: { thinkingLevel: 'MINIMAL' } };
   if (json) config.responseMimeType = 'application/json';
+  // v1.22 (S24 pass): with only a JSON mime type the model chooses the shape
+  // (it wrapped the fields in an object of its own); a schema fixes it.
+  if (json && schema) config.responseSchema = schema;
   return config;
 }
 
@@ -101,6 +104,8 @@ export async function generate(opts: {
   temperature: number;
   /** Ask for a JSON answer (the debrief's extraction). */
   json?: boolean;
+  /** With `json`: the exact shape the answer must have (Gemini responseSchema). */
+  schema?: Record<string, unknown>;
   /** For the Settings test: a key not saved yet. */
   key?: string;
   model?: string;
@@ -117,7 +122,7 @@ export async function generate(opts: {
       headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: opts.prompt }] }],
-        generationConfig: generationConfig(model, opts.maxTokens, opts.temperature, opts.json === true),
+        generationConfig: generationConfig(model, opts.maxTokens, opts.temperature, opts.json === true, opts.schema),
       }),
     });
   } catch {

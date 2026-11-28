@@ -67,7 +67,25 @@ describe('parseDebrief with realistic model output', () => {
     });
   });
 
+  it('the fields wrapped in an object of the model own (the S24 "Saved" chip)', () => {
+    expect(parseDebrief('{"workoutQuality":{"rpe":8,"painFlags":["knee"],"mood":"good","noteSummary":"Heavy legs, knee twinge on squats."}}')).toEqual({
+      rpe: 8, painFlags: ['knee'], mood: 'good', noteSummary: 'Heavy legs, knee twinge on squats.',
+    });
+  });
+
   it('a cut-off answer is a failure, not empty chips', () => {
     expect(parseDebrief('{"rpe":8,"painFlags":["left kn')).toBeNull();
+  });
+});
+
+// The owner's example note, end to end through analyseDebrief: chips come back.
+describe('analyseDebrief with the S24 example note', () => {
+  it('"legs felt heavy, knee twinged on squats, RPE 8, good mood" yields RPE, pain and mood', async () => {
+    gen.fn.mockResolvedValue({ ok: true, text: '{"rpe":8,"painFlags":["knee"],"mood":"good","noteSummary":"Heavy legs; knee twinged on squats."}' });
+    const out = await analyseDebrief('legs felt heavy, knee twinged on squats, RPE 8, good mood');
+    expect(out).toEqual({ result: { rpe: 8, painFlags: ['knee'], mood: 'good', noteSummary: 'Heavy legs; knee twinged on squats.' } });
+    // The request carries the schema, so the model answers in this shape.
+    const req = gen.fn.mock.calls[0][0];
+    expect(req.schema.required).toEqual(['rpe', 'painFlags', 'mood', 'noteSummary']);
   });
 });

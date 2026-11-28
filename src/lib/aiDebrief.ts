@@ -34,6 +34,22 @@ function buildPrompt(userText: string): string {
 Note: "${userText.slice(0, 400).replace(/"/g, "'")}"`;
 }
 
+/** v1.22 (S24 pass) — the answer's exact shape, sent as Gemini's
+ *  responseSchema. Without it gemini-3.5-flash-lite returned JSON of its own
+ *  shape (the fields inside a wrapper object), which parsed to no RPE, pain
+ *  or mood: the "Saved" chip. */
+export const DEBRIEF_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    rpe: { type: 'INTEGER', nullable: true, description: 'Effort 1-10, null if not stated or implied' },
+    painFlags: { type: 'ARRAY', items: { type: 'STRING' }, description: 'Body parts with pain or discomfort' },
+    mood: { type: 'STRING', nullable: true, enum: ['great', 'good', 'neutral', 'bad', 'terrible'] },
+    noteSummary: { type: 'STRING' },
+  },
+  required: ['rpe', 'painFlags', 'mood', 'noteSummary'],
+  propertyOrdering: ['rpe', 'painFlags', 'mood', 'noteSummary'],
+};
+
 export type DebriefOutcome = { result: DebriefResult } | { error: AiError };
 
 /** Analyse a free-text debrief note. Returns the structured fields, or why it
@@ -48,7 +64,7 @@ export async function analyseDebrief(userText: string): Promise<DebriefOutcome |
   // 1024, not 256 (limecore#122 device pass): on 3.x models even the
   // minimal thinking level counts against maxOutputTokens, so a small cap can
   // end the answer mid-JSON. The answer itself is well under 200 tokens.
-  const res = await generate({ prompt: buildPrompt(text), json: true, maxTokens: 1024, temperature: 0.2 });
+  const res = await generate({ prompt: buildPrompt(text), json: true, schema: DEBRIEF_SCHEMA, maxTokens: 1024, temperature: 0.2 });
   if (!res.ok) return { error: res.error };
   const result = parseDebrief(res.text);
   return result ? { result } : { error: 'other' };
@@ -69,7 +85,13 @@ export function parseDebrief(raw: string): DebriefResult | null {
   }
   if (Array.isArray(obj)) obj = obj[0];
   if (!obj || typeof obj !== 'object') return null;
-  const o = normaliseKeys(obj as Record<string, unknown>);
+  let o = normaliseKeys(obj as Record<string, unknown>);
+  // The fields wrapped in an object of the model's own ({"debrief": {...}},
+  // {"workoutQuality": {...}}): read the one nested object that has them.
+  if (!KNOWN.some((k) => k in o)) {
+    const inner = Object.values(o).find((v) => v && typeof v === 'object' && !Array.isArray(v) && KNOWN.some((k) => k in normaliseKeys(v as Record<string, unknown>)));
+    if (inner) o = normaliseKeys(inner as Record<string, unknown>);
+  }
 
   const rpeNum = typeof o.rpe === 'number' ? o.rpe : typeof o.rpe === 'string' ? parseFloat(o.rpe) : NaN;
   const rpe = Number.isFinite(rpeNum) && rpeNum >= 1 && rpeNum <= 10 ? Math.round(rpeNum) : null;
@@ -95,6 +117,8 @@ export function parseDebrief(raw: string): DebriefResult | null {
 
   return { rpe, painFlags, mood, noteSummary };
 }
+
+const KNOWN = ['rpe', 'painflags', 'pain', 'mood', 'notesummary', 'summary'];
 
 const MOOD_SYNONYMS: Record<string, SessionMood> = {
   excellent: 'great', amazing: 'great', positive: 'good', fine: 'good',
