@@ -45,36 +45,73 @@ export async function analyseDebrief(userText: string): Promise<DebriefOutcome |
   if (!useUserStore.getState().profile.aiEnabled) return null;
   const text = userText.trim();
   if (!text) return null;
-  const res = await generate({ prompt: buildPrompt(text), json: true, maxTokens: 256, temperature: 0.2 });
+  // 1024, not 256 (limecore#122 device pass): on 3.x models even the
+  // minimal thinking level counts against maxOutputTokens, so a small cap can
+  // end the answer mid-JSON. The answer itself is well under 200 tokens.
+  const res = await generate({ prompt: buildPrompt(text), json: true, maxTokens: 1024, temperature: 0.2 });
   if (!res.ok) return { error: res.error };
   const result = parseDebrief(res.text);
   return result ? { result } : { error: 'other' };
 }
 
-function parseDebrief(raw: string): DebriefResult | null {
-  let obj: unknown;
-  try {
-    obj = JSON.parse(raw);
-  } catch {
-    // Defensive: pull the first {...} block if the model wrapped it in fences.
+/** v1.22 (limecore#122 device pass) — tolerant of what the model really
+ *  sends: ```json fences or prose around the object, an array holding it,
+ *  snake_case or other spellings of the keys, a number as a string ("7" or
+ *  "7/10"), a capitalised mood ("Good", "okay"), and pain as one string
+ *  ("knee, lower back") or as objects ({ "bodyPart": "knee" }). Exported for
+ *  the tests. */
+export function parseDebrief(raw: string): DebriefResult | null {
+  let obj: unknown = tryJson(raw.trim());
+  if (obj === undefined) {
+    // Fences or prose around it: the outermost {...}.
     const m = raw.match(/\{[\s\S]*\}/);
-    if (!m) return null;
-    try {
-      obj = JSON.parse(m[0]);
-    } catch {
-      return null;
-    }
+    obj = m ? tryJson(m[0]) : undefined;
   }
+  if (Array.isArray(obj)) obj = obj[0];
   if (!obj || typeof obj !== 'object') return null;
-  const o = obj as Record<string, unknown>;
+  const o = normaliseKeys(obj as Record<string, unknown>);
 
-  const rpe =
-    typeof o.rpe === 'number' && o.rpe >= 1 && o.rpe <= 10 ? Math.round(o.rpe) : null;
-  const painFlags = Array.isArray(o.painFlags)
-    ? o.painFlags.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).slice(0, 8)
-    : [];
-  const mood = MOODS.includes(o.mood as SessionMood) ? (o.mood as SessionMood) : null;
-  const noteSummary = typeof o.noteSummary === 'string' ? o.noteSummary.slice(0, 200) : '';
+  const rpeNum = typeof o.rpe === 'number' ? o.rpe : typeof o.rpe === 'string' ? parseFloat(o.rpe) : NaN;
+  const rpe = Number.isFinite(rpeNum) && rpeNum >= 1 && rpeNum <= 10 ? Math.round(rpeNum) : null;
+
+  const rawPain = o.painflags ?? o.pain ?? o.painpoints ?? o.painareas ?? o.bodyparts;
+  const painList: unknown[] = Array.isArray(rawPain)
+    ? rawPain
+    : typeof rawPain === 'string'
+      ? rawPain.split(/[,;]| and /i)
+      : [];
+  const painFlags = painList
+    .map((x) => (typeof x === 'string' ? x : x && typeof x === 'object' ? Object.values(x as Record<string, unknown>).find((v) => typeof v === 'string') : undefined))
+    .filter((x): x is string => typeof x === 'string')
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0 && !/^(none|null|n\/a|no)$/i.test(x))
+    .slice(0, 8);
+
+  const moodRaw = typeof o.mood === 'string' ? o.mood.trim().toLowerCase() : '';
+  const mood = (MOODS.includes(moodRaw as SessionMood) ? moodRaw : MOOD_SYNONYMS[moodRaw] ?? null) as SessionMood | null;
+
+  const summaryRaw = o.notesummary ?? o.summary;
+  const noteSummary = typeof summaryRaw === 'string' ? summaryRaw.slice(0, 200) : '';
 
   return { rpe, painFlags, mood, noteSummary };
+}
+
+const MOOD_SYNONYMS: Record<string, SessionMood> = {
+  excellent: 'great', amazing: 'great', positive: 'good', fine: 'good',
+  ok: 'neutral', okay: 'neutral', average: 'neutral', mixed: 'neutral',
+  tired: 'bad', poor: 'bad', negative: 'bad', awful: 'terrible', horrible: 'terrible',
+};
+
+function tryJson(text: string): unknown {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Keys lower-cased with separators dropped: painFlags, pain_flags and
+ *  "Pain Flags" all read as painflags. */
+function normaliseKeys(o: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(o).map(([k, v]) => [k.toLowerCase().replace(/[^a-z]/g, ''), v]));
 }
