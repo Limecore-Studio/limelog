@@ -17,6 +17,7 @@ import { DEFAULT_PREFS } from '@/types/bodyMetrics';
 import { enqueue } from '@/lib/outbox';
 import { syncAllowed } from '@/lib/syncSetting';
 import { healthConsent, requestHealthAsk, HEALTH_BODY_FIELDS } from '@/lib/healthConsent';
+import { readOwner } from '@/lib/accountOwner';
 
 const STORAGE_KEY = 'limelog-body-metrics';
 const PREFS_KEY = 'limelog-body-metrics-prefs';
@@ -152,7 +153,11 @@ export const useBodyMetricsStore = create<BodyMetricsStore>((set, get) => ({
     // v1.22 (limecore#91) — a body-composition reading synced for the first
     // time asks the health-data question; until it is answered the push
     // leaves those fields out (nexusSync.ts).
-    if (syncAllowed() && healthConsent() === 'unasked' && HEALTH_BODY_FIELDS.some((f) => merged[f] !== undefined)) requestHealthAsk();
+    // v1.22 (limelog#185) — signed in only: a guest never syncs, so there is
+    // nothing to store on the server to ask about (syncAllowed() is true for
+    // a guest too). The guest is asked after signing in, when the data is
+    // found on the device (HealthConsentPrompt).
+    if (readOwner() && syncAllowed() && healthConsent() === 'unasked' && HEALTH_BODY_FIELDS.some((f) => merged[f] !== undefined)) requestHealthAsk();
     if (syncAllowed()) enqueue('upsert_body_metric', {
       id: merged.id,
       date: merged.date,
