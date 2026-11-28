@@ -14,7 +14,9 @@
     "withdrawConfirm": "Withdraw consent? Your body-composition readings and pain notes are erased from our server and kept on this device.",
     "debriefNeeds": "The debrief note can mention pain, so analysing it needs your agreement to process health data.",
     "debriefRefused": "Analysing the note needs your agreement to process health data. You can give it in Settings.",
-    "review": "Review"
+    "review": "Review",
+    "settingUnasked": "Not answered yet: nothing is synced until you choose.",
+    "settingDeclined": "Declined on {{date}}: body-composition readings and pain notes stay on this device."
   },
   "fi": {
     "eyebrow": "Terveystiedot",
@@ -31,7 +33,9 @@
     "withdrawConfirm": "Perutaanko suostumus? Kehonkoostumuksen lukemat ja kipumuistiinpanot poistetaan palvelimeltamme ja säilytetään tällä laitteella.",
     "debriefNeeds": "Palautemuistiinpano voi mainita kivun, joten sen analysointi vaatii suostumuksesi terveystietojen käsittelyyn.",
     "debriefRefused": "Muistiinpanon analysointi vaatii suostumuksesi terveystietojen käsittelyyn. Voit antaa sen asetuksissa.",
-    "review": "Tarkista"
+    "review": "Tarkista",
+    "settingUnasked": "Ei vielä vastattu: mitään ei synkronoida ennen kuin valitset.",
+    "settingDeclined": "Kieltäydytty {{date}}: kehonkoostumuksen lukemat ja kipumuistiinpanot pysyvät tällä laitteella."
   },
   "de": {
     "eyebrow": "Gesundheitsdaten",
@@ -48,7 +52,9 @@
     "withdrawConfirm": "Einwilligung widerrufen? Deine Werte zur Körperzusammensetzung und Schmerznotizen werden von unserem Server gelöscht und auf diesem Gerät behalten.",
     "debriefNeeds": "Die Notiz kann Schmerzen erwähnen, daher braucht ihre Analyse deine Zustimmung zur Verarbeitung von Gesundheitsdaten.",
     "debriefRefused": "Die Analyse der Notiz braucht deine Zustimmung zur Verarbeitung von Gesundheitsdaten. Du kannst sie in den Einstellungen geben.",
-    "review": "Ansehen"
+    "review": "Ansehen",
+    "settingUnasked": "Noch nicht beantwortet: Bis du wählst, wird nichts synchronisiert.",
+    "settingDeclined": "Abgelehnt am {{date}}: Werte zur Körperzusammensetzung und Schmerznotizen bleiben auf diesem Gerät."
   },
   "es": {
     "eyebrow": "Datos de salud",
@@ -65,7 +71,9 @@
     "withdrawConfirm": "¿Retirar el consentimiento? Tus lecturas de composición corporal y notas de dolor se borran de nuestro servidor y se conservan en este dispositivo.",
     "debriefNeeds": "La nota puede mencionar dolor, así que analizarla requiere tu consentimiento para tratar datos de salud.",
     "debriefRefused": "Analizar la nota requiere tu consentimiento para tratar datos de salud. Puedes darlo en Ajustes.",
-    "review": "Revisar"
+    "review": "Revisar",
+    "settingUnasked": "Sin responder todavía: no se sincroniza nada hasta que elijas.",
+    "settingDeclined": "Rechazado el {{date}}: las lecturas de composición corporal y las notas de dolor se quedan en este dispositivo."
   },
   "fr": {
     "eyebrow": "Données de santé",
@@ -82,7 +90,9 @@
     "withdrawConfirm": "Retirer le consentement ? Vos mesures de composition corporelle et notes de douleur sont effacées de notre serveur et gardées sur cet appareil.",
     "debriefNeeds": "La note peut mentionner une douleur : l’analyser demande votre accord pour traiter des données de santé.",
     "debriefRefused": "Analyser la note demande votre accord pour traiter des données de santé. Vous pouvez le donner dans Réglages.",
-    "review": "Voir"
+    "review": "Voir",
+    "settingUnasked": "Pas encore répondu : rien n’est synchronisé tant que vous n’avez pas choisi.",
+    "settingDeclined": "Refusé le {{date}} : les mesures de composition corporelle et les notes de douleur restent sur cet appareil."
   },
   "pt": {
     "eyebrow": "Dados de saúde",
@@ -99,7 +109,9 @@
     "withdrawConfirm": "Retirar o consentimento? As suas leituras de composição corporal e notas de dor são apagadas do nosso servidor e mantidas neste dispositivo.",
     "debriefNeeds": "A nota pode mencionar dor, por isso analisá-la requer o seu consentimento para tratar dados de saúde.",
     "debriefRefused": "Analisar a nota requer o seu consentimento para tratar dados de saúde. Pode dá-lo nas Definições.",
-    "review": "Rever"
+    "review": "Rever",
+    "settingUnasked": "Ainda sem resposta: nada é sincronizado até escolher.",
+    "settingDeclined": "Recusado a {{date}}: as leituras de composição corporal e as notas de dor ficam neste dispositivo."
   },
   "id": {
     "eyebrow": "Data kesehatan",
@@ -116,7 +128,9 @@
     "withdrawConfirm": "Tarik persetujuan? Hasil komposisi tubuh dan catatan nyerimu dihapus dari server kami dan tetap disimpan di perangkat ini.",
     "debriefNeeds": "Catatan bisa menyebut nyeri, jadi menganalisisnya memerlukan persetujuanmu untuk memproses data kesehatan.",
     "debriefRefused": "Menganalisis catatan memerlukan persetujuanmu untuk memproses data kesehatan. Kamu bisa memberikannya di Pengaturan.",
-    "review": "Tinjau"
+    "review": "Tinjau",
+    "settingUnasked": "Belum dijawab: tidak ada yang disinkronkan sampai kamu memilih.",
+    "settingDeclined": "Ditolak pada {{date}}: hasil komposisi tubuh dan catatan nyeri tetap di perangkat ini."
   },
   "hi": {
     "eyebrow": "स्वास्थ्य डेटा",
@@ -133,7 +147,9 @@
     "withdrawConfirm": "सहमति वापस लें? आपके शरीर की संरचना के माप और दर्द के नोट हमारे सर्वर से मिटा दिए जाएँगे और इस डिवाइस पर बने रहेंगे।",
     "debriefNeeds": "नोट में दर्द का ज़िक्र हो सकता है, इसलिए इसके विश्लेषण के लिए स्वास्थ्य डेटा संसाधित करने की आपकी सहमति चाहिए।",
     "debriefRefused": "नोट के विश्लेषण के लिए स्वास्थ्य डेटा संसाधित करने की आपकी सहमति चाहिए। आप इसे सेटिंग्स में दे सकते हैं।",
-    "review": "देखें"
+    "review": "देखें",
+    "settingUnasked": "अभी उत्तर नहीं दिया: जब तक आप नहीं चुनते, कुछ भी सिंक नहीं होता।",
+    "settingDeclined": "{{date}} को अस्वीकार किया: शरीर की संरचना के माप और दर्द के नोट इसी डिवाइस पर रहते हैं।"
   },
   "ar": {
     "eyebrow": "البيانات الصحية",
@@ -150,7 +166,9 @@
     "withdrawConfirm": "سحب الموافقة؟ تُمحى قراءات تكوين الجسم وملاحظات الألم من خادمنا وتبقى على هذا الجهاز.",
     "debriefNeeds": "قد تذكر الملاحظة ألمًا، لذا يتطلب تحليلها موافقتك على معالجة البيانات الصحية.",
     "debriefRefused": "يتطلب تحليل الملاحظة موافقتك على معالجة البيانات الصحية. يمكنك منحها في الإعدادات.",
-    "review": "مراجعة"
+    "review": "مراجعة",
+    "settingUnasked": "لم تُجب بعد: لا تتم مزامنة أي شيء حتى تختار.",
+    "settingDeclined": "رُفض في {{date}}: تبقى قراءات تكوين الجسم وملاحظات الألم على هذا الجهاز."
   },
   "zh": {
     "eyebrow": "健康数据",
@@ -167,6 +185,8 @@
     "withdrawConfirm": "撤回同意？你的身体成分读数和疼痛笔记将从我们的服务器删除，并保留在此设备上。",
     "debriefNeeds": "复盘笔记可能提到疼痛，因此分析它需要你同意处理健康数据。",
     "debriefRefused": "分析笔记需要你同意处理健康数据。你可以在设置中同意。",
-    "review": "查看"
+    "review": "查看",
+    "settingUnasked": "尚未选择：在你选择之前不会同步任何内容。",
+    "settingDeclined": "已于 {{date}} 拒绝：身体成分读数和疼痛笔记仅保留在此设备上。"
   }
 }

@@ -22,6 +22,13 @@ import './ConsentPrompt.css';
 // for this owner, and Settings changes it.
 const DELAY_MS = 2500;
 
+// v1.22 (device pass): the other consent card (ConsentPrompt) sits in the same
+// corner. Shown together, this one covered it, and an upgrade asks both at
+// launch. So this one waits until that card is gone.
+function otherCardUp(): boolean {
+  return typeof document !== 'undefined' && !!document.querySelector('.consent-card:not(.health-consent-card)');
+}
+
 function holdsHealthData(): boolean {
   if (useBodyMetricsStore.getState().metrics.some((m) => HEALTH_BODY_FIELDS.some((f) => m[f] !== undefined))) return true;
   return useLogStore.getState().sessionLogs.some((l) => !!(l.aiDebriefRaw || l.aiPainFlags?.length || l.aiNoteSummary));
@@ -31,6 +38,7 @@ export function HealthConsentPrompt() {
   const { t } = useTranslation();
   const userId = useNexusStore((s) => s.userId);
   const [owner, setOwner] = useState<string | null>(null);
+  const [held, setHeld] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -57,7 +65,20 @@ export function HealthConsentPrompt() {
     };
   }, [userId]);
 
-  if (!owner || owner !== healthOwner()) return null;
+  // Waiting for the other card to be answered before showing.
+  useEffect(() => {
+    if (!owner || !otherCardUp()) return;
+    setHeld(true);
+    const t = setInterval(() => {
+      if (!otherCardUp()) {
+        setHeld(false);
+        clearInterval(t);
+      }
+    }, 1000);
+    return () => clearInterval(t);
+  }, [owner]);
+
+  if (!owner || held || owner !== healthOwner()) return null;
 
   const answer = (yes: boolean) => {
     if (yes) grantHealthConsent();
@@ -66,7 +87,7 @@ export function HealthConsentPrompt() {
   };
 
   return (
-    <div className="ref-card consent-card" role="dialog" aria-live="polite" aria-label={t('healthConsent.title')}>
+    <div className="ref-card consent-card health-consent-card" role="dialog" aria-live="polite" aria-label={t('healthConsent.title')}>
       <div className="ref-eyebrow">{t('healthConsent.eyebrow')}</div>
       <div className="ref-title">{t('healthConsent.title')}</div>
       <div className="consent-item__note">{t('healthConsent.body')}</div>

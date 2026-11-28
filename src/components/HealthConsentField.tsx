@@ -38,7 +38,14 @@ export function HealthConsentField() {
         ))}
       </div>
       <div className="settings-field__sublabel settings-ai-note">
-        {on ? t('healthConsent.settingOn', { date }) : t('healthConsent.settingOff')}
+        {/* v1.22 (device pass): "declined" and "not asked yet" used to read the
+            same ("Off"), which hid whether the one-time question had been
+            answered. */}
+        {on
+          ? t('healthConsent.settingOn', { date })
+          : r
+            ? t('healthConsent.settingDeclined', { date })
+            : t('healthConsent.settingUnasked')}
       </div>
     </div>
   );
